@@ -1,4 +1,4 @@
-package login
+package auth
 
 import (
     "database/sql"
@@ -55,7 +55,9 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
         
         // We do NOT redirect here because we want to show the "Success" message.
         // If you redirect, the message "Login Success!" will be lost.
-        h.Tpl.ExecuteTemplate(w, "login.html", "Login Success!")
+        //h.Tpl.ExecuteTemplate(w, "login.html", "Login Success!")
+        // Redirect to a success page or dashboard
+        http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
         return
     }
 
