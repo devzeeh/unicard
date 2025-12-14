@@ -1,67 +1,72 @@
 package auth
 
 import (
-    "database/sql"
-    "fmt"
-    "html/template"
-    "net/http"
+	"fmt"
+	"net/http"
 
-    "golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// Handler holds the dependencies (DB and Templates) for this package
-type Handler struct {
-    DB  *sql.DB
-    Tpl *template.Template
+// We use this struct to pass data to the HTML
+type LoginData struct {
+	Error string
 }
 
-// LoginAuthHandler processes the login form submission
+// View Handler (GET)
+// This function checks the URL for errors (e.g., ?error=invalid)
+// and displays the red text if needed.
+func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
+	// Get the error code from the URL
+	errCode := r.URL.Query().Get("error")
+
+	var msg string
+
+	// Determine the message based on the error code
+	switch errCode {
+	case "invalid":
+		msg = "Wrong password"
+	case "notfound":
+		msg = "User not found"
+	}
+
+	// Render the template with the message
+	h.Tpl.ExecuteTemplate(w, "login.html", LoginData{Error: msg})
+}
+
+// Auth Handler (POST)
 func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("loginauth running...")
+	fmt.Println("loginauth running...")
 
-    // Ensure this is a POST request
-    if r.Method != http.MethodPost {
-        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-        return
-    }
+	r.ParseForm()
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
-    // Get Form Values
-    r.ParseForm()
-    username := r.FormValue("username")
-    password := r.FormValue("password")
+	var hash string
+	stmt := "SELECT Hash FROM Persons WHERE username = ?"
 
-    // Retrieve user hash from database
-    var hash string
-    // Assuming you have a table 'Persons' with columns 'username' and 'Hash'
-    stmt := "SELECT Hash FROM Persons WHERE username = ?"
+	err := h.DB.QueryRow(stmt, username).Scan(&hash)
 
-    err := h.DB.QueryRow(stmt, username).Scan(&hash)
+	// User not found
+	if err != nil {
+		fmt.Println("User not found or DB error:", err)
+		// Redirect with ?error=notfound
+		http.Redirect(w, r, "/login?error=notfound", http.StatusSeeOther)
+		return
+	}
 
-    if err != nil {
-        fmt.Println("User not found or DB error:", err)
-        // Render template with error message
-        h.Tpl.ExecuteTemplate(w, "login.html", "User not found")
-        return
-    }
+	fmt.Println("Hash found, verifying...")
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 
-    fmt.Println("Hash found, verifying...")
+	// SUCCESS
+	if err == nil {
+		fmt.Println("Login success")
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
 
-    // 4. Check password
-    err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	// Password mismatch
+	fmt.Println("Password mismatch")
 
-    if err == nil {
-        // SUCCESS CASE
-        fmt.Println("Login success")
-        
-        // We do NOT redirect here because we want to show the "Success" message.
-        // If you redirect, the message "Login Success!" will be lost.
-        //h.Tpl.ExecuteTemplate(w, "login.html", "Login Success!")
-        // Redirect to a success page or dashboard
-        http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-        return
-    }
-
-    // FAILURE CASE
-    fmt.Println("Password mismatch")
-    h.Tpl.ExecuteTemplate(w, "login.html", "Wrong password")
+	// Redirect with ?error=invalid
+	http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
 }
