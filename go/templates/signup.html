@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Page</title>
+</head>
+
+<body>
+    <!--signup page-->
+    <h1>Signup Page</h1>
+
+
+    <form action="/signupauth" method="POST">
+        <label for="username">Username:</label>
+        <input id="username" type="text" name="username" required><br><br>
+
+        <label for="cardNumber">Card Number</label>
+        <input id="cardNumber" name="cardNumber" type="tel">
+        
+        <label for="password">Password:</label>
+        <input type="password" name="password" required><br><br>
+        
+        <button type="submit">Signup</button>
+        {{if .Error}}
+        <h3 style="color: red;">Message: {{.Error}}</h3>
+        {{end}}
+</body>
+
+</html>

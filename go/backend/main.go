@@ -43,9 +43,11 @@ func main() {
 	// GET Request: Shows the page AND handles the ?error=invalid logic
 	// We use the function from the auth package now
 	mux.HandleFunc("GET /login", loginH.LoginView)
+	mux.HandleFunc("GET /signup", loginH.SignupHandler)
 	// POST Request: Processes the form
 	// This matches <form action="/loginauth"> in your HTML
 	mux.HandleFunc("POST /loginauth", loginH.LoginAuthHandler)
+	mux.HandleFunc("POST /signupauth", loginH.SignupHandler)
 
 	// Dashboard
 	mux.HandleFunc("/dashboard", dashboardHandler)

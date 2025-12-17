@@ -42,7 +42,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	var hash string
-	stmt := "SELECT Hash FROM Persons WHERE username = ?"
+	stmt := "SELECT Hash FROM persons WHERE username = ?"
 
 	err := h.DB.QueryRow(stmt, username).Scan(&hash)
 
