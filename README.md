@@ -61,48 +61,11 @@ User taps card ➔ Validates balance ➔ Deducts payment ➔ Earns points ➔ Re
 
 ### Sample Fare Receipt
 
-```
-════════════════════════════════════
-        PAYCARD RECEIPT
-════════════════════════════════════
-Card ID:        A1B2C3D4
-Date:           Nov 1, 2025 3:35PM
-Transaction:    Transport - Route 42
-────────────────────────────────────
-Previous Balance:  ₱150.00
-Fare Deducted:     ₱13.00
-Discount (PWD):    -₱2.60
-────────────────────────────────────
-New Balance:       ₱139.60
-Points Earned:     +₱0.052
-Total Points:      ₱12.35
-════════════════════════════════════
-Thank you for using PAYCARD!
-════════════════════════════════════
-```
+![Sample Fare Receipt](./docs/assets/images/Fare%20Receipt.png)
 
 ### Sample Retail Receipt
 
-```
-════════════════════════════════════
-        PAYCARD RECEIPT
-════════════════════════════════════
-Card ID:        A1B2C3D4
-Date:           Nov 1, 2025 4:15PM
-Transaction:    Retail - Store
-────────────────────────────────────
-Item 1: Rice (₱50.00)
-Item 2: Canned Goods (₱30.00)
-Item 3: Snacks (₱20.00)
-────────────────────────────────────
-Subtotal:         ₱100.00
-────────────────────────────────────
-New Balance:       ₱39.60
-Points Earned:     +₱0.20
-Total Points:      ₱12.85
-════════════════════════════════════
-Thank you for paying with PAYCARD!
-```
+![Sample Retail Receipt](./docs/assets/images/Retail%20Receipt.png)
 
 ## Acknowledgements
 

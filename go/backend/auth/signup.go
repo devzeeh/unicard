@@ -20,22 +20,6 @@ type ErrorMessage struct {
 // This function checks the URL for errors (e.g., ?error=invalid)
 // and displays the red text if needed.
 func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
-	// Get the error code from the URL
-	/*errCode := r.URL.Query().Get("error")
-
-	var msg string
-
-	// Determine the message based on the error code
-	switch errCode {
-	case "emptyfields":
-		msg = "Please check all fields."
-	case "userexist":
-		msg ="Username already registered."
-	case "notfound":
-		msg = "User not found"
-	}*/
-
-	// Render the template with the message
 	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
@@ -129,33 +113,4 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Succesfully account creation
 	log.Printf("account successfully created!")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
-	//h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Account successfully created!"})
-
-	/*stmt = "SELECT COUNT(*) FROM Persons WHERE username = ?"
-	err = h.DB.QueryRow(stmt, user.username).Scan(&count)
-	if err != nil {
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System Error checking username."})
-		return
-	}*/
-
-	// Check if cardNumber exist using prepared statement
-	//stmt := "SELECT COUNT(*) FROM Persons WHERE cardNumber = ?"
-	//var count int
-	//err := h.DB.QueryRow(stmt, user.cardNumber).Scan(&count)
-	/*if err != nil {
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System Error checking card."})
-		return
-	}
-	if count > 0 {
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Card Number already registered."})
-		return
-	}*/
-
-	// Finally insert to db
-	//query := "INSERT INTO users "
-
-	// If all checks pass, proceed to insert user into database (not implemented here)
-	//fmt.Println("User passed all checks, proceed to insert into database.")
-
-	//h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{})
 }
