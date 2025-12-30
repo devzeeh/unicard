@@ -6,31 +6,56 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"unicard-go/go/backend/auth"
+	"os"
+	"unicard-go/backend/auth"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 var tpl *template.Template
 var db *sql.DB
 
 func main() {
-	// Setup Templates
-	var err error
-	tpl, _ = template.ParseGlob("../templates/*.html")
 
+	// Load .env file
+	err := godotenv.Load("../.env")
+	if err != nil {
+		// Fallback: try loading from current directory
+		if err := godotenv.Load(); err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
+
+	// read .env VALUES
+	port := os.Getenv("PORT")
+	serverAddress := os.Getenv("SERVER_ADDR")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+
+	// Setup Templates
+	tpl, err = template.ParseGlob("../templates/*.html")
+	if err != nil {
+		log.Fatal("Templates loaded but variable is nil. Check your folder path.")
+	}
+	
 	// Setup Database
-	db, err = sql.Open("mysql", "root:devengr@tcp(localhost:3306)/testdb")
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer db.Close()
 
+	// Always verify connection
 	if err := db.Ping(); err != nil {
 		panic("Database connection failed: " + err.Error())
 	}
 
-	// Initialize the Handler
+	// Initialize the Handler from the auth package
 	loginH := &auth.Handler{
 		DB:  db,
 		Tpl: tpl,
@@ -53,8 +78,8 @@ func main() {
 	mux.HandleFunc("/dashboard", dashboardHandler)
 
 	// Start Server
-	fmt.Println("Server started on: http://localhost:8001/login")
-	if err := http.ListenAndServe(":8001", mux); err != nil {
+	fmt.Println("Server started on: http://", serverAddress, port)
+	if err := http.ListenAndServe(port, mux); err != nil {
 		log.Fatal(err)
 	}
 }
