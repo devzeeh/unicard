@@ -155,7 +155,7 @@ func setupRealEnv() (*auth.Handler, error) {
 	dbName := os.Getenv("DB_NAME")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
-
+ 
 	if dbUser == "" || dbHost == "" {
 		return nil, fmt.Errorf("environment variables (DB_USER/DB_HOST) are empty")
 	}
