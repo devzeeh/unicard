@@ -7,6 +7,6 @@ import (
 
 // One Handler to rule them all
 type Handler struct {
-	DB  *sql.DB
-	Tpl *template.Template
+	DB  *sql.DB // Handling DB
+	Tpl *template.Template // Handling Template
 }
