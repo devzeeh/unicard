@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -32,6 +34,50 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+// Checking email existance
+func (h *Handler) isEmailExist(email string) {
+	// Hold the existing email
+	var existingEmail string
+
+	// Check query
+	query := "SELECT email FROM users WHERE email = ?"
+	err := h.DB.QueryRow(query, email).Scan(&existingEmail)
+	if err == sql.ErrNoRows {
+		fmt.Println("Email is available.")
+	}
+	if err != nil {
+		fmt.Println("Email check error:", err)
+	}
+	fmt.Println("Email already exists.")
+}
+
+// Generates a unique 12 digits user IDsss
+func (h *Handler) GenerateUserID() (int64, error) {
+	// Generate random 12 digits number
+	min := int64(10000000000)
+	max := int64(99999999999)
+
+	for {
+		number, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+		if err != nil {
+			return 0, err
+		}
+		userID := number.Int64() + min
+
+		// Check DB directly (Faster: 1 Round Trip)
+		// to hold queried ID
+		var tmpId int64
+		err = h.DB.QueryRow("SELECT user_id FROM  users WHERE user_id=?", userID).Scan(&tmpId)
+		if err == sql.ErrNoRows {
+			return userID, nil // Unique ID found
+		} else if err != nil {
+			return 0, err
+		}
+		// If it exists, loop runs again
+		fmt.Println("Collision detected! Retrying...")
+	}
+}
+
 // Signup handler
 func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup is running...")
@@ -40,7 +86,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	// Get form values
-
 	username := r.FormValue("username")
 	cardNumber := r.FormValue("cardNumber")
 	password := r.FormValue("password")
@@ -94,17 +139,17 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	password = hashedPassword // Store the hashed password
 	log.Printf("hass password is: %v", password)
 
-	// Insert to DB
-	query = "INSERT INTO persons (Username, Hash, CardNumber) values (?, ?, ?)"
-
-	stmt, err := h.DB.Prepare(query)
+	generateUserId, err := h.GenerateUserID()
 	if err != nil {
-		log.Printf("Prepare statement error: %v", err)
+		log.Printf("Error generating UserID: %v", err)
+		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating UserID."})
 	}
-	defer stmt.Close()
+
+	// Insert to DB
+	query = "INSERT INTO persons (Username, Hash, CardNumber, UserID) values (?, ?, ?, ?)"
 
 	// Execute
-	_, err = stmt.Exec(username, password, cardNumber)
+	_, err = h.DB.Exec(query, username, password, cardNumber, generateUserId)
 	if err != nil {
 		log.Printf("Insert execution error: %v", err)
 		return // you may want to handle this error properly
