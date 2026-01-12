@@ -61,11 +61,11 @@ User taps card ➔ Validates balance ➔ Deducts payment ➔ Earns points ➔ Re
 
 ### Sample Fare Receipt
 
-![Sample Fare Receipt](./docs/assets/images/Fare%20Receipt.png)
+![Sample Fare Receipt](assets/images/Fare%20Receipt.png)
 
 ### Sample Retail Receipt
 
-![Sample Retail Receipt](./docs/assets/images/Retail%20Receipt.png)
+![Sample Retail Receipt](assets/images/Retail%20Receipt.png)
 
 ## Acknowledgements
 
