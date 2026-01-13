@@ -16,6 +16,9 @@ type ErrorMessage struct {
 	Error string
 }
 
+
+
+
 // User struct to hold signup data
 
 // View Handler (GET)
@@ -23,59 +26,6 @@ type ErrorMessage struct {
 // and displays the red text if needed.
 func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
-}
-
-// HashPassword (Helper function, doesn't need Handler)
-func HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
-}
-
-// Checking email existance
-func (h *Handler) isEmailExist(email string) {
-	// Hold the existing email
-	var existingEmail string
-
-	// Check query
-	query := "SELECT email FROM users WHERE email = ?"
-	err := h.DB.QueryRow(query, email).Scan(&existingEmail)
-	if err == sql.ErrNoRows {
-		fmt.Println("Email is available.")
-	}
-	if err != nil {
-		fmt.Println("Email check error:", err)
-	}
-	fmt.Println("Email already exists.")
-}
-
-// Generates a unique 12 digits user IDsss
-func (h *Handler) GenerateUserID() (int64, error) {
-	// Generate random 12 digits number
-	min := int64(10000000000)
-	max := int64(99999999999)
-
-	for {
-		number, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
-		if err != nil {
-			return 0, err
-		}
-		userID := number.Int64() + min
-
-		// Check DB directly (Faster: 1 Round Trip)
-		// to hold queried ID
-		var tmpId int64
-		err = h.DB.QueryRow("SELECT user_id FROM  users WHERE user_id=?", userID).Scan(&tmpId)
-		if err == sql.ErrNoRows {
-			return userID, nil // Unique ID found
-		} else if err != nil {
-			return 0, err
-		}
-		// If it exists, loop runs again
-		fmt.Println("Collision detected! Retrying...")
-	}
 }
 
 // Signup handler
@@ -89,6 +39,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	cardNumber := r.FormValue("cardNumber")
 	password := r.FormValue("password")
+	email := r.FormValue("email")
 
 	// Check if fields is empty
 	if username == "" || cardNumber == "" || password == "" {
@@ -139,6 +90,19 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	password = hashedPassword // Store the hashed password
 	log.Printf("hass password is: %v", password)
 
+	// Check if Email Exists (Using our helper method)
+	hasEmail, err := h.isEmailExist(email)
+	if err != nil {
+		log.Printf("Error checking email existence: %v", err)
+		h.Tpl.ExecuteTemplate(w, "signup.html", "System Error checking email.")
+		return
+	}
+	if hasEmail {
+		log.Printf("Email %s already registered.", email)
+		h.Tpl.ExecuteTemplate(w, "signup.html", "Error: Email already registered.")
+		return
+	}
+
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
 		log.Printf("Error generating UserID: %v", err)
@@ -158,4 +122,60 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Succesfully account creation
 	log.Printf("account successfully created!")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+// HashPassword (Helper function, doesn't need Handler)
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+}
+
+// Checking email existance
+func (h *Handler) isEmailExist(email string) (bool, error) {
+	// Hold the existing email
+	var existingEmail string
+
+	// Check query
+	query := "SELECT email FROM users WHERE email = ?"
+	err := h.DB.QueryRow(query, email).Scan(&existingEmail)
+	if err == sql.ErrNoRows {
+		fmt.Println("Email is available.")
+		return false, nil
+	}
+	if err != nil {
+		fmt.Println("Email check error:", err)
+		return false, err
+	}
+	fmt.Println("Email already exists.")
+	return true, nil
+}
+
+// Generates a unique 12 digits user IDsss
+func (h *Handler) GenerateUserID() (int64, error) {
+	// Generate random 12 digits number
+	min := int64(10000000000)
+	max := int64(99999999999)
+
+	for {
+		number, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+		if err != nil {
+			return 0, err
+		}
+		userID := number.Int64() + min
+
+		// Check DB directly (Faster: 1 Round Trip)
+		// to hold queried ID
+		var tmpId int64
+		err = h.DB.QueryRow("SELECT user_id FROM  users WHERE user_id=?", userID).Scan(&tmpId)
+		if err == sql.ErrNoRows {
+			return userID, nil // Unique ID found
+		} else if err != nil {
+			return 0, err
+		}
+		// If it exists, loop runs again
+		fmt.Println("Collision detected! Retrying...")
+	}
 }
