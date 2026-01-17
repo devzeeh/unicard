@@ -7,19 +7,32 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Struct to handle error message
+// # ErrorMessage struct
+//
+// Struct to handle error message display in signup template
 type ErrorMessage struct {
 	Error string
 }
 
-
-
-
 // User struct to hold signup data
+type User struct {
+	Username        string
+	Fullname        string
+	UserID          string
+	CardNumber      string
+	Email           string
+	Phone           string
+	Password        string
+	Usertype        string
+	Status          string
+	CreatedAt       string
+	ConfirmPassword string
+}
 
 // View Handler (GET)
 // This function checks the URL for errors (e.g., ?error=invalid)
@@ -28,92 +41,143 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
-// Signup handler
+// # Signup handler
+//
+// This function processes the signup form submission.
+// It validates the input, checks for existing usernames and card numbers,
+// hashes the password, and inserts the new user into the database.
+// On success, it redirects to the login page.
+// On failure, it re-renders the signup page with an error message.
+// POST /signupauth
 func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup is running...")
 
-	// parse the formdata
-	r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		// Handle the error, e.g., send a 400 Bad Request response.
+		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Failed to parse form."})
+		return
+	}
 
-	// Get form values
-	username := r.FormValue("username")
-	cardNumber := r.FormValue("cardNumber")
-	password := r.FormValue("password")
-	email := r.FormValue("email")
+	// Get form values using User struct
+	user := User{
+		Usertype:   "Regular",
+		Username:   r.PostFormValue("first_name"),
+		Fullname:   r.PostFormValue("first_name") + " " + r.PostFormValue("last_name"),
+		CardNumber: r.PostFormValue("card_number"),
+		Password:   r.PostFormValue("password"),
+		Email:      r.PostFormValue("email"),
+		Phone:      r.PostFormValue("contact_number"),
+	}
 
 	// Check if fields is empty
-	if username == "" || cardNumber == "" || password == "" {
+	if user.Username == "" || user.CardNumber == "" || user.Password == "" {
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Please check all fields."})
 		return
 	}
 
 	// Check if username exist
 	var existingUsername string // to hold existing username
-	query := "SELECT Username FROM persons WHERE Username = ? "
-	err := h.DB.QueryRow(query, username).Scan(&existingUsername)
+	query := "SELECT Username FROM persons WHERE username = ? "
+	err := h.DB.QueryRow(query, user.Username).Scan(&existingUsername)
 
 	if err == sql.ErrNoRows {
-		log.Printf("Username %s is available.", username)
+		log.Printf("Username %s is available.", user.Username)
 	} else if err != nil {
 		log.Printf("Username check error: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System Error checking username."})
 		return
 	} else {
-		log.Printf("Username %s already exists.", username)
+		log.Printf("Username %s already exists.", user.Username)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Username already registered."})
 		return
 	}
 
-	// Check cardNumber if exist
+	// Check card number if exist
 	var existingCardNumber string
 	query = "SELECT CardNumber FROM cardDetails WHERE CardNumber = ?"
-	err = h.DB.QueryRow(query, cardNumber).Scan(&existingCardNumber)
+	err = h.DB.QueryRow(query, user.CardNumber).Scan(&existingCardNumber)
 	if err == sql.ErrNoRows {
-		log.Printf("CardNumber %s is available.", cardNumber)
+		log.Printf("CardNumber %s is available.", user.CardNumber)
 	} else if err != nil {
 		log.Printf("CardNumber check error: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System Error checking card."})
 		return
 	} else {
-		log.Printf("CardNumber %s already exists.", cardNumber)
+		log.Printf("CardNumber %s already exists.", user.CardNumber)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Card Number already registered."})
 		return
 	}
 
-	// Generate Hash for password
-	hashedPassword, err := HashPassword(password)
-	if err != nil {
-		log.Printf("Error hashing password: %v", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", "Error hashing password.")
+	// Password length check
+	if len(user.Password) < 8 {
+		log.Printf("Password too short `%d`", len(user.Password))
+		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Password must be at least 8 characters long."})
 		return
 	}
-	password = hashedPassword // Store the hashed password
-	log.Printf("hass password is: %v", password)
+
+	// Generate Hash for password
+	hashedPassword, err := HashPassword(user.Password)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		//h.Tpl.ExecuteTemplate(w, "signup.html", "Error hashing password.")
+		return
+	}
+	user.Password = hashedPassword // Store the hashed password
+	log.Printf("hashed password is: %v", user.Password)
 
 	// Check if Email Exists (Using our helper method)
-	hasEmail, err := h.isEmailExist(email)
+	hasEmail, err := h.isEmailExist(user.Email)
 	if err != nil {
 		log.Printf("Error checking email existence: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", "System Error checking email.")
 		return
 	}
 	if hasEmail {
-		log.Printf("Email %s already registered.", email)
+		log.Printf("Email %s already registered.", user.Email)
 		h.Tpl.ExecuteTemplate(w, "signup.html", "Error: Email already registered.")
 		return
 	}
 
+	// Check if Phone Exists (Using our helper method)
+	hasPhone, err := h.isPhoneExist(user.Phone)
+	if err != nil {
+		log.Printf("Error checking phone existence: %v", err)
+		h.Tpl.ExecuteTemplate(w, "signup.html", "System Error checking phone.")
+		return
+	}
+	if hasPhone {
+		log.Printf("Phone %s already registered.", user.Phone)
+		h.Tpl.ExecuteTemplate(w, "signup.html", "Error: Phone number already registered.")
+		return
+	}
+
+	// Generate unique UserID (12 digits)
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
 		log.Printf("Error generating UserID: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating UserID."})
 	}
+	user.UserID = fmt.Sprintf("%d", generateUserId)
+
+	// Time of account creation
+	user.CreatedAt, _ = CurrentTimestamp()
 
 	// Insert to DB
-	query = "INSERT INTO persons (Username, Hash, CardNumber, UserID) values (?, ?, ?, ?)"
+	query = "INSERT INTO persons (role, username, fullname, hash, card_number, email, phone, user_id, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 	// Execute
-	_, err = h.DB.Exec(query, username, password, cardNumber, generateUserId)
+	_, err = h.DB.Exec(
+		query,
+		user.Usertype,
+		user.Username,
+		user.Fullname,
+		user.Password,
+		user.CardNumber,
+		user.Email,
+		user.Phone,
+		user.UserID,
+		user.CreatedAt,
+	)
 	if err != nil {
 		log.Printf("Insert execution error: %v", err)
 		return // you may want to handle this error properly
@@ -124,8 +188,16 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-// HashPassword (Helper function, doesn't need Handler)
+// ---Helper Functions---
+
+// # HashPassword (Helper function).
+//
+// This function takes a plain-text password and returns its bcrypt hash.
+// It uses bcrypt's GenerateFromPassword function with a default cost.
+// The hashed password is returned as a string.
+// If an error occurs during hashing, it is returned along with an empty string.
 func HashPassword(password string) (string, error) {
+	// Generate bcrypt hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -133,7 +205,12 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-// Checking email existance
+// # Checking email existance (Helper function).
+//
+// This function checks if a given email already exists in the database.
+// It executes a SQL query to search for the email in the users table.
+// If the email is found, it returns true. If not found, it returns false.
+// If an error occurs during the query, it returns the error.
 func (h *Handler) isEmailExist(email string) (bool, error) {
 	// Hold the existing email
 	var existingEmail string
@@ -153,7 +230,36 @@ func (h *Handler) isEmailExist(email string) (bool, error) {
 	return true, nil
 }
 
-// Generates a unique 12 digits user IDsss
+// # Checking phone existance (Helper function).
+//
+// This function checks if a given phone number already exists in the database.
+// It executes a SQL query to search for the phone number in the users table.
+// If the phone number is found, it returns true. If not found, it returns false.
+// If an error occurs during the query, it returns the error.
+func (h *Handler) isPhoneExist(phone string) (bool, error) {
+	// Hold the existing phone number
+	var existingPhone string
+
+	// Check query
+	query := "SELECT phone FROM users WHERE phone = ?"
+	err := h.DB.QueryRow(query, phone).Scan(&existingPhone)
+	if err == sql.ErrNoRows {
+		fmt.Println("Phone number is available.")
+		return false, nil
+	}
+	if err != nil {
+		fmt.Println("Phone number check error:", err)
+		return false, err
+	}
+	fmt.Println("Phone number already exists.")
+	return true, nil
+}
+
+// # GenerateUserID generates a unique 12-digit user ID (Helper function).
+//
+// It generates random numbers and checks the database for uniqueness.
+// If a generated ID already exists, it retries until a unique one is found.
+// Returns the unique user ID as int64 or an error if any occurs.
 func (h *Handler) GenerateUserID() (int64, error) {
 	// Generate random 12 digits number
 	min := int64(10000000000)
@@ -178,4 +284,18 @@ func (h *Handler) GenerateUserID() (int64, error) {
 		// If it exists, loop runs again
 		fmt.Println("Collision detected! Retrying...")
 	}
+}
+
+// # CurrentTimestamp (Helper function)
+//
+// This function returns the current timestamp formatted as "YYYY-MM-DD HH:MM:SS"
+// in the "Asia/Manila" timezone. If there's an error loading the timezone,
+// it returns an empty string and the error.
+func CurrentTimestamp() (string, error) {
+	loc, err := time.LoadLocation("Asia/Manila")
+	if err != nil {
+		return "", err
+	}
+	time.Local = loc
+	return time.Now().Format("2006-01-02 03:04:05"), nil
 }
