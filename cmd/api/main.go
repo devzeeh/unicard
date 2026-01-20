@@ -55,10 +55,7 @@ func main() {
 	}
 
 	// Initialize the Handler from the auth package
-	loginH := &auth.Handler{
-		DB:  db,
-		Tpl: tpl,
-	}
+	loginH := auth.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
