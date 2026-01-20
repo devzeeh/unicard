@@ -8,15 +8,15 @@ import (
 	"math/big"
 	"net/http"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
+	"unicard-go/internal/pkg/account"
 )
 
 // # ErrorMessage struct
 //
 // Struct to handle error message display in signup template
 type ErrorMessage struct {
-	Error string
+	Error   string
+	Success string
 }
 
 // User struct to hold signup data
@@ -116,7 +116,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate Hash for password
-	hashedPassword, err := HashPassword(user.Password)
+	hashedPassword, err := account.HashPassword(user.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
 		//h.Tpl.ExecuteTemplate(w, "signup.html", "Error hashing password.")
@@ -126,7 +126,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("hashed password is: %v", user.Password)
 
 	// Check if Email Exists (Using our helper method)
-	hasEmail, err := h.isEmailExist(user.Email)
+	hasEmail, err := account.IsEmailExist(h.DB, user.Email)
 	if err != nil {
 		log.Printf("Error checking email existence: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", "System Error checking email.")
@@ -189,46 +189,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ---Helper Functions---
-
-// # HashPassword (Helper function).
-//
-// This function takes a plain-text password and returns its bcrypt hash.
-// It uses bcrypt's GenerateFromPassword function with a default cost.
-// The hashed password is returned as a string.
-// If an error occurs during hashing, it is returned along with an empty string.
-func HashPassword(password string) (string, error) {
-	// Generate bcrypt hash
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
-}
-
-// # Checking email existance (Helper function).
-//
-// This function checks if a given email already exists in the database.
-// It executes a SQL query to search for the email in the users table.
-// If the email is found, it returns true. If not found, it returns false.
-// If an error occurs during the query, it returns the error.
-func (h *Handler) isEmailExist(email string) (bool, error) {
-	// Hold the existing email
-	var existingEmail string
-
-	// Check query
-	query := "SELECT email FROM users WHERE email = ?"
-	err := h.DB.QueryRow(query, email).Scan(&existingEmail)
-	if err == sql.ErrNoRows {
-		fmt.Println("Email is available.")
-		return false, nil
-	}
-	if err != nil {
-		fmt.Println("Email check error:", err)
-		return false, err
-	}
-	fmt.Println("Email already exists.")
-	return true, nil
-}
 
 // # Checking phone existance (Helper function).
 //
