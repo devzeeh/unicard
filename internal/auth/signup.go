@@ -11,8 +11,6 @@ import (
 	"unicard-go/internal/pkg/account"
 )
 
-// # ErrorMessage struct
-//
 // Struct to handle error message display in signup template
 type ErrorMessage struct {
 	Error   string
@@ -41,8 +39,6 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
-// # Signup handler
-//
 // This function processes the signup form submission.
 // It validates the input, checks for existing usernames and card numbers,
 // hashes the password, and inserts the new user into the database.
@@ -190,8 +186,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 // ---Helper Functions---
 
-// # Checking phone existance (Helper function).
-//
 // This function checks if a given phone number already exists in the database.
 // It executes a SQL query to search for the phone number in the users table.
 // If the phone number is found, it returns true. If not found, it returns false.
@@ -215,8 +209,6 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 	return true, nil
 }
 
-// # GenerateUserID generates a unique 12-digit user ID (Helper function).
-//
 // It generates random numbers and checks the database for uniqueness.
 // If a generated ID already exists, it retries until a unique one is found.
 // Returns the unique user ID as int64 or an error if any occurs.
@@ -246,8 +238,6 @@ func (h *Handler) GenerateUserID() (int64, error) {
 	}
 }
 
-// # CurrentTimestamp (Helper function)
-//
 // This function returns the current timestamp formatted as "YYYY-MM-DD HH:MM:SS"
 // in the "Asia/Manila" timezone. If there's an error loading the timezone,
 // it returns an empty string and the error.
