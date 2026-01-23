@@ -55,7 +55,6 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
 		return
 	}
-
 	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Success: "Password updated successfully."})
 }
 
