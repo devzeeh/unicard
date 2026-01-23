@@ -7,10 +7,18 @@ import (
 	"unicard-go/internal/pkg/account"
 )
 
+// This function renders the forgot password HTML template.
+// It is triggered when a user navigates to the forgot password page.
+// The function uses the template engine to execute and display the "forgotPassword.html" template.
 func (h *Handler) ForgotPasswordView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", nil)
 }
 
+// This function handles the forgot password process.
+// It retrieves the email and new password from the form submission.
+// The function checks if the email exists in the database.
+// If the email exists, it hashes the new password and updates it in the database.
+// Finally, it provides feedback to the user about the success or failure of the operation.
 func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Forgot Password is running...")
 
@@ -21,7 +29,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("email:", email, "\n Password:", password)
 
 	// Check if email exists
-	exists, err := h.checkEmailExist(email)
+	exists, err := h.checkEmailExist(email) 
 	if err != nil {
 		fmt.Println("Error checking email existence:", err)
 		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
@@ -47,14 +55,11 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
 		return
 	}
-
 	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Success: "Password updated successfully."})
 }
 
 // ---Helper Function---
 
-// # isEmailExist (Helper function).
-//
 // This function checks if a given email already exists in the database.
 // It executes a SQL query to search for the email in the users table.
 // If the email is found, it returns true. If not found, it returns false.
@@ -78,8 +83,6 @@ func (h *Handler) checkEmailExist(email string) (bool, error) {
 	return true, nil
 }
 
-// # Update Password (Helper function).
-//
 // This function updates the user's password in the database.
 // It takes the user's email and the new hashed password as parameters.
 // It executes an UPDATE SQL query to set the new password for the given email.
