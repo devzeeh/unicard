@@ -10,17 +10,17 @@
 <body>
     <h1>Login Page</h1>
 
-    {{if .Error}}
-    <h3 style="color: red;">Message: {{.Error}}</h3>
-    {{end}}
-
     <form action="/loginauth" method="POST">
         <label>Username:</label>
         <input type="text" name="username" required><br><br>
 
         <label>Password:</label>
         <input type="password" name="password" required><br><br>
-
+        <a href="/forgotpassword">Forgot Password?</a>
+        <p>dont have account?<a href="/signup">Sign Up</a></p><br>
+        {{if .Error}}
+        <h3 style="color: red; font-size: large;">{{.Error}}</h3>
+        {{end}}
         <button type="submit">Login</button>
     </form>
 </body>

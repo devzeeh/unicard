@@ -16,8 +16,9 @@ type LoginData struct {
 // This function checks the URL for errors (e.g., ?error=invalid)
 // and displays the red text if needed.
 func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Login view is running...")
 	// Get the error code from the URL
-	errCode := r.URL.Query().Get("error")
+	errCode := r.URL.Query().Get("user")
 
 	var msg string
 
@@ -38,19 +39,19 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("loginauth running...")
 
 	r.ParseForm()
-	username := r.FormValue("username")
-	password := r.FormValue("password")
+	username := r.PostFormValue("username")
+	password := r.PostFormValue("password")
 
 	var hash string
-	stmt := "SELECT Hash FROM persons WHERE username = ?"
+	stmt := "SELECT password_hash FROM users WHERE username = ?"
 
 	err := h.DB.QueryRow(stmt, username).Scan(&hash)
 
 	// User not found
 	if err != nil {
 		fmt.Println("User not found or DB error:", err)
-		// Redirect with ?error=notfound
-		http.Redirect(w, r, "/login?error=notfound", http.StatusSeeOther)
+		// Redirect with ?user=notfound
+		http.Redirect(w, r, "/login?user=notfound", http.StatusSeeOther)
 		return
 	}
 
@@ -67,6 +68,6 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	// Password mismatch
 	fmt.Println("Password mismatch")
 
-	// Redirect with ?error=invalid
-	http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
+	// Redirect with ?user=invalid
+	http.Redirect(w, r, "/login?user=invalid", http.StatusSeeOther)
 }
