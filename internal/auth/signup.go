@@ -85,26 +85,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		Phone:      phone,
 	}
 
-	// Check if username exists
-	var exists string
-	/*query := "SELECT Username FROM users WHERE username = ? "
-	err := h.DB.QueryRow(query, user.Username).Scan(&exists)
-
-	if err != sql.ErrNoRows {
-		if err == nil {
-			fmt.Printf("Validation Failed: Username %s already exists.\n", user.Username)
-		} else {
-			fmt.Printf("Validation Error: System error checking username: %v\n", err)
-		}
-		msg := "Username already registered."
-		if err != nil {
-			msg = "System error checking username."
-		}
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
-		return // STOP HERE
-	}
-	fmt.Printf("Username %s is available.\n", user.Username)*/
-
 	// Check if username exists using helper function
 	generatedUsername, err := h.GenerateUniqueUsername()
 	if err != nil {
@@ -117,21 +97,38 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check card number if exist
 	// If exist push thru
-	err = h.DB.QueryRow("SELECT card_number FROM cards WHERE card_number = ?", user.CardNumber).Scan(&exists)
-	if err == sql.ErrNoRows {
-		if err == nil {
-			fmt.Printf("Validation Failed: Card Number %s already exists.\n", user.CardNumber)
-		} else {
-			fmt.Printf("Validation Error: System error checking card: %v\n", err)
-		}
-		msg := "Card Number already registered."
-		if err != nil {
-			msg = "System error checking card." // DB error
-		}
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
-		return
-	}
-	fmt.Printf("Card number %s is available.\n", user.CardNumber)
+	// Variable to hold the status from the DB
+    var cardStatus string
+    // Make sure your column name is correct (card_status vs status) based on your table definition
+    query := "SELECT status FROM cards WHERE card_number = ?"
+    err = h.DB.QueryRow(query, user.CardNumber).Scan(&cardStatus)
+
+    // Card does not exist
+    if err == sql.ErrNoRows {
+        fmt.Printf("Validation Failed: Card Number %s does not exist in system.\n", user.CardNumber)
+        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Invalid Card Number. Please check your card."})
+        return
+    }
+    // System Error
+    if err != nil {
+        fmt.Printf("Validation Error: System error checking card: %v\n", err)
+        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System error checking card status."})
+        return
+    }
+    // Handle: Card Exists, but is NOT "Inactive" (e.g., Active, Blocked)
+    // This blocks 'Active', 'Blocked', 'Lost', 'Expired', etc.
+    if cardStatus != "Inactive" {
+        fmt.Printf("Validation Failed: Card %s is currently '%s'.\n", user.CardNumber, cardStatus)
+		// Return a helpful error message based on the status
+        msg := "Card is invalid. Please contact support."
+        if cardStatus == "Blocked" || cardStatus == "Lost"  || cardStatus == "Expired" {
+			msg = "Card is invalid. Please contact support."
+        }
+        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
+        return
+    }
+    // Success: Proceed
+    fmt.Printf("Card %s is Inactive (Valid). Proceeding...\n", user.CardNumber)
 
 	// Password length check
 	if len(user.Password) < 8 {
@@ -173,6 +170,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("Error generating UserID: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating UserID."})
+		return
 	}
 	fmt.Printf("Generated UserID: %d\n", generateUserId)
 	user.UserID = fmt.Sprintf("%d", generateUserId)
@@ -182,6 +180,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("Error generating CardID: %v", err)
 		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating CardID."})
+		return
 	}
 	user.CardID = generateCardID
 	fmt.Printf("Generated CardID: %s\n", user.CardID)
@@ -200,7 +199,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Initial balance for card %s is %.2f\n", user.CardNumber, user.Balance)
 
 	// Insert to DB
-	query := "INSERT INTO users (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	query = "INSERT INTO users (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 	// Execute
 	_, err = h.DB.Exec(
