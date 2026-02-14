@@ -37,8 +37,25 @@ type User struct {
 // and displays the red text if needed.
 func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup view is running...")
-	// Render the signup template
-	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
+	// Get the error code from the URL
+	errCode := r.URL.Query().Get("error")
+
+	var msg string
+	// Determine the message based on the error code
+	switch errCode {
+	case "cardnotfound":
+		msg = "Card number not found. Please check your card or contact support."
+	case "userid":
+		msg = "System error generating UserID. Please try again."
+	case "cardnumber":
+		msg = "System error generating CardNumber. Please try again."
+	case "contactnumber":
+		msg = "Phone number already registered. Please use a different number."
+	case "email":
+		msg = "Email already registered. Please use a different email."
+	}
+	// Render the signup template with error message
+	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
 }
 
 // This function processes the signup form submission.
@@ -98,37 +115,37 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Check card number if exist
 	// If exist push thru
 	// Variable to hold the status from the DB
-    var cardStatus string
-    // Make sure your column name is correct (card_status vs status) based on your table definition
-    query := "SELECT status FROM cards WHERE card_number = ?"
-    err = h.DB.QueryRow(query, user.CardNumber).Scan(&cardStatus)
+	var cardStatus string
+	// Make sure your column name is correct (card_status vs status) based on your table definition
+	query := "SELECT status FROM cards WHERE card_number = ?"
+	err = h.DB.QueryRow(query, user.CardNumber).Scan(&cardStatus)
 
-    // Card does not exist
-    if err == sql.ErrNoRows {
-        fmt.Printf("Validation Failed: Card Number %s does not exist in system.\n", user.CardNumber)
-        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Invalid Card Number. Please check your card."})
-        return
-    }
-    // System Error
-    if err != nil {
-        fmt.Printf("Validation Error: System error checking card: %v\n", err)
-        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System error checking card status."})
-        return
-    }
-    // Handle: Card Exists, but is NOT "Inactive" (e.g., Active, Blocked)
-    // This blocks 'Active', 'Blocked', 'Lost', 'Expired', etc.
-    if cardStatus != "Inactive" {
-        fmt.Printf("Validation Failed: Card %s is currently '%s'.\n", user.CardNumber, cardStatus)
+	// Card does not exist
+	if err == sql.ErrNoRows {
+		fmt.Printf("Validation Failed: Card Number %s does not exist in system.\n", user.CardNumber)
+		http.Redirect(w, r, "/signup?error=cardnotfound", http.StatusSeeOther)
+		return
+	}
+	// System Error
+	if err != nil {
+		fmt.Printf("Validation Error: System error checking card: %v\n", err)
+		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System error checking card status."})
+		return
+	}
+	// Handle: Card Exists, but is NOT "Inactive" (e.g., Active, Blocked)
+	// This blocks 'Active', 'Blocked', 'Lost', 'Expired', etc.
+	if cardStatus != "Inactive" {
+		fmt.Printf("Validation Failed: Card %s is currently '%s'.\n", user.CardNumber, cardStatus)
 		// Return a helpful error message based on the status
-        msg := "Card is invalid. Please contact support."
-        if cardStatus == "Blocked" || cardStatus == "Lost"  || cardStatus == "Expired" {
+		msg := "Card is invalid. Please contact support."
+		if cardStatus == "Blocked" || cardStatus == "Lost" || cardStatus == "Expired" {
 			msg = "Card is invalid. Please contact support."
-        }
-        h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
-        return
-    }
-    // Success: Proceed
-    fmt.Printf("Card %s is Inactive (Valid). Proceeding...\n", user.CardNumber)
+		}
+		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
+		return
+	}
+	// Success: Proceed
+	fmt.Printf("Card %s is Inactive (Valid). Proceeding...\n", user.CardNumber)
 
 	// Password length check
 	if len(user.Password) < 8 {
@@ -169,7 +186,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
 		fmt.Printf("Error generating UserID: %v", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating UserID."})
+		http.Redirect(w, r, "/signup?error=userid", http.StatusSeeOther)
 		return
 	}
 	fmt.Printf("Generated UserID: %d\n", generateUserId)
@@ -225,6 +242,8 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Succesfully account creation
 	fmt.Printf("account successfully created!")
 	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Success: "Account successfully created! Please login."})
+
+	h.Tpl.ExecuteTemplate(w, "sign.html", LoginData{Error: "Account created successfully. Please login."})
 }
 
 // ---Helper Functions---
