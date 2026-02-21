@@ -49,10 +49,32 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 		msg = "System error generating UserID. Please try again."
 	case "cardnumber":
 		msg = "System error generating CardNumber. Please try again."
+	case "invalidcard":
+		msg = "Invalid Card Number. Please check your card."
 	case "contactnumber":
 		msg = "Phone number already registered. Please use a different number."
 	case "email":
 		msg = "Email already registered. Please use a different email."
+	case "emptyfields":
+		msg = "Please fill in all fields."
+	case "genusername":
+		msg = "System error generating username. Please try again."
+	case "cardstatuscheck":
+		msg = "System error checking card status. Please try again."
+	case "cardstatus":
+		msg = "Card is invalid. Please contact support."
+	case "passwordshort":
+		msg = "Password must be at least 8 characters long."
+	case "gencardid":
+		msg = "System error generating CardID. Please try again."
+	case "dbinsert":
+		msg = "System error creating account. Please try again."
+	case "parseform":
+		msg = "Failed to parse form. Please try again."
+	case "hashpassword":
+		msg = "System error processing password. Please try again."
+	case "cardupdate":
+		msg = "System error activating card. Please contact support."
 	}
 	// Render the signup template with error message
 	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
@@ -68,7 +90,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup is running...")
 
 	if err := r.ParseForm(); err != nil {
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Failed to parse form."})
+		http.Redirect(w, r, "/signup?error=parseform", http.StatusSeeOther)
 		return
 	}
 
@@ -86,7 +108,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// We check individual variables before putting them in the struct
 	if firstName == "" || lastName == "" || cardNum == "" || password == "" || email == "" || phone == "" {
 		fmt.Println("Validation Failed: One or more fields are empty.")
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Please fill in all fields."})
+		http.Redirect(w, r, "/signup?error=emptyfields", http.StatusSeeOther)
 		return
 	}
 
@@ -106,7 +128,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	generatedUsername, err := h.GenerateUniqueUsername()
 	if err != nil {
 		fmt.Printf("Error generating username: %v\n", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System error generating username."})
+		http.Redirect(w, r, "/signup?error=genusername", http.StatusSeeOther)
 		return
 	}
 	user.Username = generatedUsername
@@ -129,19 +151,14 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// System Error
 	if err != nil {
 		fmt.Printf("Validation Error: System error checking card: %v\n", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "System error checking card status."})
+		http.Redirect(w, r, "/signup?error=cardstatuscheck", http.StatusSeeOther)
 		return
 	}
 	// Handle: Card Exists, but is NOT "Inactive" (e.g., Active, Blocked)
 	// This blocks 'Active', 'Blocked', 'Lost', 'Expired', etc.
 	if cardStatus != "Inactive" {
 		fmt.Printf("Validation Failed: Card %s is currently '%s'.\n", user.CardNumber, cardStatus)
-		// Return a helpful error message based on the status
-		msg := "Card is invalid. Please contact support."
-		if cardStatus == "Blocked" || cardStatus == "Lost" || cardStatus == "Expired" {
-			msg = "Card is invalid. Please contact support."
-		}
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
+		http.Redirect(w, r, "/signup?error=cardstatus", http.StatusSeeOther)
 		return
 	}
 	// Success: Proceed
@@ -150,7 +167,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Password length check
 	if len(user.Password) < 8 {
 		fmt.Printf("Validation Failed: Password too short (%d chars).\n", len(user.Password))
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Password must be at least 8 characters long."})
+		http.Redirect(w, r, "/signup?error=passwordshort", http.StatusSeeOther)
 		return
 	}
 
@@ -158,8 +175,8 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := account.HashPassword(user.Password)
 	if err != nil {
 		fmt.Printf("Error hashing password: %v", err)
-		//h.Tpl.ExecuteTemplate(w, "signup.html", "Error hashing password.")
-		return // STOP HERE
+		http.Redirect(w, r, "/signup?error=hashpassword", http.StatusSeeOther)
+		return
 	}
 	fmt.Println("raw password is:", user.Password)
 	user.Password = hashedPassword // Store the hashed password
@@ -168,7 +185,8 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if Email Exists (Using our helper method)
 	if exists, _ := account.IsEmailExist(h.DB, user.Email); exists {
 		fmt.Printf("Validation Failed: Email %s already exists.\n", user.Email)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Email already registered."})
+		http.Redirect(w, r, "/signup?error=email", http.StatusSeeOther)
+		//h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Email already registered."})
 		return
 	}
 	fmt.Printf("Email %s is available.\n", user.Email)
@@ -176,7 +194,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if Phone Exists (Using our helper method)
 	if exists, _ := h.isPhoneExist(user.Phone); exists {
 		fmt.Printf("Validation Failed: Phone %s already exists.\n", user.Phone)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Phone number already registered."})
+		http.Redirect(w, r, "/signup?error=contactnumber", http.StatusSeeOther)
 		return
 	}
 	fmt.Printf("Phone %s is available.\n", user.Phone)
@@ -196,7 +214,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	generateCardID, err := h.GenerateCardID()
 	if err != nil {
 		fmt.Printf("Error generating CardID: %v", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error Generating CardID."})
+		http.Redirect(w, r, "/signup?error=gencardid", http.StatusSeeOther)
 		return
 	}
 	user.CardID = generateCardID
@@ -210,7 +228,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	user.Balance, err = h.GetInitialBalance(user.CardNumber)
 	if err != nil {
 		fmt.Printf("Error: Failed to retrieve initial balance for card %s: %v\n", user.CardNumber, err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Invalid Card Number."})
+		http.Redirect(w, r, "/signup?error=invalidcard", http.StatusSeeOther)
 		return
 	}
 	fmt.Printf("Initial balance for card %s is %.2f\n", user.CardNumber, user.Balance)
@@ -234,16 +252,24 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		user.CreatedAt,
 	)
 	if err != nil {
-		fmt.Printf("CRITICAL ERROR: Insert execution failed: %v\n", err)
-		h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Error creating account."})
+		fmt.Printf("CRITICAL ERROR: Failed to insert user into database: %v\n", err)
+		http.Redirect(w, r, "/signup?error=dbinsert", http.StatusSeeOther)
 		return
 	}
 
+	// Update card status from "Inactive" to "Active"
+	updateQuery := "UPDATE cards SET status = 'Active' WHERE card_number = ?"
+	_, err = h.DB.Exec(updateQuery, user.CardNumber)
+	if err != nil {
+		fmt.Printf("ERROR: Failed to update card status to Active: %v\n", err)
+		http.Redirect(w, r, "/signup?error=cardupdate", http.StatusSeeOther)
+		return
+	}
+	fmt.Printf("Card %s status updated to Active\n", user.CardNumber)
+
 	// Succesfully account creation
 	fmt.Printf("account successfully created!")
-	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Success: "Account successfully created! Please login."})
-
-	h.Tpl.ExecuteTemplate(w, "sign.html", LoginData{Error: "Account created successfully. Please login."})
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 // ---Helper Functions---
