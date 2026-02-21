@@ -35,17 +35,19 @@ func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 // Auth Handler (POST)
+// Accepts login credentials: username, email, or full_name
 func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("loginauth running...")
 
 	r.ParseForm()
-	username := r.PostFormValue("username")
+	credential := r.PostFormValue("username") // This can be username, email, or full_name
 	password := r.PostFormValue("password")
 
 	var hash string
-	stmt := "SELECT password_hash FROM users WHERE username = ?"
+	// Query to check if credential matches username, email, or full_name
+	stmt := "SELECT password_hash FROM users WHERE username = ? OR email = ? OR full_name = ?"
 
-	err := h.DB.QueryRow(stmt, username).Scan(&hash)
+	err := h.DB.QueryRow(stmt, credential, credential, credential).Scan(&hash)
 
 	// User not found
 	if err != nil {
