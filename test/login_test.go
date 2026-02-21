@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"unicard-go/backend/auth"
+	"unicard-go/internal/auth"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/go-sql-driver/mysql" // Import MySQL driver for real DB tests
@@ -155,7 +155,7 @@ func setupRealEnv() (*auth.Handler, error) {
 	dbName := os.Getenv("DB_NAME")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
- 
+
 	if dbUser == "" || dbHost == "" {
 		return nil, fmt.Errorf("environment variables (DB_USER/DB_HOST) are empty")
 	}

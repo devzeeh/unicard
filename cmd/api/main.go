@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"unicard-go/backend/auth"
+	"unicard-go/internal/auth"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -17,7 +17,6 @@ var tpl *template.Template
 var db *sql.DB
 
 func main() {
-
 	// Load .env file
 	err := godotenv.Load("../.env")
 	if err != nil {
@@ -42,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Templates loaded but variable is nil. Check your folder path.")
 	}
-	
+
 	// Setup Database
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
@@ -56,10 +55,7 @@ func main() {
 	}
 
 	// Initialize the Handler from the auth package
-	loginH := &auth.Handler{
-		DB:  db,
-		Tpl: tpl,
-	}
+	loginH := auth.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()

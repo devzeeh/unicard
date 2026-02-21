@@ -1,6 +1,6 @@
 # UniCard
 
-> This is a practice ground for my personal project *[PayCard](https://github.com/devzeeh/PayCard)*
+> This is an Open Source of my personal project *[PayCard](https://github.com/devzeeh/PayCard)*
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/devzeeh/unicard)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=blue)](https://www.mysql.com/)
@@ -61,11 +61,11 @@ User taps card ➔ Validates balance ➔ Deducts payment ➔ Earns points ➔ Re
 
 ### Sample Fare Receipt
 
-![Sample Fare Receipt](./docs/assets/images/Fare%20Receipt.png)
+![Sample Fare Receipt](assets/images/Fare%20Receipt.png)
 
 ### Sample Retail Receipt
 
-![Sample Retail Receipt](./docs/assets/images/Retail%20Receipt.png)
+![Sample Retail Receipt](assets/images/Retail%20Receipt.png)
 
 ## Acknowledgements
 

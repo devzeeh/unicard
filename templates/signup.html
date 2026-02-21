@@ -11,20 +11,30 @@
     <!--signup page-->
     <h1>Signup Page</h1>
 
-
     <form action="/signupauth" method="POST">
-        <label for="username">Username:</label>
-        <input id="username" type="text" name="username" required><br><br>
+        <label for="firstName">First Name:</label><span style="color: red;">*</span>
+        <input id="firstName" type="text" name="firstName" required>
+        <label for="lastName">Last Name:</label><span style="color: red;">*</span>
+        <input id="lastName" type="text" name="lastName" required><br><br>
 
-        <label for="cardNumber">Card Number</label>
-        <input id="cardNumber" name="cardNumber" type="tel">
         
-        <label for="password">Password:</label>
+        <label for="cardNumber">Card Number</label><span style="color: red;">*</span>
+        <input id="cardNumber" name="cardNumber" type="tel" required>
+        
+        <label for="password">Password:</label><span style="color: red;">*</span>
         <input type="password" name="password" required><br><br>
-        
+
+        <label for="email">Email:</label><span style="color: red;">*</span>
+        <input id="email" type="email" name="email" required><br><br>
+        <label for="contactNumber">Contact Number:</label><span style="color: red;">*</span>
+        <input id="contactNumber" type="tel" name="contactNumber" required><br><br>
+
         <button type="submit">Signup</button>
         {{if .Error}}
-        <h3 style="color: red;">Message: {{.Error}}</h3>
+        <h3 style="color: red; font-size: small;">{{.Error}}</h3>
+        {{end}}
+        {{if .Success}}
+        <h3 style="color: green; font-size: small;">{{.Success}}</h3>
         {{end}}
 </body>
 

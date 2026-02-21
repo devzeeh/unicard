@@ -16,8 +16,9 @@ type LoginData struct {
 // This function checks the URL for errors (e.g., ?error=invalid)
 // and displays the red text if needed.
 func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Login view is running...")
 	// Get the error code from the URL
-	errCode := r.URL.Query().Get("error")
+	errCode := r.URL.Query().Get("user")
 
 	var msg string
 
@@ -34,23 +35,25 @@ func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 // Auth Handler (POST)
+// Accepts login credentials: username, email, or full_name
 func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("loginauth running...")
 
 	r.ParseForm()
-	username := r.FormValue("username")
-	password := r.FormValue("password")
+	credential := r.PostFormValue("username") // This can be username, email, or full_name
+	password := r.PostFormValue("password")
 
 	var hash string
-	stmt := "SELECT Hash FROM persons WHERE username = ?"
+	// Query to check if credential matches username, email, or full_name
+	stmt := "SELECT password_hash FROM users WHERE username = ? OR email = ? OR full_name = ?"
 
-	err := h.DB.QueryRow(stmt, username).Scan(&hash)
+	err := h.DB.QueryRow(stmt, credential, credential, credential).Scan(&hash)
 
 	// User not found
 	if err != nil {
 		fmt.Println("User not found or DB error:", err)
-		// Redirect with ?error=notfound
-		http.Redirect(w, r, "/login?error=notfound", http.StatusSeeOther)
+		// Redirect with ?user=notfound
+		http.Redirect(w, r, "/login?user=notfound", http.StatusSeeOther)
 		return
 	}
 
@@ -67,6 +70,6 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	// Password mismatch
 	fmt.Println("Password mismatch")
 
-	// Redirect with ?error=invalid
-	http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
+	// Redirect with ?user=invalid
+	http.Redirect(w, r, "/login?user=invalid", http.StatusSeeOther)
 }
