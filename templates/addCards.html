@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Card</title>
+    <link rel="stylesheet" href="../assets/css/admin/addCard.css">
+</head>
+<body>
+    <h1>Add Card</h1>
+    {{if .Error}}
+        <div class="error">{{.Error}}</div>
+    {{end}}
+    {{if .Success}}
+        <div class="success">{{.Success}}</div>
+    {{end}}
+    <form action="/addcardauth" method="POST">
+        <div class="form-group">
+            <label for="cardUID">Card UID:</label>
+            <input type="text" id="cardUID" name="cardUID" required>
+        </div>
+        <div class="form-group">
+            <label for="initialAmount">Initial Amount:</label>
+            <input type="number" id="initialAmount" name="initialAmount" step="0.01" min="0" required>
+        </div>
+        <div class="form-group" style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 20px;">
+            <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;"><em>The following fields will be auto-generated:</em></p>
+            <div>
+                <label>Card Number:</label>
+                <p style="margin: 5px 0; color: #999;"><em>Auto-generated (16-digit)</em></p>
+            </div>
+            <div>
+                <label>Card Type:</label>
+                <p style="margin: 5px 0; color: #999;"><em>Default: Regular</em></p>
+            </div>
+            <div>
+                <label>Expiry Date:</label>
+                <p style="margin: 5px 0; color: #999;"><em>Auto-calculated (10 years from today)</em></p>
+            </div>
+        </div>
+        <input type="submit" value="Add Card">
+    </form>
+</body>
+</html>
