@@ -1,4 +1,4 @@
-package auth
+package authentication
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 
 // The struct is shared across the files in this package
 type Handler struct {
-	DB  *sql.DB // Database connection
+	DB  *sql.DB            // Database connection
 	Tpl *template.Template // HTML templates
 }
 
