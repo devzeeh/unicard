@@ -10,11 +10,15 @@ import (
 	"time"
 )
 
+// We use this struct to pass data to the HTML template for the Add Cards page
 type AddCardsData struct {
 	Error   string
 	Success string
 }
 
+// This struct represents a card and its attributes.
+// We can use it to easily pass card data around in our functions. 
+// It also helps to keep our code organized and makes it easier to manage card-related data. 
 type Card struct {
 	CardUID       string
 	CardNumber    string
@@ -24,12 +28,18 @@ type Card struct {
 	CreatedAt     string
 }
 
+// This function renders the addCards.html template when the admin visits the /admin/addcard page.
+// It doesn't do any processing yet, it just shows the form to the admin.
+// We can also pass an empty AddCardsData struct to the template, which allows us to easily display error or success messages later on when we process the form submission.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
 	// Render the addCards.html template
 	h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{})
 }
 
+// This function handles the form submission from the addCards.html page.
+// It processes the form data, validates it, generates a card number, checks for duplicates, and inserts the new card into the database.
+// Also have error handling at each step, and we pass error or success messages back to the template to inform the admin of the result.
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("addcardshandler running...")
 

@@ -7,7 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"unicard-go/internal/auth"
+	adminauth "unicard-go/internal/admin"
+	authentication "unicard-go/internal/auth"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -28,7 +29,7 @@ func main() {
 
 	// read .env VALUES
 	port := os.Getenv("PORT")
-	serverAddress := os.Getenv("SERVER_ADDR")
+	serverAddress := os.Getenv("SERVER_PORT")
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
@@ -37,7 +38,7 @@ func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Setup Templates
-	tpl, err = template.ParseGlob("../templates/*.html")
+	tpl, err = template.ParseGlob("./templates/*.html")
 	if err != nil {
 		log.Fatal("Templates loaded but variable is nil. Check your folder path.")
 	}
@@ -55,26 +56,34 @@ func main() {
 	}
 
 	// Initialize the Handler from the auth package
-	loginH := auth.NewHandler(db, tpl)
+	authHandler := authentication.NewHandler(db, tpl)
+	adminHanlder := adminauth.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
 
+	// Serve static files (CSS, JS, images)
+	fileServer := http.FileServer(http.Dir("./assets"))
+	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
+
 	// --- ROUTES ---
 	// GET Request: Shows the page AND handles the ?error=invalid logic
 	// We use the function from the auth package now
-	mux.HandleFunc("GET /login", loginH.LoginView)
-	mux.HandleFunc("GET /signup", loginH.SignupHandler)
+	mux.HandleFunc("GET /login", authHandler.LoginView)
+	mux.HandleFunc("GET /signup", authHandler.SignupHandler)
+	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
+
 	// POST Request: Processes the form
 	// This matches <form action="/loginauth"> in your HTML
-	mux.HandleFunc("POST /loginauth", loginH.LoginAuthHandler)
-	mux.HandleFunc("POST /signupauth", loginH.SignupHandler)
+	mux.HandleFunc("POST /loginauth", authHandler.LoginAuthHandler)
+	mux.HandleFunc("POST /signupauth", authHandler.SignupHandler)
+	mux.HandleFunc("POST /admin/addcardauth", adminHanlder.AddCardHandler)
 
 	// Dashboard
 	mux.HandleFunc("/dashboard", dashboardHandler)
 
 	// Start Server
-	fmt.Println("Server started on: http://", serverAddress, port)
+	fmt.Println("Server started on: http://" + serverAddress + port)
 	if err := http.ListenAndServe(port, mux); err != nil {
 		log.Fatal(err)
 	}
