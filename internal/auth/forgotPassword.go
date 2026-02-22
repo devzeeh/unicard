@@ -1,4 +1,4 @@
-package auth
+package authentication
 
 import (
 	"database/sql"
@@ -29,7 +29,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("email:", email, "\n Password:", password)
 
 	// Check if email exists
-	exists, err := h.checkEmailExist(email) 
+	exists, err := h.checkEmailExist(email)
 	if err != nil {
 		fmt.Println("Error checking email existence:", err)
 		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
