@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/admin/addcard.css">
     <title>Add Card</title>
-    <link rel="stylesheet" href="../assets/css/admin/addCard.css">
 </head>
 <body>
     <h1>Add Card</h1>
@@ -14,7 +14,7 @@
     {{if .Success}}
         <div class="success">{{.Success}}</div>
     {{end}}
-    <form action="/addcardauth" method="POST">
+    <form action="/admin/addcardauth" method="POST">
         <div class="form-group">
             <label for="cardUID">Card UID:</label>
             <input type="text" id="cardUID" name="cardUID" required>
