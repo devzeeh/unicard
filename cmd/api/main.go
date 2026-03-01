@@ -72,12 +72,14 @@ func main() {
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
+	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 
 	// POST Request: Processes the form
 	// This matches <form action="/loginauth"> in your HTML
 	mux.HandleFunc("POST /loginauth", authHandler.LoginAuthHandler)
 	mux.HandleFunc("POST /signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("POST /admin/addcardauth", adminHanlder.AddCardHandler)
+	mux.HandleFunc("POST /admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 
 	// Dashboard
 	mux.HandleFunc("/dashboard", dashboardHandler)

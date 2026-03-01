@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/admin/addcard.css">
+    <title>Deactivate Card</title>
+</head>
+
+<body>
+    <h1>Deactivate Card</h1>
+    {{if .Error}}
+    <div class="error">{{.Error}}</div>
+    {{end}}
+    {{if .Success}}
+    <div class="success">{{.Success}}</div>
+    {{end}}
+    <form action="/admin/deactivatecardauth" method="POST">
+        <div class="form-group">
+            <label for="cardNumber">Card Number:</label>
+            <input type="number" id="cardNumber" name="cardNumber" required>
+        </div>
+        <div class="form-group">
+            <label for="name">Cardholder Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="cardType">Card Type:</label>
+            <select id="cardType" name="cardType" required>
+                <option value="">-- Select Card Type --</option>
+                <option value="Regular">Regular</option>
+                <option value="Student">Student</option>
+                <option value="Senior">Senior</option>
+                <option value="Concessionary">Concessionary</option>
+            </select>
+        </div>
+
+        <input type="submit" value="Deactivate Card">
+        <input type="button" value="Cancel" class="cancel-button" onclick="window.history.back();">
+    </form>
+</body>
+
+</html>
