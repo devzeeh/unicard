@@ -17,8 +17,8 @@ type AddCardsData struct {
 }
 
 // This struct represents a card and its attributes.
-// We can use it to easily pass card data around in our functions. 
-// It also helps to keep our code organized and makes it easier to manage card-related data. 
+// We can use it to easily pass card data around in our functions.
+// It also helps to keep our code organized and makes it easier to manage card-related data.
 type Card struct {
 	CardUID       string
 	CardNumber    string
