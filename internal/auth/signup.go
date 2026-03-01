@@ -8,14 +8,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	structMessage "unicard-go/internal/pkg"
 	"unicard-go/internal/pkg/account"
 )
-
-// Struct to handle error message display in signup template
-type ErrorMessage struct {
-	Error   string
-	Success string
-}
 
 // User struct to hold signup data
 type User struct {
@@ -77,7 +72,7 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 		msg = "System error activating card. Please contact support."
 	}
 	// Render the signup template with error message
-	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
+	h.Tpl.ExecuteTemplate(w, "signup.html", structMessage.MessageData{Error: msg})
 }
 
 // This function processes the signup form submission.
@@ -186,7 +181,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	if exists, _ := account.IsEmailExist(h.DB, user.Email); exists {
 		fmt.Printf("Validation Failed: Email %s already exists.\n", user.Email)
 		http.Redirect(w, r, "/signup?error=email", http.StatusSeeOther)
-		//h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Email already registered."})
+		//h.Tpl.ExecuteTemplate(w, "signup.html",  structMessage.MessageData{Error: "Email already registered."})
 		return
 	}
 	fmt.Printf("Email %s is available.\n", user.Email)
