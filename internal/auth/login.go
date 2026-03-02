@@ -3,14 +3,10 @@ package authentication
 import (
 	"fmt"
 	"net/http"
+	structMessage "unicard-go/internal/pkg"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-// We use this struct to pass data to the HTML
-type LoginData struct {
-	Error string
-}
 
 // View Handler (GET)
 // This function checks the URL for errors (e.g., ?error=invalid)
@@ -31,7 +27,7 @@ func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render the template with the message
-	h.Tpl.ExecuteTemplate(w, "login.html", LoginData{Error: msg})
+	h.Tpl.ExecuteTemplate(w, "login.html", structMessage.MessageData{Error: msg})
 }
 
 // Auth Handler (POST)

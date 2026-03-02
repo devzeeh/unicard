@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	structMessage "unicard-go/internal/pkg"
 	"unicard-go/internal/pkg/account"
 )
 
@@ -32,11 +33,11 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	exists, err := h.checkEmailExist(email)
 	if err != nil {
 		fmt.Println("Error checking email existence:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
+		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", structMessage.MessageData{Error: "System error. Please try again later."})
 		return
 	}
 	if !exists {
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "Email not found."})
+		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", structMessage.MessageData{Error: "Email not found."})
 		return
 	}
 
@@ -44,7 +45,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := account.HashPassword(password)
 	if err != nil {
 		fmt.Println("Error hashing password:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
+		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", structMessage.MessageData{Error: "System error. Please try again later."})
 		return
 	}
 
@@ -52,10 +53,10 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	err = h.updatePassword(email, hashedPassword)
 	if err != nil {
 		fmt.Println("Error updating password:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Error: "System error. Please try again later."})
+		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", structMessage.MessageData{Error: "System error. Please try again later."})
 		return
 	}
-	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", ErrorMessage{Success: "Password updated successfully."})
+	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", structMessage.MessageData{Success: "Password updated successfully."})
 }
 
 // ---Helper Function---
