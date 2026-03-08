@@ -89,7 +89,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Get and CLEAN the form values
 	// strings.TrimSpace removes leading/trailing spaces.
 	// Example: "  John  " becomes "John". "   " becomes "".
 	firstName := strings.TrimSpace(r.PostFormValue("firstName"))
@@ -99,7 +98,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.PostFormValue("email"))
 	phone := strings.TrimSpace(r.PostFormValue("contactNumber"))
 
-	// 2. Check if ANY required field is empty
 	// We check individual variables before putting them in the struct
 	if firstName == "" || lastName == "" || cardNum == "" || password == "" || email == "" || phone == "" {
 		fmt.Println("Validation Failed: One or more fields are empty.")
@@ -107,7 +105,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Hydrate User Struct
 	// Now we know the data is clean and present
 	user := User{
 		Usertype:   "Regular",
@@ -286,7 +283,7 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 		// Combine date and time to form part of the username
 		//usernamePrefix = fmt.Sprintf("user%s%s", userDate, timePart)
 
-		// 1. Generate the random suffix
+		// Generate the random suffix
 		randomPart := ""
 		for i := 0; i < length; i++ {
 			num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
@@ -296,10 +293,10 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 			randomPart += string(charset[num.Int64()])
 		}
 
-		// 2. Combine prefix + date + time + random part
+		// Combine prefix + date + time + random part
 		username := fmt.Sprintf("%s%s%s%s", usernamePrefix, userDate, randomPart, timePart)
 
-		// 3. Check DB for uniqueness
+		// Check DB for uniqueness
 		var existing string
 		query := "SELECT username FROM users WHERE username = ?"
 		err := h.DB.QueryRow(query, username).Scan(&existing)
@@ -378,7 +375,7 @@ func (h *Handler) GenerateUserID() (int64, error) {
 // It generates the unique cardID for every card users
 // Checks the database for uniqueness.
 // Returns the unique card ID as string or an error if any occurs.
-// Example format: CARD-XXXXXXXXXX
+// Example format: CARD-XXXXXXX
 func (h *Handler) GenerateCardID() (string, error) {
 	// Define charset: letters and numbers
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	structMessage "unicard-go/internal/pkg"
+	message "unicard-go/internal/pkg"
 )
 
 // This struct represents the details of a card that we want to deactivate.
@@ -21,7 +21,7 @@ type CardDetails struct {
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
 	// Render the deactivateCard.html template
-	h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{})
+	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{})
 }
 
 // This function handles the form submission from the deactivateCard.html page.
@@ -29,7 +29,7 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 	fmt.Println("Deactivate card handler running...")
 
 	if err := r.ParseForm(); err != nil {
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{Error: "Failed to parse form"})
+		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Failed to parse form"})
 		return
 	}
 
@@ -39,7 +39,7 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 
 	if cardNumber == "" || cardHolder == "" || cardType == "" {
 		fmt.Println("Missing required fields:", cardNumber, cardHolder, cardType)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{Error: "Please fill in all required fields."})
+		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Please fill in all required fields."})
 		return
 	}
 
@@ -47,18 +47,18 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 	ok, err := h.deactivateCardIfActive(cardNumber, cardHolder, cardType)
 	if err != nil {
 		fmt.Println("Error while deactivating card:", err)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{Error: "Failed to deactivate card."})
+		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Failed to deactivate card."})
 		return
 	}
 
 	if !ok {
 		fmt.Printf("Card not found or already inactive: %s with Card Type: %s\n", cardNumber, cardType)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{Error: "Card not found or already inactive."})
+		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Card not found or already inactive."})
 		return
 	}
 
 	fmt.Println("Card deactivated successfully:", cardNumber, cardType)
-	h.Tpl.ExecuteTemplate(w, "deactivateCard.html",  structMessage.MessageData{Success: "Card deactivated successfully!"})
+	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Success: "Card deactivated successfully!"})
 }
 
 // --- Helper functions ---
