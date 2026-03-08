@@ -1,4 +1,4 @@
-package auth
+package authentication
 
 import (
 	"crypto/rand"
@@ -8,14 +8,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	structMessage "unicard-go/internal/pkg"
 	"unicard-go/internal/pkg/account"
 )
-
-// Struct to handle error message display in signup template
-type ErrorMessage struct {
-	Error   string
-	Success string
-}
 
 // User struct to hold signup data
 type User struct {
@@ -77,7 +72,7 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 		msg = "System error activating card. Please contact support."
 	}
 	// Render the signup template with error message
-	h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: msg})
+	h.Tpl.ExecuteTemplate(w, "signup.html", structMessage.MessageData{Error: msg})
 }
 
 // This function processes the signup form submission.
@@ -94,7 +89,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Get and CLEAN the form values
 	// strings.TrimSpace removes leading/trailing spaces.
 	// Example: "  John  " becomes "John". "   " becomes "".
 	firstName := strings.TrimSpace(r.PostFormValue("firstName"))
@@ -104,7 +98,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.PostFormValue("email"))
 	phone := strings.TrimSpace(r.PostFormValue("contactNumber"))
 
-	// 2. Check if ANY required field is empty
 	// We check individual variables before putting them in the struct
 	if firstName == "" || lastName == "" || cardNum == "" || password == "" || email == "" || phone == "" {
 		fmt.Println("Validation Failed: One or more fields are empty.")
@@ -112,7 +105,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Hydrate User Struct
 	// Now we know the data is clean and present
 	user := User{
 		Usertype:   "Regular",
@@ -186,7 +178,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	if exists, _ := account.IsEmailExist(h.DB, user.Email); exists {
 		fmt.Printf("Validation Failed: Email %s already exists.\n", user.Email)
 		http.Redirect(w, r, "/signup?error=email", http.StatusSeeOther)
-		//h.Tpl.ExecuteTemplate(w, "signup.html", ErrorMessage{Error: "Email already registered."})
+		//h.Tpl.ExecuteTemplate(w, "signup.html",  structMessage.MessageData{Error: "Email already registered."})
 		return
 	}
 	fmt.Printf("Email %s is available.\n", user.Email)
@@ -291,7 +283,7 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 		// Combine date and time to form part of the username
 		//usernamePrefix = fmt.Sprintf("user%s%s", userDate, timePart)
 
-		// 1. Generate the random suffix
+		// Generate the random suffix
 		randomPart := ""
 		for i := 0; i < length; i++ {
 			num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
@@ -301,10 +293,10 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 			randomPart += string(charset[num.Int64()])
 		}
 
-		// 2. Combine prefix + date + time + random part
+		// Combine prefix + date + time + random part
 		username := fmt.Sprintf("%s%s%s%s", usernamePrefix, userDate, randomPart, timePart)
 
-		// 3. Check DB for uniqueness
+		// Check DB for uniqueness
 		var existing string
 		query := "SELECT username FROM users WHERE username = ?"
 		err := h.DB.QueryRow(query, username).Scan(&existing)
@@ -383,7 +375,7 @@ func (h *Handler) GenerateUserID() (int64, error) {
 // It generates the unique cardID for every card users
 // Checks the database for uniqueness.
 // Returns the unique card ID as string or an error if any occurs.
-// Example format: CARD-XXXXXXXXXX
+// Example format: CARD-XXXXXXX
 func (h *Handler) GenerateCardID() (string, error) {
 	// Define charset: letters and numbers
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

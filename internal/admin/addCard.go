@@ -8,13 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	message "unicard-go/internal/pkg"
 )
 
-type AddCardsData struct {
-	Error   string
-	Success string
-}
-
+// This struct represents a card and its attributes.
+// We can use it to easily pass card data around in our functions.
+// It also helps to keep our code organized and makes it easier to manage card-related data.
 type Card struct {
 	CardUID       string
 	CardNumber    string
@@ -24,17 +23,23 @@ type Card struct {
 	CreatedAt     string
 }
 
+// This function renders the addCards.html template when the admin visits the /admin/addcard page.
+// It doesn't do any processing yet, it just shows the form to the admin.
+// We can also pass an empty AddCardsData struct to the template, which allows us to easily display error or success messages later on when we process the form submission.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
 	// Render the addCards.html template
-	h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{})
+	h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{})
 }
 
+// This function handles the form submission from the addCards.html page.
+// It processes the form data, validates it, generates a card number, checks for duplicates, and inserts the new card into the database.
+// Also have error handling at each step, and we pass error or success messages back to the template to inform the admin of the result.
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("addcardshandler running...")
 
 	if err := r.ParseForm(); err != nil {
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Failed to parse form"})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Failed to parse form"})
 		return
 	}
 
@@ -44,7 +49,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validate required fields
 	if cardUID == "" || initialAmount == "" {
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Please fill in all required fields."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Please fill in all required fields."})
 		return
 	}
 
@@ -66,7 +71,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	amount, err := strconv.ParseFloat(initialAmount, 64)
 	if err != nil {
 		fmt.Printf("Error parsing amount: %v\n", err)
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Invalid amount format. Must be a number."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Invalid amount format. Must be a number."})
 		return
 	}
 	fmt.Printf("Parsed amount: %.2f\n", amount)
@@ -76,12 +81,12 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	cardUidExist, err := h.cardUIDExist(cardUID)
 	if err != nil {
 		fmt.Println("Error checking card UID existence:", err)
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Error checking card UID."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Error checking card UID."})
 		return
 	}
 	if cardUidExist {
 		fmt.Println("Card UID already exists")
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Card UID already exists."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Card UID already exists."})
 		return
 	}
 	fmt.Println("Card UID is unique")
@@ -100,12 +105,12 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	cardNumExists, err := h.cardNumberExist(card)
 	if err != nil {
 		fmt.Println("Error checking card number existence:", err)
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Error checking card number."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Error checking card number."})
 		return
 	}
 	if cardNumExists {
 		fmt.Println("Card number already exists")
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Card number already exists."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Card number already exists."})
 		return
 	}
 	fmt.Println("Card number is unique")
@@ -129,13 +134,13 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 		createdAt)
 	if err != nil {
 		fmt.Println("Error inserting card into database:", err)
-		h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Error: "Error while adding card."})
+		h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Error: "Error while adding card."})
 		return
 	}
 
 	// Successfully added the card
 	fmt.Printf("Card added successfully: %s\n", card.CardNumber)
-	h.Tpl.ExecuteTemplate(w, "addCards.html", AddCardsData{Success: "Card added successfully!"})
+	h.Tpl.ExecuteTemplate(w, "addCards.html", message.MessageData{Success: "Card added successfully!"})
 }
 
 //--- HELPER FUNCTIONS ---
