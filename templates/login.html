@@ -10,19 +10,78 @@
 <body>
     <h1>Login Page</h1>
 
-    <form action="/loginauth" method="POST">
+    <form id="loginForm">
         <label>Username:</label>
-        <input type="text" name="username" required><br><br>
+        <input type="text" id="username" name="username" required><br><br>
 
         <label>Password:</label>
-        <input type="password" name="password" required><br><br>
+        <input type="password" id="password" name="password" required><br><br>
+        
         <a href="/forgotpassword">Forgot Password?</a>
-        <p>dont have account?<a href="/signup">Sign Up</a></p><br>
-        {{if .Error}}
-        <h3 style="color: red; font-size: large;">{{.Error}}</h3>
-        {{end}}
+        <p>Don't have an account? <a href="/signup">Sign Up</a></p><br>
+        
+        <h3 id="errorMessage" style="color: red; font-size: large; display: none;"></h3>
+        
         <button type="submit">Login</button>
     </form>
+
+    <script>
+        // 1. Grab the form and the error message container from the page
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 2. Listen for the form submission
+        loginForm.addEventListener('submit', async function(event) {
+            // Prevent the default HTML form submission (which reloads the page)
+            event.preventDefault();
+
+            // Clear any previous error messages
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+
+            // 3. Get the values from the input fields
+            const usernameValue = document.getElementById('username').value;
+            const passwordValue = document.getElementById('password').value;
+
+            // 4. Create the JSON payload. 
+            // Notice we use "credential" to match your Go LoginRequest struct.
+            const payload = {
+                credential: usernameValue,
+                password: passwordValue
+            };
+
+            try {
+                // 5. Send the JSON to your Go backend using the Fetch API
+                const response = await fetch('/api/v1/loginauth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // 6. Parse the JSON response from Go
+                const data = await response.json();
+
+                // 7. Check if the login was successful based on your Go LoginResponse struct
+                if (!data.success) {
+                    // Show the error message returned by Go
+                    errorMessage.textContent = data.message;
+                    errorMessage.style.display = 'block';
+                } else {
+                    // SUCCESS! 
+                    // You can redirect the user to a secure page, or save their token.
+                    console.log("Logged in user ID:", data.user_id);
+                    window.location.href = "/dashboard"; // Change this to your actual success page
+                }
+
+            } catch (error) {
+                console.error("Error during login:", error);
+                errorMessage.textContent = "A network error occurred. Please try again.";
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 
 </html>

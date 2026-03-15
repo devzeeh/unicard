@@ -1,71 +1,100 @@
 package authentication
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	message "unicard-go/internal/pkg"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginRequest represents the JSON request for login
+type LoginRequest struct {
+	Username string `json:"username"` // username, email, or full_name
+	Password   string `json:"password"`
+}
+
+// LoginResponse represents the JSON response for login
+type LoginResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	UserID  string `json:"user_id,omitempty"`
+}
+
 // View Handler (GET)
-// This function checks the URL for errors (e.g., ?error=invalid)
-// and displays the red text if needed.
+// Serves the login page template
 func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Login view is running...")
-	// Get the error code from the URL
-	errCode := r.URL.Query().Get("user")
-
-	var msg string
-
-	// Determine the message based on the error code
-	switch errCode {
-	case "invalid":
-		msg = "Wrong password"
-	case "notfound":
-		msg = "User not found"
-	}
-
-	// Render the template with the message
-	h.Tpl.ExecuteTemplate(w, "login.html", message.MessageData{Error: msg})
+	h.Tpl.ExecuteTemplate(w, "login.html", nil)
 }
 
 // Auth Handler (POST)
-// Accepts login credentials: username, email, or full_name
+// Accepts JSON login credentials: username, email, or full_name
+// Returns JSON response with success status and message
 func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("loginauth running...")
 
-	r.ParseForm()
-	credential := r.PostFormValue("username") // This can be username, email, or full_name
-	password := r.PostFormValue("password")
+	w.Header().Set("Content-Type", "application/json")
+
+	// Parse JSON request body
+	var loginReq LoginRequest // Define a struct to hold the login request data
+	err := json.NewDecoder(r.Body).Decode(&loginReq)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(LoginResponse{
+			Success: false,
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	// Validate input
+	if loginReq.Username == "" || loginReq.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(LoginResponse{
+			Success: false,
+			Message: "Credential and password are required",
+		})
+		return
+	}
 
 	var hash string
+	var userID string
 	// Query to check if credential matches username, email, or full_name
-	stmt := "SELECT password_hash FROM users WHERE username = ? OR email = ? OR full_name = ?"
+	stmt := "SELECT id, password_hash FROM users WHERE username = ? OR email = ? OR full_name = ?"
 
-	err := h.DB.QueryRow(stmt, credential, credential, credential).Scan(&hash)
+	err = h.DB.QueryRow(stmt, loginReq.Username, loginReq.Username, loginReq.Username).Scan(&userID, &hash)
 
 	// User not found
 	if err != nil {
 		fmt.Println("User not found or DB error:", err)
-		// Redirect with ?user=notfound
-		http.Redirect(w, r, "/login?user=notfound", http.StatusSeeOther)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(LoginResponse{
+			Success: false,
+			Message: "User not found",
+		})
 		return
 	}
 
 	fmt.Println("Hash found, verifying...")
-	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(loginReq.Password))
 
 	// SUCCESS
 	if err == nil {
 		fmt.Println("Login success")
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(LoginResponse{
+			Success: true,
+			Message: "Login successful",
+			UserID:  userID,
+		})
 		return
 	}
 
 	// Password mismatch
-	fmt.Println("Password mismatch")
-
-	// Redirect with ?user=invalid
-	http.Redirect(w, r, "/login?user=invalid", http.StatusSeeOther)
+	fmt.Println("Password Incorrect:", err)
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(LoginResponse{
+		Success: false,
+		Message: "Password incorrect",
+	})
 }

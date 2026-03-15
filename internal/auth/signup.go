@@ -3,16 +3,32 @@ package authentication
 import (
 	"crypto/rand"
 	"database/sql"
+	"encoding/json" // Added for JSON support
 	"fmt"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
-	structMessage "unicard-go/internal/pkg"
 	"unicard-go/internal/pkg/account"
 )
 
-// User struct to hold signup data
+// 1. Create a struct to catch the incoming JSON from the frontend
+type SignupRequest struct {
+	FirstName     string `json:"firstName"`
+	LastName      string `json:"lastName"`
+	CardNumber    string `json:"cardNumber"`
+	Password      string `json:"password"`
+	Email         string `json:"email"`
+	ContactNumber string `json:"contactNumber"`
+}
+
+// 2. Create a standard API response struct
+type APIResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// User struct to hold signup data (Keep your existing one)
 type User struct {
 	UserID     string
 	Username   string
@@ -28,242 +44,170 @@ type User struct {
 }
 
 // View Handler (GET)
-// This function checks the URL for errors (e.g., ?error=invalid)
-// and displays the red text if needed.
+// You can now simplify this because JS handles the errors!
 func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup view is running...")
-	// Get the error code from the URL
-	errCode := r.URL.Query().Get("error")
-
-	var msg string
-	// Determine the message based on the error code
-	switch errCode {
-	case "cardnotfound":
-		msg = "Card number not found. Please check your card or contact support."
-	case "userid":
-		msg = "System error generating UserID. Please try again."
-	case "cardnumber":
-		msg = "System error generating CardNumber. Please try again."
-	case "invalidcard":
-		msg = "Invalid Card Number. Please check your card."
-	case "contactnumber":
-		msg = "Phone number already registered. Please use a different number."
-	case "email":
-		msg = "Email already registered. Please use a different email."
-	case "emptyfields":
-		msg = "Please fill in all fields."
-	case "genusername":
-		msg = "System error generating username. Please try again."
-	case "cardstatuscheck":
-		msg = "System error checking card status. Please try again."
-	case "cardstatus":
-		msg = "Card is invalid. Please contact support."
-	case "passwordshort":
-		msg = "Password must be at least 8 characters long."
-	case "gencardid":
-		msg = "System error generating CardID. Please try again."
-	case "dbinsert":
-		msg = "System error creating account. Please try again."
-	case "parseform":
-		msg = "Failed to parse form. Please try again."
-	case "hashpassword":
-		msg = "System error processing password. Please try again."
-	case "cardupdate":
-		msg = "System error activating card. Please contact support."
-	}
-	// Render the signup template with error message
-	h.Tpl.ExecuteTemplate(w, "signup.html", structMessage.MessageData{Error: msg})
+	// Just serve the template. No need for the huge switch statement anymore.
+	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
-// This function processes the signup form submission.
-// It validates the input, checks for existing usernames and card numbers,
-// hashes the password, and inserts the new user into the database.
-// On success, it redirects to the login page.
-// On failure, it re-renders the signup page with an error message.
-// POST /signupauth
+// Auth Handler (POST) - Converted to JSON API
 func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Signup is running...")
+	fmt.Println("Signup API is running...")
+	w.Header().Set("Content-Type", "application/json")
 
-	if err := r.ParseForm(); err != nil {
-		http.Redirect(w, r, "/signup?error=parseform", http.StatusSeeOther)
+	// Enforce POST method
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Method not allowed"})
 		return
 	}
 
-	// strings.TrimSpace removes leading/trailing spaces.
-	// Example: "  John  " becomes "John". "   " becomes "".
-	firstName := strings.TrimSpace(r.PostFormValue("firstName"))
-	lastName := strings.TrimSpace(r.PostFormValue("lastName"))
-	cardNum := strings.TrimSpace(r.PostFormValue("cardNumber"))
-	password := strings.TrimSpace(r.PostFormValue("password"))
-	email := strings.TrimSpace(r.PostFormValue("email"))
-	phone := strings.TrimSpace(r.PostFormValue("contactNumber"))
-
-	// We check individual variables before putting them in the struct
-	if firstName == "" || lastName == "" || cardNum == "" || password == "" || email == "" || phone == "" {
-		fmt.Println("Validation Failed: One or more fields are empty.")
-		http.Redirect(w, r, "/signup?error=emptyfields", http.StatusSeeOther)
+	// Decode incoming JSON
+	var req SignupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Failed to parse JSON request"})
 		return
 	}
 
-	// Now we know the data is clean and present
+	// Clean the inputs
+	req.FirstName = strings.TrimSpace(req.FirstName)
+	req.LastName = strings.TrimSpace(req.LastName)
+	req.CardNumber = strings.TrimSpace(req.CardNumber)
+	req.Password = strings.TrimSpace(req.Password)
+	req.Email = strings.TrimSpace(req.Email)
+	req.ContactNumber = strings.TrimSpace(req.ContactNumber)
+
+	// Validation: Empty Fields
+	if req.FirstName == "" || req.LastName == "" || req.CardNumber == "" || req.Password == "" || req.Email == "" || req.ContactNumber == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Please fill in all fields."})
+		return
+	}
+
+	// Prepare User struct
 	user := User{
 		Usertype:   "Regular",
-		Username:   firstName, // Using First Name as Username
-		Fullname:   firstName + " " + lastName,
-		CardNumber: cardNum,
-		Password:   password,
-		Email:      email,
-		Phone:      phone,
+		Username:   req.FirstName, // Using First Name as temporary Username
+		Fullname:   req.FirstName + " " + req.LastName,
+		CardNumber: req.CardNumber,
+		Password:   req.Password,
+		Email:      req.Email,
+		Phone:      req.ContactNumber,
 	}
 
-	// Check if username exists using helper function
+	// Generate Username
 	generatedUsername, err := h.GenerateUniqueUsername()
 	if err != nil {
-		fmt.Printf("Error generating username: %v\n", err)
-		http.Redirect(w, r, "/signup?error=genusername", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating username. Please try again."})
 		return
 	}
 	user.Username = generatedUsername
-	fmt.Printf("Assigned Username: %s\n", user.Username)
 
-	// Check card number if exist
-	// If exist push thru
-	// Variable to hold the status from the DB
+	// Check Card Status
 	var cardStatus string
-	// Make sure your column name is correct (card_status vs status) based on your table definition
 	query := "SELECT status FROM cards WHERE card_number = ?"
 	err = h.DB.QueryRow(query, user.CardNumber).Scan(&cardStatus)
 
-	// Card does not exist
 	if err == sql.ErrNoRows {
-		fmt.Printf("Validation Failed: Card Number %s does not exist in system.\n", user.CardNumber)
-		http.Redirect(w, r, "/signup?error=cardnotfound", http.StatusSeeOther)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Card number not found. Please check your card."})
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error checking card status."})
 		return
 	}
-	// System Error
-	if err != nil {
-		fmt.Printf("Validation Error: System error checking card: %v\n", err)
-		http.Redirect(w, r, "/signup?error=cardstatuscheck", http.StatusSeeOther)
-		return
-	}
-	// Handle: Card Exists, but is NOT "Inactive" (e.g., Active, Blocked)
-	// This blocks 'Active', 'Blocked', 'Lost', 'Expired', etc.
+
 	if cardStatus != "Inactive" {
-		fmt.Printf("Validation Failed: Card %s is currently '%s'.\n", user.CardNumber, cardStatus)
-		http.Redirect(w, r, "/signup?error=cardstatus", http.StatusSeeOther)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus)})
 		return
 	}
-	// Success: Proceed
-	fmt.Printf("Card %s is Inactive (Valid). Proceeding...\n", user.CardNumber)
 
-	// Password length check
+	// Password Length Check
 	if len(user.Password) < 8 {
-		fmt.Printf("Validation Failed: Password too short (%d chars).\n", len(user.Password))
-		http.Redirect(w, r, "/signup?error=passwordshort", http.StatusSeeOther)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Password must be at least 8 characters long."})
 		return
 	}
 
-	// Generate Hash for password
+	// Hash Password
 	hashedPassword, err := account.HashPassword(user.Password)
 	if err != nil {
-		fmt.Printf("Error hashing password: %v", err)
-		http.Redirect(w, r, "/signup?error=hashpassword", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error processing password."})
 		return
 	}
-	fmt.Println("raw password is:", user.Password)
-	user.Password = hashedPassword // Store the hashed password
-	fmt.Printf("hashed password is: %v\n", user.Password)
+	user.Password = hashedPassword
 
-	// Check if Email Exists (Using our helper method)
+	// Check Email
 	if exists, _ := account.IsEmailExist(h.DB, user.Email); exists {
-		fmt.Printf("Validation Failed: Email %s already exists.\n", user.Email)
-		http.Redirect(w, r, "/signup?error=email", http.StatusSeeOther)
-		//h.Tpl.ExecuteTemplate(w, "signup.html",  structMessage.MessageData{Error: "Email already registered."})
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Email already registered. Please use a different email."})
 		return
 	}
-	fmt.Printf("Email %s is available.\n", user.Email)
 
-	// Check if Phone Exists (Using our helper method)
+	// Check Phone
 	if exists, _ := h.isPhoneExist(user.Phone); exists {
-		fmt.Printf("Validation Failed: Phone %s already exists.\n", user.Phone)
-		http.Redirect(w, r, "/signup?error=contactnumber", http.StatusSeeOther)
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Phone number already registered. Please use a different number."})
 		return
 	}
-	fmt.Printf("Phone %s is available.\n", user.Phone)
-	user.Phone = phone
 
-	// Generate unique UserID (12 digits)
+	// Generate IDs
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
-		fmt.Printf("Error generating UserID: %v", err)
-		http.Redirect(w, r, "/signup?error=userid", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating UserID."})
 		return
 	}
-	fmt.Printf("Generated UserID: %d\n", generateUserId)
 	user.UserID = fmt.Sprintf("%d", generateUserId)
 
-	// Generate unique CardID
 	generateCardID, err := h.GenerateCardID()
 	if err != nil {
-		fmt.Printf("Error generating CardID: %v", err)
-		http.Redirect(w, r, "/signup?error=gencardid", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating CardID."})
 		return
 	}
 	user.CardID = generateCardID
-	fmt.Printf("Generated CardID: %s\n", user.CardID)
 
-	// Time of account creation
+	// Get Timestamp & Balance
 	user.CreatedAt, _ = CurrentTimestamp()
-
-	// Check initial balance base on card
-	// Using helper function from account package
 	user.Balance, err = h.GetInitialBalance(user.CardNumber)
 	if err != nil {
-		fmt.Printf("Error: Failed to retrieve initial balance for card %s: %v\n", user.CardNumber, err)
-		http.Redirect(w, r, "/signup?error=invalidcard", http.StatusSeeOther)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid Card Number."})
 		return
 	}
-	fmt.Printf("Initial balance for card %s is %.2f\n", user.CardNumber, user.Balance)
 
-	// Insert to DB
-	query = "INSERT INTO users (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-
-	// Execute
-	_, err = h.DB.Exec(
-		query,
-		user.UserID,
-		user.Username,
-		user.Fullname,
-		user.Email,
-		user.Phone,
-		user.Password,
-		user.CardID,
-		user.CardNumber,
-		user.Usertype,
-		user.Balance,
-		user.CreatedAt,
-	)
+	// Insert into DB
+	insertQuery := "INSERT INTO users (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err = h.DB.Exec(insertQuery, user.UserID, user.Username, user.Fullname, user.Email, user.Phone, user.Password, user.CardID, user.CardNumber, user.Usertype, user.Balance, user.CreatedAt)
 	if err != nil {
-		fmt.Printf("CRITICAL ERROR: Failed to insert user into database: %v\n", err)
-		http.Redirect(w, r, "/signup?error=dbinsert", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error creating account. Please try again."})
 		return
 	}
 
-	// Update card status from "Inactive" to "Active"
+	// Activate Card
 	updateQuery := "UPDATE cards SET status = 'Active' WHERE card_number = ?"
 	_, err = h.DB.Exec(updateQuery, user.CardNumber)
 	if err != nil {
-		fmt.Printf("ERROR: Failed to update card status to Active: %v\n", err)
-		http.Redirect(w, r, "/signup?error=cardupdate", http.StatusSeeOther)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error activating card."})
 		return
 	}
-	fmt.Printf("Card %s status updated to Active\n", user.CardNumber)
 
-	// Succesfully account creation
-	fmt.Printf("account successfully created!")
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// SUCCESS! Send a JSON success message instead of redirecting.
+	fmt.Println("Account successfully created!")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(APIResponse{Success: true, Message: "Account created successfully!"})
 }
 
+// ... [KEEP ALL YOUR HELPER FUNCTIONS DOWN HERE EXACTLY AS THEY WERE] ...
 // ---Helper Functions---
 
 // GenerateUniqueUsername creates a random unique username
