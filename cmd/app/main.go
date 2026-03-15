@@ -67,19 +67,18 @@ func main() {
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
 	// --- ROUTES ---
-	// GET Request: Shows the page AND handles the ?error=invalid logic
-	// We use the function from the auth package now
-	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("GET /signup", authHandler.SignupHandler)
+	// POST Request: JSON API endpoints
+	mux.HandleFunc("POST /api/v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
+	mux.HandleFunc("POST /api/v1/signupauth", authHandler.SignupHandler)
+
+	// GET Request: SSR endpoints (for signup, admin)
+	mux.HandleFunc("GET /login", authHandler.LoginView) // 
+	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 
-	// POST Request: Processes the form
-	// This matches <form action="/loginauth"> in your HTML
-	mux.HandleFunc("POST /loginauth", authHandler.LoginAuthHandler)
-	mux.HandleFunc("POST /signupauth", authHandler.SignupHandler)
-	mux.HandleFunc("POST /admin/addcardauth", adminHanlder.AddCardHandler)
-	mux.HandleFunc("POST /admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
+	mux.HandleFunc("POST /api/v1/admin/addcardauth", adminHanlder.AddCardHandler)
+	mux.HandleFunc("POST /api/v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 
 	// Dashboard
 	mux.HandleFunc("/dashboard", dashboardHandler)
@@ -96,3 +95,5 @@ func dashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard is running")
 	tpl.ExecuteTemplate(w, "dashboard.html", nil)
 }
+
+// View handler - just serve the template
