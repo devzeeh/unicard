@@ -5,14 +5,16 @@ import (
 	"database/sql"
 	"encoding/json" // Added for JSON support
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
 	"unicard-go/internal/pkg/account"
+	jsonwrite "unicard-go/internal/pkg/handler"
 )
 
-// 1. Create a struct to catch the incoming JSON from the frontend
+// Create a struct to catch the incoming JSON from the frontend
 type SignupRequest struct {
 	FirstName     string `json:"firstName"`
 	LastName      string `json:"lastName"`
@@ -22,7 +24,7 @@ type SignupRequest struct {
 	ContactNumber string `json:"contactNumber"`
 }
 
-// 2. Create a standard API response struct
+// Create a standard API response struct
 type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
@@ -51,23 +53,14 @@ func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
-// Auth Handler (POST) - Converted to JSON API
 func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Signup API is running...")
-	w.Header().Set("Content-Type", "application/json")
-
-	// Enforce POST method
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Method not allowed"})
-		return
-	}
 
 	// Decode incoming JSON
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Failed to parse JSON request"})
+		log.Printf("Error decoding signup JSON: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Failed to parse JSON request"})
 		return
 	}
 
@@ -80,134 +73,170 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	req.ContactNumber = strings.TrimSpace(req.ContactNumber)
 
 	// Validation: Empty Fields
-	if req.FirstName == "" || req.LastName == "" || req.CardNumber == "" || req.Password == "" || req.Email == "" || req.ContactNumber == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Please fill in all fields."})
-		return
+	fields := []string{req.FirstName, req.LastName, req.CardNumber, req.Password, req.Email, req.ContactNumber}
+	for _, f := range fields {
+		if f == "" {
+			log.Printf("Validation failed: Empty fields")
+			jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Please fill in all fields."})
+			return
+		}
 	}
 
-	// Prepare User struct
-	user := User{
-		Usertype:   "Regular",
-		Username:   req.FirstName, // Using First Name as temporary Username
-		Fullname:   req.FirstName + " " + req.LastName,
-		CardNumber: req.CardNumber,
-		Password:   req.Password,
-		Email:      req.Email,
-		Phone:      req.ContactNumber,
-	}
-
-	// Generate Username
-	generatedUsername, err := h.GenerateUniqueUsername()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating username. Please try again."})
+	// Validation: Password Length (fail fast before any DB calls)
+	if len(req.Password) < 8 {
+		log.Printf("Validation failed: Password must be at least 8 characters long")
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Password must be at least 8 characters long."})
 		return
 	}
-	user.Username = generatedUsername
 
 	// Check Card Status
 	var cardStatus string
-	query := "SELECT status FROM cards WHERE card_number = ?"
-	err = h.DB.QueryRow(query, user.CardNumber).Scan(&cardStatus)
-
+	err := h.DB.QueryRow("SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&cardStatus)
 	if err == sql.ErrNoRows {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Card number not found. Please check your card."})
+		log.Printf("Card not found: %v", req.CardNumber)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Card number not found. Please check your card."})
 		return
 	} else if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error checking card status."})
+		log.Printf("Error checking card status: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking card status."})
 		return
 	}
 
 	if cardStatus != "Inactive" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus)})
+		log.Printf("Card is not inactive: %v", cardStatus)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus)})
 		return
 	}
-
-	// Password Length Check
-	if len(user.Password) < 8 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Password must be at least 8 characters long."})
-		return
-	}
-
-	// Hash Password
-	hashedPassword, err := account.HashPassword(user.Password)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error processing password."})
-		return
-	}
-	user.Password = hashedPassword
 
 	// Check Email
-	if exists, _ := account.IsEmailExist(h.DB, user.Email); exists {
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Email already registered. Please use a different email."})
+	exists, err := account.IsEmailExist(h.DB, req.Email)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking email."})
+		return
+	}
+	if exists {
+		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{Success: false, Message: "Email already registered. Please use a different email."})
 		return
 	}
 
 	// Check Phone
-	if exists, _ := h.isPhoneExist(user.Phone); exists {
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Phone number already registered. Please use a different number."})
+	exists, err = h.isPhoneExist(req.ContactNumber)
+	if err != nil {
+		fmt.Println("Phone number check error:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking phone number."})
 		return
 	}
+	if exists {
+		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{Success: false, Message: "Phone number already registered. Please use a different number."})
+		return
+	}
+
+	// Hash Password
+	hashedPassword, err := account.HashPassword(req.Password)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error processing password."})
+		return
+	}
+	log.Printf("Password: %v", req.Password)
+	log.Printf("Password hashed successfully: %v", hashedPassword)
+
+	// Generate Username
+	generatedUsername, err := h.GenerateUniqueUsername()
+	if err != nil {
+		fmt.Println("Error generating username:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating username. Please try again."})
+		return
+	}
+	log.Printf("Generated Username: %v", generatedUsername)
 
 	// Generate IDs
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating UserID."})
+		log.Printf("Error generating UserID: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating UserID."})
 		return
 	}
-	user.UserID = fmt.Sprintf("%d", generateUserId)
 
 	generateCardID, err := h.GenerateCardID()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error generating CardID."})
+		log.Printf("Error generating CardID: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating CardID."})
 		return
 	}
-	user.CardID = generateCardID
 
-	// Get Timestamp & Balance
-	user.CreatedAt, _ = CurrentTimestamp()
-	user.Balance, err = h.GetInitialBalance(user.CardNumber)
+	// Get Timestamp
+	createdAt, err := CurrentTimestamp()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid Card Number."})
+		log.Printf("Error getting timestamp: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error getting timestamp."})
 		return
 	}
+	fmt.Println("Timestamp:", createdAt)
 
-	// Insert into DB
-	insertQuery := "INSERT INTO users (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err = h.DB.Exec(insertQuery, user.UserID, user.Username, user.Fullname, user.Email, user.Phone, user.Password, user.CardID, user.CardNumber, user.Usertype, user.Balance, user.CreatedAt)
+	// Get Initial Balance
+	balance, err := h.GetInitialBalance(req.CardNumber)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error creating account. Please try again."})
+		log.Printf("Error getting initial balance: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid Card Number."})
 		return
 	}
 
-	// Activate Card
-	updateQuery := "UPDATE cards SET status = 'Active' WHERE card_number = ?"
-	_, err = h.DB.Exec(updateQuery, user.CardNumber)
+	// Build User struct
+	user := User{
+		UserID:     fmt.Sprintf("%d", generateUserId),
+		CardID:     generateCardID,
+		Usertype:   "Regular",
+		Username:   generatedUsername,
+		Fullname:   req.FirstName + " " + req.LastName,
+		CardNumber: req.CardNumber,
+		Password:   hashedPassword,
+		Email:      req.Email,
+		Phone:      req.ContactNumber,
+		CreatedAt:  createdAt,
+		Balance:    balance,
+	}
+
+	// Begin transaction: insert user + activate card atomically
+	tx, err := h.DB.Begin()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "System error activating card."})
+		log.Printf("Error starting transaction: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error starting transaction."})
+		return
+	}
+	defer tx.Rollback() // no-op if tx.Commit() is called
+
+	insertQuery := `INSERT INTO users 
+    (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = tx.Exec(insertQuery,
+		user.UserID, user.Username, user.Fullname, user.Email, user.Phone,
+		user.Password, user.CardID, user.CardNumber, user.Usertype, user.Balance, user.CreatedAt,
+	)
+	if err != nil {
+		log.Printf("Error inserting user: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error creating account. Please try again."})
+		return
+	}
+	log.Printf("User record inserted: %v", user.UserID)
+
+	_, err = tx.Exec("UPDATE cards SET status = 'Active' WHERE card_number = ?", user.CardNumber)
+	if err != nil {
+		log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error activating card."})
 		return
 	}
 
-	// SUCCESS! Send a JSON success message instead of redirecting.
-	fmt.Println("Account successfully created!")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(APIResponse{Success: true, Message: "Account created successfully!"})
+	if err = tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error finalizing account creation."})
+		return
+	}
+
+	log.Printf("Account successfully created! UserID: %s", user.UserID) // moved here
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Account created successfully!"})
 }
 
-// ... [KEEP ALL YOUR HELPER FUNCTIONS DOWN HERE EXACTLY AS THEY WERE] ...
 // ---Helper Functions---
 
 // GenerateUniqueUsername creates a random unique username
@@ -253,7 +282,7 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 		}
 
 		// Collision detected, loop runs again...
-		fmt.Println("Username collision! Retrying...")
+		log.Println("Username collision! Retrying...")
 	}
 }
 
@@ -272,7 +301,7 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		fmt.Println("Phone number check error:", err)
+		log.Printf("Phone number check error: %v", err)
 		return false, err
 	}
 	return true, nil
@@ -312,7 +341,7 @@ func (h *Handler) GenerateUserID() (int64, error) {
 			return 0, err // Real DB error
 		}
 		// If it exists, loop runs again
-		fmt.Println("Collision detected! Retrying...")
+		log.Println("Collision detected! Retrying...")
 	}
 }
 
@@ -354,7 +383,7 @@ func (h *Handler) GenerateCardID() (string, error) {
 		} else if err != nil {
 			return "", err // DB error
 		}
-		fmt.Println("Collision detected! Retrying...", cardID)
+		log.Printf("Collision detected! Retrying... conflicting ID: %s", cardID)
 	}
 }
 
@@ -368,6 +397,7 @@ func (h *Handler) GetInitialBalance(cardNumber string) (float64, error) {
 	query := "SELECT initial_amount FROM cards WHERE card_number = ?"
 	err := h.DB.QueryRow(query, cardNumber).Scan(&initialBalance)
 	if err != nil {
+		log.Printf("GetInitialBalance error for card %s: %v", cardNumber, err)
 		return 0, err
 	}
 	return initialBalance, nil
@@ -380,6 +410,7 @@ func CurrentTimestamp() (string, error) {
 	// Load Asia/Manila location
 	loc, err := time.LoadLocation("Asia/Manila")
 	if err != nil {
+		log.Printf("CurrentTimestamp error loading timezone: %v", err)
 		return "", err
 	}
 	time.Local = loc

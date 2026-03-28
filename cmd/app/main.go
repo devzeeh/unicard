@@ -74,14 +74,13 @@ func main() {
 	// GET Request: SSR endpoints (for signup, admin)
 	mux.HandleFunc("GET /login", authHandler.LoginView) // 
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
+	mux.HandleFunc("GET /dashboard", authHandler.DashboardHandler)
+
+	// endpoints for admin
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
-
 	mux.HandleFunc("POST /api/v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /api/v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
-
-	// Dashboard
-	mux.HandleFunc("/dashboard", dashboardHandler)
 
 	// Start Server
 	fmt.Println("Server started on: http://" + serverAddress + port)

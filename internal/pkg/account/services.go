@@ -8,7 +8,7 @@ package account
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -42,13 +42,13 @@ func IsEmailExist(db *sql.DB, email string) (bool, error) {
 	query := "SELECT email FROM users WHERE email = ?"
 	err := db.QueryRow(query, email).Scan(&existingEmail)
 	if err == sql.ErrNoRows {
-		fmt.Println("Email is available.")
+		log.Println("Email does not exist, can proceed with signup.")
 		return false, nil
 	}
 	if err != nil {
-		fmt.Println("Email check error:", err)
+		log.Printf("Email check error: %v", err)
 		return false, err
 	}
-	fmt.Println("Email already exists.")
+	log.Println("Email already exists.")
 	return true, nil
 }
