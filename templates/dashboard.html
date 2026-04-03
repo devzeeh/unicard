@@ -2,11 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Unicard Dashboard</title>
+    <style>
+        .stats-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; min-width: 150px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .text-green { color: green; font-weight: bold; }
+        .text-red { color: red; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h1>Dashboard</h1>
-    <p>This is the dashboard page.</p>
+
+    <header>
+        <h1>Welcome, {{ .Name }}!</h1>
+        <p>Username: <strong>{{ .Username }}</strong> | Account: <strong>{{ .AccountType }}</strong></p>
+    </header>
+
+    <div class="stats-container">
+        <div class="card">
+            <h3>Current Balance</h3>
+            <p>₱{{ printf "%.2f" .Balance }}</p>
+        </div>
+        <div class="card">
+            <h3>Loyalty Points</h3>
+            <p>{{ .LoyaltyPoints }} pts</p>
+        </div>
+    </div>
+
+    <h2>Recent Transactions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .RecentTransactions }}
+            <tr>
+                <td>{{ .Date }}</td>
+                <td>{{ .Description }}</td>
+                <td>{{ .Type }}</td>
+                <td class="{{ if eq .Type "Credit" }}text-green{{ else }}text-red{{ end }}">
+                    ₱{{ printf "%.2f" .Amount }}
+                </td>
+            </tr>
+            {{ else }}
+            <tr>
+                <td colspan="4">No recent transactions found.</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+
 </body>
 </html>
