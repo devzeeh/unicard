@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	adminauth "unicard-go/internal/admin"
+	"unicard-go/internal/admin"
 	authentication "unicard-go/internal/auth"
+	"unicard-go/internal/user"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -57,7 +58,8 @@ func main() {
 
 	// Initialize the Handler from the auth package
 	authHandler := authentication.NewHandler(db, tpl)
-	adminHanlder := adminauth.NewHandler(db, tpl)
+	adminHanlder := admin.NewHandler(db, tpl)
+	userHandler := user.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -70,11 +72,9 @@ func main() {
 	// POST Request: JSON API endpoints
 	mux.HandleFunc("POST /api/v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /api/v1/signupauth", authHandler.SignupHandler)
-
-	// GET Request: SSR endpoints (for signup, admin)
-	mux.HandleFunc("GET /login", authHandler.LoginView) // 
+	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
-	mux.HandleFunc("GET /dashboard", authHandler.DashboardHandler)
+	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
 
 	// endpoints for admin
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
@@ -88,11 +88,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
-// Dashboard handler
-func dashboardHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Dashboard is running")
-	tpl.ExecuteTemplate(w, "dashboard.html", nil)
-}
-
-// View handler - just serve the template
