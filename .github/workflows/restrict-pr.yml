@@ -2,16 +2,35 @@ name: Enforce PR Flow
 
 on:
   pull_request:
-    branches:
-      - main
+    # Remove "branches: - main" to run script to any Pull Request
 
 jobs:
-  check-source-branch:
+  check-pr-flow:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from development
-        if: github.head_ref != 'development'
+      - name: Validate PR Source and Target
+        env:
+          TARGET_BRANCH: ${{ github.base_ref }} # papunta ang PR
+          SOURCE_BRANCH: ${{ github.head_ref }} # Kungaling ang PR
         run: |
-          echo "🚨 ERROR: Bawal mag-PR diretso sa main branch!"
-          echo "Dapat i-target muna ang development branch. Pag okay na doon, tsaka lang mag-PR from development to main."
-          exit 1
+          echo "validate ang PR mula '$SOURCE_BRANCH' papuntang '$TARGET_BRANCH'..."
+
+          # RULE 1: Protection for 'main' branch
+          if [[ "$TARGET_BRANCH" == "main" ]]; then
+            if [[ "$SOURCE_BRANCH" != "development" && "$SOURCE_BRANCH" != *"-alpha"* && "$SOURCE_BRANCH" != *"-beta"* && "$SOURCE_BRANCH" != *"-rc"* ]]; then
+              echo "ERROR: Bawal dumiretso sa main mula sa $SOURCE_BRANCH!"
+              echo "Allowed lang ay 'development', '-alpha', '-beta', o '-rc'."
+              exit 1
+            fi
+          fi
+
+          # RULE 2: Protection for 'alpha', 'beta', at 'rc' branches
+          if [[ "$TARGET_BRANCH" == *"-alpha"* || "$TARGET_BRANCH" == *"-beta"* || "$TARGET_BRANCH" == *"-rc"* ]]; then
+            if [[ "$SOURCE_BRANCH" != "development" && "$SOURCE_BRANCH" != *"-alpha"* && "$SOURCE_BRANCH" != *"-beta"* && "$SOURCE_BRANCH" != *"-rc"* ]]; then
+              echo "ERROR: Bawal ipasok ang feature/ branch ($SOURCE_BRANCH) diretso sa $TARGET_BRANCH!"
+              echo "Ang mga testing branches ay tumatanggap lang ng code galing sa 'development' o sa testing branches."
+              exit 1
+            fi
+          fi
+
+          echo "Pumasa sa validation! Tama ang flow ng PR mo."
