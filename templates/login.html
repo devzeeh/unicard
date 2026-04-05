@@ -12,8 +12,8 @@
     <h1>Login Page</h1>
 
     <form id="loginForm">
-        <label for="username">Username:<span class="required">*</span></label>
-        <input type="text" id="username" name="username" required><br><br>
+        <label for="phoneNumber">Phone Number:<span class="required">*</span></label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required><br><br>
 
         <label for="password">Password:<span class="required">*</span></label>
         <input type="password" id="password" name="password" required><br><br>
@@ -41,15 +41,17 @@
             errorMessage.textContent = '';
 
             // Get the values from the input fields
-            const usernameValue = document.getElementById('username').value;
+            const phoneValue = document.getElementById('phoneNumber').value;
             const passwordValue = document.getElementById('password').value;
 
             // Create the JSON payload. 
             // Notice we use "username" to match your Go LoginRequest struct.
             const payload = {
-                username: usernameValue,
+                phoneNumber: phoneValue,
                 password: passwordValue
             };
+
+            console.log("Payload to send:", payload); // Debug: Check the payload before sending
 
             try {
                 // Send the JSON to your Go backend using the Fetch API
