@@ -68,7 +68,6 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
-	// --- ROUTES ---
 	// POST Request: JSON API endpoints
 	mux.HandleFunc("POST /api/v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /api/v1/signupauth", authHandler.SignupHandler)
@@ -82,9 +81,18 @@ func main() {
 	mux.HandleFunc("POST /api/v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /api/v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 
+	// Wrap mux with custom handler for root redirect
+	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+
 	// Start Server
 	fmt.Println("Server started on: http://" + serverAddress + port)
-	if err := http.ListenAndServe(port, mux); err != nil {
+	if err := http.ListenAndServe(port, customHandler); err != nil {
 		log.Fatal(err)
 	}
 }
