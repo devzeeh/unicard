@@ -12,16 +12,16 @@ import (
 // isUserIDExist checks if a given user ID already exists in the database.
 // It queries the users table and returns true if the ID is found, false otherwise.
 func (h *Handler) isUserIDExist(userID int64) (bool, error) {
-    var tmpId int64
-    query := "SELECT user_id FROM users WHERE user_id = ?"
-    err := h.DB.QueryRow(query, userID).Scan(&tmpId)
-    
-    if err == sql.ErrNoRows {
-        return false, nil // Doesn't exist!
-    } else if err != nil {
-        return false, err // Real DB error
-    }
-    return true, nil // It exists
+	var tmpId int64
+	query := "SELECT user_id FROM users WHERE user_id = ?"
+	err := h.DB.QueryRow(query, userID).Scan(&tmpId)
+
+	if err == sql.ErrNoRows {
+		return false, nil // Doesn't exist!
+	} else if err != nil {
+		return false, err // Real DB error
+	}
+	return true, nil // It exists
 }
 
 // GenerateUniqueUsername creates a random unique username
@@ -32,11 +32,20 @@ func (h *Handler) GenerateUniqueUsername() (string, error) {
 	usernamePrefix := "user"
 	length := 7
 
+	loc, err := time.LoadLocation("Asia/Manila")
+	if err != nil {
+		//log.Printf("GenerateUniqueUsername error loading timezone: %v", err)
+		//return "", err
+		// Fallback to UTC if timezone loading fails
+		loc = time.UTC
+	}
+	time.Local = loc
+
 	for {
 		// Get the current date in DDYY format (Go uses "010206" as reference)
-		userDate := time.Now().Format("06") // e.g., "012624" for Jan 26, 2024
-		// time .Now().Format("1504") // e.g., "1530" for 3:30 PM
-		timePart := time.Now().Format("0405") // e.g., "1530" for 3:30 PM
+		userDate := time.Now().In(loc).Format("06") // e.g "06" for 2026, "27" for 2027, etc.
+		// time.Now().Format("1504") // e.g., "1530" for 3:30 PM
+		timePart := time.Now().In(loc).Format("0405") // e.g., "1530" for 3:30 PM
 
 		// Combine date and time to form part of the username
 		//usernamePrefix = fmt.Sprintf("user%s%s", userDate, timePart)
@@ -145,6 +154,27 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 	}
 	if err != nil {
 		log.Printf("Phone number check error: %v", err)
+		return false, err
+	}
+	return true, nil
+}
+
+// This function checks if a given full name already exists in the database.
+// It executes a SQL query to search for the full name in the users table.
+// If the full name is found, it returns true. If not found, it returns false.
+// If an error occurs during the query, it returns the error.
+func (h *Handler) isFullNameExist(fullName string) (bool, error) {
+	// Hold the existing full name
+	var existingName string
+
+	// Check query
+	query := "SELECT full_name FROM users WHERE full_name = ?"
+	err := h.DB.QueryRow(query, fullName).Scan(&existingName)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		log.Printf("Full name check error: %v", err)
 		return false, err
 	}
 	return true, nil
