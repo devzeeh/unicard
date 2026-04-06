@@ -2,20 +2,25 @@ package authentication
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	jsonwrite "unicard-go/internal/pkg/handler"
 
+	"github.com/go-playground/validator/v10" // For struct validation
 	"golang.org/x/crypto/bcrypt"
 )
 
 // LoginRequest represents the JSON request for login
 type LoginRequest struct {
-	ID          string `json:"id,omitempty"`           // This can be username, email, or full_name
-	UserID      string `json:"userId,omitempty"`       // Optional: can be used for direct user ID login
-	PhoneNumber string `json:"phoneNumber" db:"phone"` // Allow login via phone number
-	Password    string `json:"password"`
+	ID          string `json:"id,omitempty" db:"ID"`                                      // Optional: can be used for direct ID login
+	UserID      string `json:"userId,omitempty" db:"user_id"`                             // Optional: can be used for direct user ID login
+	PhoneNumber string `json:"phoneNumber" db:"phone" validate:"required,numeric,len=11"` // Allow login via phone number
+	Password    string `json:"password" db:"password_hash" validate:"required"`           // Expecting the password hash in the database
 }
+
+// Validator instance for struct validation
+var validate = validator.New()
 
 // View Handler (GET)
 // Serves the login page template
@@ -41,31 +46,48 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Login attempt for: %s", loginReq.PhoneNumber)
 
-	// Validate input
-	fields := []string{loginReq.PhoneNumber, loginReq.Password}
-	for _, f := range fields {
-		if f == "" {
-			log.Println("Validation failed: empty fields")
-			jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-				Success: false,
-				Message: "Please fill in all fields.",
-			})
-			return
+	err := validate.Struct(loginReq)
+	if err != nil {
+		log.Printf("Validation failed: %v", err)
+
+		// Set a default generic message just in case
+		errorMessage := "Invalid input provided."
+
+		// Parse the specific validation errors
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			firstErr := validationErrs[0] // Just look at the first error to keep it simple
+
+			// 3. Update the message based on exactly what failed
+			if firstErr.Field() == "PhoneNumber" {
+				errorMessage = "Please enter a valid 11-digit phone number."
+			} else if firstErr.Field() == "Password" {
+				errorMessage = "Please enter your password."
+			}
 		}
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: errorMessage,
+		})
+		return
 	}
 
-	// Query to check if credential matches username, email, or full_name
-	var hash string // Store the password hash from the database
-	var userID string // Store the user ID for successful login response
+	// Query to check if credential matches
+	var (
+		hash   string // Store the password hash from the database
+		ID     string // Store the ID
+		userID string // Store the user ID for successful login response
+	)
+
 	stmt := "SELECT ID, user_id, password_hash FROM users WHERE phone = ?"
-	err := h.DB.QueryRow(stmt, loginReq.PhoneNumber).Scan(&userID, &hash)
+	err = h.DB.QueryRow(stmt, loginReq.PhoneNumber).Scan(&ID, &userID, &hash)
 
 	// User not found
 	if err != nil {
 		log.Printf("User not found or DB error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Invalid credentials",
+			Message: "Incorrect phone number or password",
 		})
 		return
 	}
@@ -76,7 +98,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Password mismatch for user: %s", loginReq.PhoneNumber)
 		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Invalid credentials",
+			Message: "Password is incorrect",
 		})
 		return
 	}
@@ -86,6 +108,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.LoginResponse{
 		Success: true,
 		Message: "Login successful",
+		ID:      ID,
 		UserID:  userID,
 	})
 }
