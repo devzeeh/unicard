@@ -13,17 +13,18 @@
 
     <form id="loginForm">
         <label for="phoneNumber">Phone Number:<span class="required">*</span></label>
-        <input type="text" id="phoneNumber" name="phoneNumber" pattern="[0-9]{11}" maxlength="11" 
-            onkeypress="return /[0-9]/.test(event.key)" title="Please enter a valid 11-digit phone number" required><br><br>
+        <input type="text" id="phoneNumber" name="phoneNumber" pattern="[0-9]{11}" maxlength="11"
+            onkeypress="return /[0-9]/.test(event.key)" title="Please enter a valid 11-digit phone number"
+            required><br><br>
 
         <label for="password">Password:<span class="required">*</span></label>
         <input type="password" id="password" name="password" required><br><br>
-        
+
         <a href="/forgotpassword">Forgot Password?</a>
         <p>Don't have an account? <a href="/signup">Sign Up</a></p><br>
-        
+
         <h3 id="errorMessage" style="color: red; font-size: large; display: none;"></h3>
-        
+
         <button type="submit">Login</button>
     </form>
 
@@ -33,7 +34,7 @@
         const errorMessage = document.getElementById('errorMessage');
 
         // Listen for the form submission
-        loginForm.addEventListener('submit', async function(event) {
+        loginForm.addEventListener('submit', async function (event) {
             // Prevent the default HTML form submission (which reloads the page)
             event.preventDefault();
 

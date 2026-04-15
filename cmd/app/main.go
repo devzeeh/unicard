@@ -20,7 +20,7 @@ var db *sql.DB
 
 func main() {
 	// Load .env file
-	err := godotenv.Load("../.env")
+	err := godotenv.Load("./.env")
 	if err != nil {
 		// Fallback: try loading from current directory
 		if err := godotenv.Load(); err != nil {

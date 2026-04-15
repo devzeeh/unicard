@@ -46,6 +46,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Login attempt for: %s", loginReq.PhoneNumber)
 
+	// validate the login request
 	err := validate.Struct(loginReq)
 	if err != nil {
 		log.Printf("Validation failed: %v", err)

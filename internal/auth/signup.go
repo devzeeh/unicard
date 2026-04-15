@@ -57,7 +57,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("Error decoding signup JSON: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Failed to parse JSON request"})
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to parse JSON request",
+		})
 		return
 	}
 
@@ -74,7 +77,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	for _, f := range fields {
 		if f == "" {
 			log.Printf("Validation failed: Empty fields")
-			jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Please fill in all fields."})
+			jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+				Success: false, 
+				Message: "Please fill in all fields.",
+			})
 			return
 		}
 	}
@@ -82,7 +88,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Validation: Password Length (fail fast before any DB calls)
 	if len(req.Password) < 8 {
 		log.Printf("Validation failed: Password must be at least 8 characters long")
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Password must be at least 8 characters long."})
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "Password must be at least 8 characters long.",
+		})
 		return
 	}
 
@@ -91,28 +100,43 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	err := h.DB.QueryRow("SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&cardStatus)
 	if err == sql.ErrNoRows {
 		log.Printf("Card not found: %v", req.CardNumber)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Card number not found. Please check your card."})
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "Card number not found. Please check your card.",
+		})
 		return
 	} else if err != nil {
 		log.Printf("Error checking card status: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking card status."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error checking card status.",
+		})
 		return
 	}
 
 	if cardStatus != "Inactive" {
 		log.Printf("Card is not inactive: %v", cardStatus)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus)})
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false, 
+			Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus),
+		})
 		return
 	}
 
 	// Check Email
 	exists, err := account.IsEmailExist(h.DB, req.Email)
 	if err != nil {
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking email."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error checking email.",
+		})
 		return
 	}
 	if exists {
-		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{Success: false, Message: "Email already registered. Please use a different email."})
+		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "Email already registered. Please use a different email.",
+		})
 		return
 	}
 
@@ -120,11 +144,17 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	exists, err = h.isPhoneExist(req.ContactNumber)
 	if err != nil {
 		fmt.Println("Phone number check error:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error checking phone number."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error checking phone number.",
+		})
 		return
 	}
 	if exists {
-		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{Success: false, Message: "Phone number already registered. Please use a different number."})
+		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "Phone number already registered. Please use a different number.",
+		})
 		return
 	}
 
@@ -132,7 +162,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := account.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error processing password."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error processing password.",
+		})
 		return
 	}
 	log.Printf("Password: %v", req.Password)
@@ -142,7 +175,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	generatedUsername, err := h.GenerateUniqueUsername()
 	if err != nil {
 		fmt.Println("Error generating username:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating username. Please try again."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error generating username. Please try again.",
+		})
 		return
 	}
 	log.Printf("Generated Username: %v", generatedUsername)
@@ -151,14 +187,18 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
 		log.Printf("Error generating UserID: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating UserID."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error generating UserID.",
+		})
 		return
 	}
 
 	generateCardID, err := h.GenerateCardID()
 	if err != nil {
 		log.Printf("Error generating CardID: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error generating CardID."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, Message: "System error generating CardID."})
 		return
 	}
 
@@ -166,7 +206,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	createdAt, err := CurrentTimestamp()
 	if err != nil {
 		log.Printf("Error getting timestamp: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error getting timestamp."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error getting timestamp.",
+		})
 		return
 	}
 	fmt.Println("Timestamp:", createdAt)
@@ -175,7 +218,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	balance, err := h.GetInitialBalance(req.CardNumber)
 	if err != nil {
 		log.Printf("Error getting initial balance: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid Card Number."})
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "Invalid Card Number.",
+		})
 		return
 	}
 
@@ -198,7 +244,10 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := h.DB.Begin()
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error starting transaction."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error starting transaction.",
+		})
 		return
 	}
 	defer tx.Rollback() // no-op if tx.Commit() is called
@@ -213,14 +262,17 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Printf("Error inserting user: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error creating account. Please try again."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error creating account. Please try again.",
+		})
 		return
 	}
 	log.Printf("User record inserted: %v", user.UserID)
 
 	// Activate Card and Link User Details
 	// Set expiry date to 10 years from now in expiry_date column
-    updateCardQuery := `
+	updateCardQuery := `
         UPDATE cards 
         SET status = 'Active', 
             user_id = ?, 
@@ -229,20 +281,29 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 10 YEAR) 
         WHERE card_number = ?`
 
-    _, err = tx.Exec(updateCardQuery, user.UserID, user.Fullname, user.CardNumber)
-    
-    if err != nil {
-        log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)
-        jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error activating card."})
-        return
-    }
+	_, err = tx.Exec(updateCardQuery, user.UserID, user.Fullname, user.CardNumber)
+
+	if err != nil {
+		log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error activating card.",
+		} )
+		return
+	}
 
 	if err = tx.Commit(); err != nil {
 		log.Printf("Error committing transaction: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "System error finalizing account creation."})
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false, 
+			Message: "System error finalizing account creation.",
+		})
 		return
 	}
 
 	log.Printf("Account successfully created! UserID: %s", user.UserID) // moved here
-	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Account created successfully!"})
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true, 
+		Message: "Account created successfully!",
+	})
 }
