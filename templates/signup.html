@@ -25,7 +25,7 @@
 
     <label for="contactNumber">Contact Number: <span class="required">*</span></label>
     <input type="tel" id="contactNumber" name="contactNumber" inputmode="tel" pattern="[0-9]*"
-        onkeypress="return /[+0-9]/.test(event.key)" required><br><br>
+        maxlength="11" onkeypress="return /[0-9]/.test(event.key)" required><br><br>
 
     <label for="cardNumber">Card Number: <span class="required">*</span></label>
     <input type="number" id="cardNumber" name="cardNumber" inputmode="numeric" pattern="[0-9]*"

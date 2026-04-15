@@ -1,4 +1,4 @@
-package adminauth
+package admin
 
 import (
 	"database/sql"

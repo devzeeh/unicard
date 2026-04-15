@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	adminauth "unicard-go/internal/admin"
+	"unicard-go/internal/admin"
 	authentication "unicard-go/internal/auth"
+	"unicard-go/internal/user"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -19,7 +20,7 @@ var db *sql.DB
 
 func main() {
 	// Load .env file
-	err := godotenv.Load("../.env")
+	err := godotenv.Load("./.env")
 	if err != nil {
 		// Fallback: try loading from current directory
 		if err := godotenv.Load(); err != nil {
@@ -57,7 +58,8 @@ func main() {
 
 	// Initialize the Handler from the auth package
 	authHandler := authentication.NewHandler(db, tpl)
-	adminHanlder := adminauth.NewHandler(db, tpl)
+	adminHanlder := admin.NewHandler(db, tpl)
+	userHandler := user.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -66,15 +68,12 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
-	// --- ROUTES ---
 	// POST Request: JSON API endpoints
 	mux.HandleFunc("POST /api/v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /api/v1/signupauth", authHandler.SignupHandler)
-
-	// GET Request: SSR endpoints (for signup, admin)
-	mux.HandleFunc("GET /login", authHandler.LoginView) // 
+	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
-	mux.HandleFunc("GET /dashboard", authHandler.DashboardHandler)
+	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
 
 	// endpoints for admin
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
@@ -82,17 +81,18 @@ func main() {
 	mux.HandleFunc("POST /api/v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /api/v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 
+	// Wrap mux with custom handler for root redirect
+	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+
 	// Start Server
 	fmt.Println("Server started on: http://" + serverAddress + port)
-	if err := http.ListenAndServe(port, mux); err != nil {
+	if err := http.ListenAndServe(port, customHandler); err != nil {
 		log.Fatal(err)
 	}
 }
-
-// Dashboard handler
-func dashboardHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Dashboard is running")
-	tpl.ExecuteTemplate(w, "dashboard.html", nil)
-}
-
-// View handler - just serve the template
