@@ -69,8 +69,8 @@ func main() {
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
 	// POST Request: JSON API endpoints
-	mux.HandleFunc("POST /api/v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
-	mux.HandleFunc("POST /api/v1/signupauth", authHandler.SignupHandler)
+	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
+	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
@@ -78,8 +78,8 @@ func main() {
 	// endpoints for admin
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
-	mux.HandleFunc("POST /api/v1/admin/addcardauth", adminHanlder.AddCardHandler)
-	mux.HandleFunc("POST /api/v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
+	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
+	mux.HandleFunc("POST /v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,7 @@ func main() {
 
 	// Start Server
 	fmt.Println("Server started on: http://" + serverAddress + port)
-	if err := http.ListenAndServe(port, customHandler); err != nil {
+	if err := http.ListenAndServe(serverAddress+port, customHandler); err != nil {
 		log.Fatal(err)
 	}
 }
