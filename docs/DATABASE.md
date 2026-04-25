@@ -1,7 +1,7 @@
 PayCard Database Schema Documentation
 
-Database Name: `paycard_playground`
-Version: 0.0.1
+Database Name: `paycard_playground`   
+Version: 0.0.1   
 Author: devzeeh
 
 **[Overview](#overview)** | **[Core concept](#core-concepts)** | **[Table Definitions](#table-definitions)** | **[ER Summary](#entity-relationship-er-summary)** 
