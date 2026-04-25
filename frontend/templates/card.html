@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PayCard - My Card</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="../static/javascript/tailwind-config.js"></script>
+    <link rel="stylesheet" href="../static/css/card.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        mono: ["'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'"]
+                    },
+                    // Add transition for padding
+                    transitionProperty: {
+                        'padding': 'padding',
+                    }
+                },
+            },
+        };
+    </script>
+</head>
+
+<body class="font-sans antialiased text-gray-900 bg-gray-100">
+
+    <!-- Fixed Top Navigation Bar -->
+    <header
+        class="fixed top-0 left-0 right-0 z-40 flex items-center justify-between h-16 px-4 md:px-6 bg-white border-b border-gray-200 shadow-sm">
+        <div class="flex items-center">
+            <!-- Sidebar Toggle Button -->
+            <button id="menu-toggle-button"
+                class="p-2 text-gray-600 hover:text-gray-900 transition-all duration-200 ease-in-out">
+                <svg id="icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                    </path>
+                </svg>
+                <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <!-- Fixed logo -->
+            <a href="/dashboard" class="flex items-center fixed top-4 left-20 z-40"> <!-- Adjusted top-4 -->
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
+                    </path>
+                </svg>
+                <span class="ml-2 text-lg font-bold text-gray-900 hidden sm:block">PayCard</span>
+            </a>
+        </div>
+
+        <!-- Profile Avatar & Dropdown (On the right) -->
+        <div class="flex items-center">
+            <span class="mr-3 font-medium hidden md:block">Welcome, Juan Dela Cruz</span>
+
+            <!-- PROFILE DROPDOWN -->
+            <div class="relative">
+                <button id="profile-avatar-button"
+                    class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
+                    JD
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="profile-dropdown-menu"
+                    class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                    <div class="py-1">
+                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-user -alt w-6 h-6 text-center text-gray-400"></i>
+                            <span class="ml-3">Profile</span>
+                        </a>
+                        <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-gear -alt w-6 h-6 text-center text-gray-400"></i>
+                            <span class="ml-3">Settings</span>
+                        </a>
+                        <div class="border-t border-gray-100"></div>
+                        <button id="profile-logout-button"
+                            class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <i class="fas fa-sign-out -alt w-6 h-6 text-center text-gray-400"></i>
+                            <span class="ml-3">Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 flex-shrink-0 w-64 px-8 py-4 bg-white border-r border-gray-200 transform -translate-x-full 
+                   transition-transform duration-200 ease-in-out pt-20">
+            <!-- Navigation Links -->
+            <nav class="mt-0">
+                <ul class="space-y-2">
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="/dashboard"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i
+                                class="fas fa-home w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span
+                                class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Dashboard</span>
+                        </a>
+                    </li>
+                    <!-- Transactions -->
+                    <li>
+                        <a href="/transactions"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i
+                                class="fas fa-exchange-alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span
+                                class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Transactions</span>
+                        </a>
+                    </li>
+                    <!-- My Card (Active Link) -->
+                    <li>
+                        <a href="/card"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-white bg-blue-600 rounded-lg">
+                            <i class="fas fa-credit-card w-6 h-6 text-center"></i>
+                            <span class="ml-3">My Card</span>
+                        </a>
+                    </li>
+                    <!-- Profile -->
+                    <li>
+                        <a href="/profile"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i
+                                class="fas fa-user w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span
+                                class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Profile</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Logout (Wrapped in <footer>) -->
+            <footer class="absolute bottom-0 left-0 w-full p-4 border-t border-gray-200">
+                <button id="logout-button"
+                    class="group w-full flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                    <i
+                        class="fas fa-sign-out-alt w-6 h-6 text-center text-gray-400 group-hover:text-red-500 transition duration-300 cursor-pointer"></i>
+                    <span class="ml-3 group-hover:text-red-500 transition duration-300 cursor-pointer">Logout</span>
+                </button>
+            </footer>
+        </aside>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="main-content"
+        class="w-full flex-1 flex flex-col overflow-hidden transition-padding duration-200 ease-in-out pt-16">
+        <!-- Main content scrollable area -->
+        <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 md:p-8">
+            <div class="max-w-7xl mx-auto">
+                <!-- Page Title -->
+                <h1 class="text-3xl font-bold text-gray-900">My Card</h1>
+
+                <!-- NEW: 3-COLUMN LAYOUT -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+                    <!-- Column 1: Card Visual -->
+                    <section class="lg:col-span-1">
+                        <h2 class="text-2xl font-bold text-gray-900">Card Preview</h2>
+                        <!-- Card Mockup -->
+                        <div
+                            class="card-bg card relative flex flex-col justify-between p-6 rounded-2xl text-white overflow-hidden transition-all duration-300 hover:scale-105 mt-4">
+                            <!-- Row 1: Logo and Contactless Symbol -->
+                            <div class="flex justify-between items-center">
+                                <!-- Logo -->
+                                <div class="flex items-center">
+                                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
+                                        </path>
+                                    </svg>
+                                    <span class="ml-3 text-2xl font-bold card-text">PayCard</span>
+                                </div>
+                                <!-- Contactless Icon -->
+                                <i class="fas fa-wifi text-3xl card-text -rotate-45"></i>
+                            </div>
+                            <!-- Row 2: Chip and Card Number -->
+                            <div class="my-auto">
+                                <!-- Chip -->
+                                <div
+                                    class="w-16 h-12 bg-yellow-300 rounded-lg border-2 border-yellow-400 opacity-80 mb-4">
+                                    <div class="w-full h-1/2 border-b-2 border-yellow-400"></div>
+                                </div>
+                                <!-- Card Number (Displaying only the last 4 digits) -->
+                                <p class="font-mono text-3xl tracking-widest card-text">
+                                    **** **** **9831
+                                </p>
+                            </div>
+                            <!-- Row 3: Cardholder and Expiry -->
+                            <div class="flex justify-between items-end font-mono card-text">
+                                <!-- Cardholder Name -->
+                                <div>
+                                    <p class="text-xs uppercase opacity-70">Cardholder Name</p>
+                                    <p class="text-lg font-medium tracking-wider">JUAN DELA CRUZ</p>
+                                </div>
+                                <!-- Expiry Date -->
+                                <div>
+                                    <p class="text-xs uppercase opacity-70">Expires End</p>
+                                    <p class="text-lg font-medium tracking-wider">12/30</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Column 2: Card Details -->
+                    <section class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 h-full">
+                            <h2 class="text-2xl font-bold text-gray-900">Card Details</h2>
+
+                            <dl class="space-y-4 mt-4">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Card ID</dt>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900">**** **** 9831</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                    <dd class="mt-1">
+                                        <!-- UPDATED: Added ID and default text -->
+                                        <span id="card-status-badge"
+                                            class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            Loading...
+                                        </span>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Account Type</dt>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900">PWD (20% Discount)</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Expiry Date</dt>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900">December 31, 2030</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </section>
+
+                    <!-- Column 3: Card Actions -->
+                    <section class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 h-full">
+                            <h2 class="text-2xl font-bold text-gray-900">Card Actions</h2>
+                            <div class="space-y-4 mt-4">
+                                <button id="report-card-button"
+                                    class="w-full px-4 py-3 bg-red-600 text-white font-medium rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fas fa-ban mr-2"></i> Report Card as Lost or Stolen
+                                </button>
+                                <button id="request-replacement-button"
+                                    class="w-full px-4 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg shadow-sm border border-gray-300 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    Request Replacement
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div> <!-- End 3-Column Grid -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black bg-opacity-50 hidden md:hidden"></div>
+
+    <!-- MODALS -->
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+            id="logout-modal-content">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
+                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <p class="text-base text-gray-600">
+                    Are you sure you want to log out of your PayCard account?
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="modal-cancel-button"
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="modal-confirm-logout-button"
+                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Card Confirmation Modal -->
+    <div id="report-card-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+            id="report-card-modal-content">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-gray-900">Report Card</h3>
+                <button id="report-modal-close-button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <p class="text-base text-gray-600">
+                    Are you sure you want to report this card as lost or stolen? This action will
+                    <span class="font-bold text-red-600">immediately block</span> your card.
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="report-modal-cancel-button"
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="report-modal-confirm-button"
+                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                    Yes, Block Card
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Replacement Modal -->
+    <div id="replacement-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+            id="replacement-modal-content">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-gray-900">Request Replacement</h3>
+                <button id="replacement-modal-close-button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <p class="text-base text-gray-600">
+                    A replacement fee of <span class="font-bold text-gray-900">₱150.00</span> will be deducted
+                    from your balance. Your old card (if found) will no longer be valid.
+                </p>
+                <p class="text-base text-gray-600 mt-2">
+                    Please visit your nearest PayCard kiosk to claim your new card.
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="replacement-modal-cancel-button"
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="replacement-modal-confirm-button"
+                    class="px-6 py-2 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                    Confirm Request
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/javascript/dashboard.js" defer></script>
+    <script src="../static/javascript/card.js" defer></script>
+</body>
+
+</html>

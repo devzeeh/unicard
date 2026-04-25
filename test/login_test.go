@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"unicard-go/internal/auth"
+	"unicard-go/backend/internal/auth"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/go-sql-driver/mysql" // Import MySQL driver for real DB tests
