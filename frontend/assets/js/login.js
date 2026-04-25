@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const idValue = document.getElementById("identifier").value;
             const pass = document.getElementById("password").value;
 
-            fetch("/api/v1/loginauth", {
+            fetch("v1/loginauth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ identifier: idValue, password: pass })

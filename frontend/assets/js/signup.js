@@ -1,3 +1,32 @@
+// Global helper functions for input restriction
+function isValidEmail(email) {
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(email);
+}
+
+function isNumber(evt) {
+    evt = (evt) ? evt : window.event;
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    // Allow only numbers
+    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+        return false;
+    }
+    return true;
+}
+
+function isAlpha(evt) {
+    evt = (evt) ? evt : window.event;
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    // Allow letters and spaces. Also allow control characters < 32.
+    if (charCode < 32) return true;
+    if ((charCode >= 65 && charCode <= 90) || 
+        (charCode >= 97 && charCode <= 122) || 
+        charCode === 32) {
+        return true;
+    }
+    return false;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     // --- STEP ELEMENTS ---
     const step1 = document.getElementById('step-1');
@@ -52,26 +81,23 @@ document.addEventListener("DOMContentLoaded", function () {
         return; // Stop the script
     }
 
-    // --- SET INITIAL BUTTON STATE ---
-    btnStep1.disabled = true;
-    btnStep2.disabled = true;
-    createAccountBtn.disabled = true;
+    // --- INITIALIZATION ---
 
     // --- HELPER FUNCTIONS ---
     function showStep(stepNumber) {
-        step1.classList.add('step-hidden');
-        step2.classList.add('step-hidden');
-        step3.classList.add('step-hidden');
+        step1.classList.add('hidden');
+        step2.classList.add('hidden');
+        step3.classList.add('hidden');
         errorMessage.classList.add('hidden'); 
 
         if (stepNumber === 1) {
-            step1.classList.remove('step-hidden');
+            step1.classList.remove('hidden');
             stepSubtitle.textContent = 'Step 1 of 3: Your Details';
         } else if (stepNumber === 2) {
-            step2.classList.remove('step-hidden');
+            step2.classList.remove('hidden');
             stepSubtitle.textContent = 'Step 2 of 3: Card Verification';
         } else if (stepNumber === 3) {
-            step3.classList.remove('step-hidden');
+            step3.classList.remove('hidden');
             stepSubtitle.textContent = 'Step 3 of 3: Create Password';
         }
     }
@@ -104,14 +130,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const contactNumber = contactNumberInput.value.trim();
         
         const isNameValid = firstName !== '' && lastName !== '';
-        const isEmailValid = email !== '' && email.includes('@');
+        const isEmailValid = email !== '' && isValidEmail(email);
         const isContactValid = contactNumber !== '';
 
         if (isNameValid && isEmailValid && isContactValid) {
-            btnStep1.disabled = false;
             errorMessage.classList.add('hidden');
-        } else {
-            btnStep1.disabled = true;
         }
     }
 
@@ -122,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const email = emailInput.value.trim();
         const contactNumber = contactNumberInput.value.trim();
         
-        if (firstName === '' || lastName === '' || email === '' || !email.includes('@') || contactNumber === '') {
+        if (firstName === '' || lastName === '' || email === '' || !isValidEmail(email) || contactNumber === '') {
             showError('Please fill all fields and provide a valid email address.');
             return false;
         }
@@ -140,8 +163,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const cardId = cardIdInput.value.trim();
 
         if (cardId === "") {
-            cardIdError.classList.add('hidden');
-            btnStep2.disabled = true;
+            cardIdError.textContent = 'Please enter your Card ID.';
+            cardIdError.classList.remove('hidden');
             return false;
         }
 
@@ -151,12 +174,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!isCardIdOnlyNumbers) {
             cardIdError.textContent = 'Card ID must contain only numbers.';
             cardIdError.classList.remove('hidden');
-            btnStep2.disabled = true;
             return false;
         } else if (!isCardIdValidLength) {
             cardIdError.textContent = 'Card ID must be exactly 10 digits long.';
             cardIdError.classList.remove('hidden');
-            btnStep2.disabled = true;
             return false;
         }
 
@@ -164,7 +185,6 @@ document.addEventListener("DOMContentLoaded", function () {
         
         cardIdError.classList.add('hidden');
         formData.cardId = cardId;
-        btnStep2.disabled = false;
         return true;
     }
 
@@ -180,7 +200,6 @@ document.addEventListener("DOMContentLoaded", function () {
         updateChecklistItem(matchCheck, passwordsMatch);
         
         const allValid = isLengthValid && passwordsMatch;
-        createAccountBtn.disabled = !allValid;
 
         if (allValid) {
             formData.password = password;
@@ -233,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault(); 
 
         if (validateStep3()) {
-            fetch("/api/v1/signupauth", {
+            fetch("v1/signupauth", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
