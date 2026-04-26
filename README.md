@@ -52,8 +52,8 @@
 A video demonstration will be available here once the project is finalized.
 
 ### Transaction Flow
-```mermaid
-Tap Card -> Validate balance -> Deduct Payment -> Update Data -> Earn Rewards -> Send Receipt -> Update Balance.
+```
+Tap Card -> Validate Balance -> Deduct Payment -> Update Data -> Earn Rewards -> Send Receipt -> Update Balance.
 ```
 
 ### Sample Fare Receipt
