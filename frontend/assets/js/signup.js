@@ -28,13 +28,13 @@ function isAlpha(evt) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    // --- STEP ELEMENTS ---
+    // STEP ELEMENTS 
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
     const step3 = document.getElementById('step-3');
     const stepSubtitle = document.getElementById('step-subtitle');
 
-    // --- BUTTONS ---
+    // BUTTONS 
     const btnStep1 = document.getElementById('btn-step-1');
     const btnBack2 = document.getElementById('btn-back-2');
     const btnStep2 = document.getElementById('btn-step-2');
@@ -42,31 +42,31 @@ document.addEventListener("DOMContentLoaded", function () {
     const createAccountBtn = document.getElementById('create-account-btn');
     const signupForm = document.getElementById('signup-form');
 
-    // --- STEP 1 INPUTS ---
+    // INPUTS 
     const firstNameInput = document.getElementById('first_name');
     const lastNameInput = document.getElementById('last_name');
     const emailInput = document.getElementById('email');
     const contactNumberInput = document.getElementById('contact_number');
     
-    // --- STEP 2 INPUTS ---
+    // INPUTS 
     const cardIdInput = document.getElementById('card_id');
     const cardIdError = document.getElementById('card-id-error');
     
-    // --- STEP 3 INPUTS ---
+    // INPUTS 
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirm_password');
     const checklist = document.getElementById('validation-checklist');
     const lengthCheck = document.getElementById('length-check');
     const matchCheck = document.getElementById('match-check');
     
-    // --- MODAL (ADDED) ---
+    // MODAL (ADDED) 
     const successModal = document.getElementById('success-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
 
-    // --- GLOBAL ---
+    // GLOBAL 
     const errorMessage = document.getElementById('error-message');
 
-    // --- FORM DATA STORAGE ---
+    // FORM DATA STORAGE 
     const formData = {
         firstName: '',
         lastName: '',
@@ -75,15 +75,15 @@ document.addEventListener("DOMContentLoaded", function () {
         password: '',
     };
     
-    // --- ROBUSTNESS CHECK ---
+    //  ROBUSTNESS CHECK 
     if (!step1 || !step2 || !step3 || !stepSubtitle || !btnStep1 || !btnBack2 || !btnStep2 || !btnBack3 || !createAccountBtn || !signupForm || !firstNameInput || !emailInput || !cardIdInput || !cardIdError || !passwordInput || !confirmPasswordInput || !checklist || !lengthCheck || !matchCheck || !errorMessage || !successModal || !modalCloseBtn) {
         console.error("Signup Script Error: Not all required HTML elements were found on the page.");
         return; // Stop the script
     }
 
-    // --- INITIALIZATION ---
+    // INITIALIZATION 
 
-    // --- HELPER FUNCTIONS ---
+    // HELPER FUNCTIONS 
     function showStep(stepNumber) {
         step1.classList.add('hidden');
         step2.classList.add('hidden');
@@ -120,9 +120,9 @@ document.addEventListener("DOMContentLoaded", function () {
         errorMessage.classList.remove('hidden');
     }
 
-    // --- STEP VALIDATION LOGIC ---
+    // VALIDATION LOGIC 
 
-    // Step 1: Real-time validation for Name and Email fields
+    // Real-time validation for Name and Email fields
     function validateStep1Realtime() {
         const firstName = firstNameInput.value.trim();
         const lastName = lastNameInput.value.trim();
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Step 1: Click validation (shows error)
+    // Click validation (shows error)
     function validateStep1() {
         const firstName = firstNameInput.value.trim();
         const lastName = lastNameInput.value.trim();
@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
-    // Step 2: Validate Card ID (real-time and click)
+    // Validate Card ID (real-time and click)
     function validateStep2() {
         const cardId = cardIdInput.value.trim();
 
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
-    // Step 3: Validate Password
+    // Validate Password
     function validateStep3() {
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
@@ -208,9 +208,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return false;
     }
 
-    // --- EVENT LISTENERS ---
+    // EVENT LISTENERS 
 
-    // --- Add real-time listeners for Step 1 ---
+    // Add real-time listeners for Step 1 
     firstNameInput.addEventListener('input', validateStep1Realtime);
     lastNameInput.addEventListener('input', validateStep1Realtime);
     emailInput.addEventListener('input', validateStep1Realtime);
@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault(); 
 
         if (validateStep3()) {
-            fetch("v1/signupauth", {
+            fetch("/v1/signupauth", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
@@ -281,7 +281,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // --- MODAL BUTTON (ADDED) ---
+    // MODAL BUTTON (ADDED) 
     // Add event listener for the modal's "Go to Login" button
     modalCloseBtn.addEventListener('click', function() {
         window.location.href = "login.html";
