@@ -12,14 +12,23 @@ import (
 )
 
 type LoginRequest struct {
-	ID         string `json:"id,omitempty" db:"ID"`                                      // Optional: can be used for direct ID login
-	UserID     string `json:"userId,omitempty" db:"user_id"`                             // Optional: can be used for direct user ID login
-	Identifier string `json:"identifier" validate:"required"`                            // Allow login via email or username
-	Password   string `json:"password" db:"password_hash" validate:"required"`           // Expecting the password hash in the database
+	ID         string `json:"id,omitempty" db:"ID"`                                        // Optional: can be used for direct ID login
+	UserID     string `json:"userId,omitempty" db:"user_id"`                               // Optional: can be used for direct user ID login
+	Identifier string `json:"identifier" validate:"required" db:"full_name, email, phone"` // Allow login via email or username
+	Password   string `json:"password" db:"password_hash" validate:"required"`             // Expecting the password hash in the database
+}
+
+// This struct is used to get the data from the database
+type Login struct {
+	ID string `db:"ID"`
+	UserID string `db:"user_id"`
+	Username string `db:"username"`
+	Password string `db:"password_hash"`
 }
 
 // Validator instance for struct validation
-var validate = validator.New()
+// Initialize the validator for all handlers 
+var Validate = validator.New()
 
 // View Handler (GET)
 // Serves the login page template
@@ -46,7 +55,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Login attempt for: %s", loginReq.Identifier)
 
 	// validate the login request
-	err := validate.Struct(loginReq)
+	err := Validate.Struct(loginReq)
 	if err != nil {
 		log.Printf("Validation failed: %v", err)
 
@@ -58,7 +67,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &validationErrs) {
 			firstErr := validationErrs[0] // Just look at the first error to keep it simple
 
-			// 3. Update the message based on exactly what failed
+			// Update the message based on exactly what failed
 			if firstErr.Field() == "Identifier" {
 				errorMessage = "Please enter a valid email or username."
 			} else if firstErr.Field() == "Password" {
