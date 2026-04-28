@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const isCardIdOnlyNumbers = /^\d+$/.test(cardId);
-        const isCardIdValidLength = cardId.length === 10;
+        const isCardIdValidLength = cardId.length === 16;
         
         if (!isCardIdOnlyNumbers) {
             cardIdError.textContent = 'Card ID must contain only numbers.';
@@ -213,7 +213,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add real-time listeners for Step 1 
     firstNameInput.addEventListener('input', validateStep1Realtime);
     lastNameInput.addEventListener('input', validateStep1Realtime);
-    emailInput.addEventListener('input', validateStep1Realtime);
     contactNumberInput.addEventListener('input', validateStep1Realtime);
 
     // Next from Step 1
@@ -256,11 +255,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
+                    first_name: formData.firstName,
+                    last_name: formData.lastName,
                     email: formData.email,
-                    contactNumber: formData.contactNumber,
-                    cardNumber: formData.cardId,
+                    contact_number: formData.contactNumber,
+                    card_number: formData.cardId,
                     password: formData.password
                 })
             })
@@ -284,6 +283,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // MODAL BUTTON (ADDED) 
     // Add event listener for the modal's "Go to Login" button
     modalCloseBtn.addEventListener('click', function() {
-        window.location.href = "login.html";
+        window.location.href = "/login";
     });
 });
