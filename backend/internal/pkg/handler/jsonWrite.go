@@ -9,6 +9,7 @@ import (
 type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
+	Field   string `json:"field,omitempty"`
 }
 
 // Login specific response — returns user data after login
