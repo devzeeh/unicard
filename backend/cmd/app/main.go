@@ -71,6 +71,8 @@ func main() {
 	// POST Request: JSON API endpoints
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
+	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
+	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)

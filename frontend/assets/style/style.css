@@ -1,0 +1,19 @@
+.required label::after {
+    content: " *";
+    color: #ef4444;
+}
+
+input.error {
+    border-color: #ef4444 !important;
+    outline: 2px solid transparent !important;
+    outline-offset: 2px !important;
+    --tw-ring-color: #ef4444 !important;
+    ring-width: 2px !important;
+}
+
+.error-text {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
