@@ -1,7 +1,8 @@
 package authentication
 
 import (
-	"database/sql"
+	//"database/sql"
+
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,6 +45,103 @@ type User struct {
 	Usertype   string  `db:"user_type"`
 	Balance    float64 `db:"balance"`
 	CreatedAt  string  `db:"created_at"`
+}
+
+type CheckDetailsRequest struct {
+	Email         string `json:"email"`
+	ContactNumber string `json:"contact_number"`
+}
+
+/*type CheckCardRequest struct {
+	CardNumber string `json:"card_number"`
+}*/
+
+// CheckDetailsHandler checks if email and phone are available
+func (h *Handler) CheckDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	var req CheckDetailsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid request",
+		})
+		return
+	}
+
+	// Check Email
+	exists, err := account.IsEmailExist(h.DB, req.Email)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Database error",
+		})
+		return
+	}
+	if exists {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Email already registered",
+			Field:   "email",
+		})
+		return
+	}
+
+	// Check Phone
+	exists, err = h.isPhoneExist(req.ContactNumber)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Database error",
+		})
+		return
+	}
+	if exists {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid phone number",
+			Field:   "phone",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Details are valid",
+	})
+}
+
+// CheckCardHandler checks if card is valid for registration
+func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
+	var req SignupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid request",
+		})
+		return
+	}
+
+	var status string
+	err := h.DB.QueryRow("SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&status)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card not found",
+		})
+		return
+	}
+
+	if status != "Inactive" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card is already active or restricted",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Card is valid",
+	})
 }
 
 // View Handler (GET)
@@ -107,79 +205,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: errorMessage,
-		})
-		return
-	}
-
-	// Validation: Password Length (fail fast before any DB calls)
-	/* len(req.Password) < 8 {
-		log.Printf("Validation failed: Password must be at least 8 characters long")
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Password must be at least 8 characters long.",
-		})
-		return
-	}*/
-
-	// Check Card Status
-	var cardStatus string
-	err = h.DB.QueryRowContext(ctx, "SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&cardStatus)
-	if err == sql.ErrNoRows {
-		log.Printf("Card not found: %v", req.CardNumber)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Card number not found. Please check your card.",
-		})
-		return
-	} else if err != nil {
-		log.Printf("Error checking card status: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error checking card status.",
-		})
-		return
-	}
-
-	if cardStatus != CardStatusInactive {
-		log.Printf("Card is not inactive: %v", cardStatus)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-			Success: false,
-			Message: fmt.Sprintf("Card is currently '%s'. Please contact support.", cardStatus),
-		})
-		return
-	}
-
-	// Check Email
-	exists, err := account.IsEmailExist(h.DB, req.Email)
-	if err != nil {
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error checking email.",
-		})
-		return
-	}
-	if exists {
-		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Email already registered. Please use a different email.",
-		})
-		return
-	}
-
-	// Check Phone
-	exists, err = h.isPhoneExist(req.ContactNumber)
-	if err != nil {
-		log.Printf("Phone number check error: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error checking phone number.",
-		})
-		return
-	}
-	if exists {
-		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Phone number already registered. Please use a different number.",
 		})
 		return
 	}
