@@ -133,7 +133,8 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 	if status != "Inactive" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Card is already active or restricted",
+			Message: "Card is invalid",
+			Field:   "card",
 		})
 		return
 	}
@@ -141,6 +142,7 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Card is valid",
+		Field:   "card",
 	})
 }
 
