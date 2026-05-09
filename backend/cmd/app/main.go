@@ -75,6 +75,10 @@ func main() {
 	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
+	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
+	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
+	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
+	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
 
 	// endpoints for admin
