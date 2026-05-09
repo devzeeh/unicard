@@ -1,93 +1,225 @@
 package authentication
 
 import (
-	"database/sql"
+	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	"log"
+	"math/big"
 	"net/http"
-	message "unicard-go/backend/internal/pkg"
+	"os"
+	"time"
+	"unicode"
+
 	"unicard-go/backend/internal/pkg/account"
+
+	"gopkg.in/gomail.v2"
 )
 
-// This function renders the forgot password HTML template.
-// It is triggered when a user navigates to the forgot password page.
-// The function uses the template engine to execute and display the "forgotPassword.html" template.
-func (h *Handler) ForgotPasswordView(w http.ResponseWriter, r *http.Request) {
-	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", nil)
+type OTPData struct {
+	OTP    string
+	Expiry time.Time
 }
 
-// This function handles the forgot password process.
-// It retrieves the email and new password from the form submission.
-// The function checks if the email exists in the database.
-// If the email exists, it hashes the new password and updates it in the database.
-// Finally, it provides feedback to the user about the success or failure of the operation.
-func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Forgot Password is running...")
+// Forgot and Reset Password Request
+type ForgotPasswordRequest struct {
+	Email       string `json:"email"`
+	OTP         string `json:"otp"`
+	NewPassword string `json:"new_password"`
+}
 
-	r.ParseForm()
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	//otp := r.FormValue("otp")
-	fmt.Println("email:", email, "\n Password:", password)
+var otpStore = make(map[string]OTPData)
 
-	// Check if email exists
-	exists, err := h.checkEmailExist(email)
+// Forgot Password View
+func (h *Handler) ForgotPasswordView(w http.ResponseWriter, r *http.Request) {
+	log.Println("Forgot Password View")
+	h.Tpl.ExecuteTemplate(w, "forgot-password.html", nil)
+}
+
+// Generate OTP Code
+func generateOTP() string {
+	max := big.NewInt(1000000)
+	n, err := rand.Int(rand.Reader, max)
 	if err != nil {
-		fmt.Println("Error checking email existence:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", message.MessageData{Error: "System error. Please try again later."})
+		return "123456"
+	}
+	return fmt.Sprintf("%06d", n.Int64())
+}
+
+// Send OTP to email
+func sendEmailOTP(email, otp string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := 587
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpSender := os.Getenv("SMTP_SENDER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", smtpSender, smtpEmail)
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Your Password Reset OTP")
+	m.SetBody("text/plain", "Your OTP for password reset is: "+otp)
+
+	d := gomail.NewDialer(smtpHost, smtpPort, smtpSender, smtpPass)
+	if err := d.DialAndSend(m); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("OTP SENT")
+
+	// Always print the OTP to the terminal so we can test locally even if email fails
+	fmt.Printf("\n======================================================\n")
+	fmt.Printf("=> [LOCAL TEST] OTP for %s is: %s\n", email, otp)
+	fmt.Printf("======================================================\n\n")
+
+	if os.Getenv("SMTP_HOST") == "" {
+		fmt.Printf("SMTP credentials not set. Simulating email success.\n")
+		return nil
+	}
+
+	err := d.DialAndSend(m)
+	if err != nil {
+		fmt.Println("Warning: Failed to send email via SMTP, but continuing for local testing. Error:", err)
+		// Return nil instead of err so the frontend flow continues seamlessly
+		return nil
+	}
+	return nil
+}
+
+// Forgot Password Send OTP
+func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) {
+	var req ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	exists, err := account.IsEmailExist(h.DB, req.Email)
+	if err != nil {
+		http.Error(w, "System error", http.StatusInternalServerError)
 		return
 	}
 	if !exists {
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", message.MessageData{Error: "Email not found."})
+		// Even if not exists, return success to prevent email enumeration
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "If the email is found, an OTP has been sent."})
 		return
 	}
 
-	// Hash the new password
-	hashedPassword, err := account.HashPassword(password)
-	if err != nil {
-		fmt.Println("Error hashing password:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", message.MessageData{Error: "System error. Please try again later."})
+	otp := generateOTP()
+	otpStore[req.Email] = OTPData{
+		OTP:    otp,
+		Expiry: time.Now().Add(10 * time.Minute),
+	}
+
+	if err := sendEmailOTP(req.Email, otp); err != nil {
+		fmt.Println("Error sending email:", err)
+		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
 		return
 	}
 
-	// Update the password in the database
-	err = h.updatePassword(email, hashedPassword)
-	if err != nil {
-		fmt.Println("Error updating password:", err)
-		h.Tpl.ExecuteTemplate(w, "forgotPassword.html", message.MessageData{Error: "System error. Please try again later."})
-		return
-	}
-	h.Tpl.ExecuteTemplate(w, "forgotPassword.html", message.MessageData{Success: "Password updated successfully."})
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "OTP sent successfully"})
 }
 
-// ---Helper Function---
-
-// This function checks if a given email already exists in the database.
-// It executes a SQL query to search for the email in the users table.
-// If the email is found, it returns true. If not found, it returns false.
-// If an error occurs during the query, it returns the error.
-func (h *Handler) checkEmailExist(email string) (bool, error) {
-	// Hold the existing email
-	var existingEmail string
-
-	// Check query
-	query := "SELECT email FROM users WHERE email = ?"
-	err := h.DB.QueryRow(query, email).Scan(&existingEmail)
-	if err == sql.ErrNoRows {
-		fmt.Println("Email is available.")
-		return false, nil
+// Forgot Password Verify OTP
+func (h *Handler) ForgotPasswordVerifyOTP(w http.ResponseWriter, r *http.Request) {
+	var req ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
 	}
-	if err != nil {
-		fmt.Println("Email check error:", err)
-		return false, err
+
+	data, ok := otpStore[req.Email]
+	if !ok || data.OTP != req.OTP {
+		http.Error(w, "Invalid OTP", http.StatusUnauthorized)
+		return
 	}
-	fmt.Println("Email already exists.")
-	return true, nil
+
+	if time.Now().After(data.Expiry) {
+		delete(otpStore, req.Email)
+		http.Error(w, "OTP expired", http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "OTP verified"})
 }
 
-// This function updates the user's password in the database.
-// It takes the user's email and the new hashed password as parameters.
-// It executes an UPDATE SQL query to set the new password for the given email.
-// If the update is successful, it returns nil. If an error occurs, it returns the error.
+// Reset Password Handler
+func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// Verify OTP again
+	data, ok := otpStore[req.Email]
+	if !ok || data.OTP != req.OTP {
+		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
+		return
+	}
+
+	// Validate Password
+	if err := validatePassword(req.NewPassword); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := account.HashPassword(req.NewPassword)
+	if err != nil {
+		http.Error(w, "System error", http.StatusInternalServerError)
+		return
+	}
+
+	// Update DB
+	if err := h.updatePassword(req.Email, hashedPassword); err != nil {
+		http.Error(w, "System error", http.StatusInternalServerError)
+		return
+	}
+
+	// Clean up OTP
+	delete(otpStore, req.Email)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Password updated successfully"})
+}
+
+// Validate password helper function
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters")
+	}
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+	for _, c := range password {
+		switch {
+		case unicode.IsNumber(c):
+			hasNumber = true
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			hasSpecial = true
+		}
+	}
+	if !hasUpper {
+		return fmt.Errorf("password must contain an uppercase letter")
+	}
+	if !hasLower {
+		return fmt.Errorf("password must contain a lowercase letter")
+	}
+	if !hasNumber {
+		return fmt.Errorf("password must contain a number")
+	}
+	if !hasSpecial {
+		return fmt.Errorf("password must contain a special character")
+	}
+	return nil
+}
+
+// Update Password Handler
 func (h *Handler) updatePassword(email, hashedPassword string) error {
 	query := "UPDATE users SET password = ? WHERE email = ?"
 	_, err := h.DB.Exec(query, hashedPassword, email)

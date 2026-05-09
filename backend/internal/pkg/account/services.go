@@ -42,7 +42,7 @@ func IsEmailExist(db *sql.DB, email string) (bool, error) {
 	query := "SELECT email FROM users WHERE email = ?"
 	err := db.QueryRow(query, email).Scan(&existingEmail)
 	if err == sql.ErrNoRows {
-		log.Println("Email does not exist, can proceed with signup.")
+		log.Println("Email does not exist, Proceed")
 		return false, nil
 	}
 	if err != nil {
