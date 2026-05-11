@@ -32,7 +32,6 @@ type ForgotPasswordRequest struct {
 }
 
 var otpStore = make(map[string]OTPData)
-
 var validate *validator.Validate
 
 func init() {
@@ -48,15 +47,13 @@ func (h *Handler) ForgotPasswordView(w http.ResponseWriter, r *http.Request) {
 // Generate OTP Code
 func generateOTP() string {
 	max := big.NewInt(1000000)
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return "123456"
-	}
+	n, _ := rand.Int(rand.Reader, max)
+
 	return fmt.Sprintf("%06d", n.Int64())
 }
 
 // Send OTP to email
-func sendEmailOTP(email, otp string) error {
+func sendEmailOTP(email, name, otp string) error {
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := 587
 	smtpEmail := os.Getenv("SMTP_EMAIL")
@@ -68,7 +65,7 @@ func sendEmailOTP(email, otp string) error {
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Unicard Password Reset OTP")
 
-	htmlBody := fmt.Sprintf(smtp.OTPCode(), otp)
+	htmlBody := fmt.Sprintf(smtp.OTPCode(), name, otp)
 
 	m.SetBody("text/html", htmlBody)
 
@@ -90,6 +87,9 @@ func sendEmailOTP(email, otp string) error {
 
 // Forgot Password Send OTP
 func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) {
+	// get context from request
+	ctx := r.Context()
+
 	var req ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Println("Error decoding request:", err)
@@ -118,6 +118,13 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Fetch the user's name
+	var fullName string
+	err = h.DB.QueryRowContext(ctx, "SELECT full_name FROM users WHERE email = ?", req.Email).Scan(&fullName)
+	if err != nil {
+		fullName = "there" // Fallback if name is not found
+	}
+
 	// Generate OTP that valid for 5 minutes
 	otp := generateOTP()
 	otpStore[req.Email] = OTPData{
@@ -125,7 +132,7 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 		Expiry: time.Now().Add(5 * time.Minute),
 	}
 
-	if err := sendEmailOTP(req.Email, otp); err != nil {
+	if err := sendEmailOTP(req.Email, fullName, otp); err != nil {
 		log.Println("Error sending email:", err)
 		http.Error(w, "Failed to send OTP", http.StatusInternalServerError)
 		return
