@@ -99,6 +99,7 @@ func main() {
 
 	// endpoints for admin
 	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
+	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)

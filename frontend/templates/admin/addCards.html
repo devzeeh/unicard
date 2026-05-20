@@ -103,35 +103,31 @@
                     </div>
 
                     <!-- Alert Messages -->
-                    {{if .Error}}
-                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
+                    <div id="error-alert" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-exclamation-circle text-red-400"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-red-700">{{.Error}}</p>
+                                <p id="error-text" class="text-sm text-red-700"></p>
                             </div>
                         </div>
                     </div>
-                    {{end}}
 
-                    {{if .Success}}
-                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
+                    <div id="success-alert" class="hidden bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-check-circle text-green-400"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-green-700">{{.Success}}</p>
+                                <p id="success-text" class="text-sm text-green-700"></p>
                             </div>
                         </div>
                     </div>
-                    {{end}}
 
                     <!-- Form Container -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                        <form action="/v1/admin/addcardauth" method="POST" class="space-y-6">
+                        <form id="add-card-form" class="space-y-6">
                             <!-- Card UID -->
                             <div>
                                 <label for="cardUID" class="block text-sm font-semibold text-gray-700">Card RFID UID</label>
@@ -218,7 +214,7 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <a href="/login" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <a href="/logout" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
                         Logout
                     </a>
                     <button type="button" onclick="closeLogoutModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
@@ -237,6 +233,53 @@
         function closeLogoutModal() {
             document.getElementById('logout-modal').classList.add('hidden');
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("add-card-form");
+            const errorAlert = document.getElementById("error-alert");
+            const successAlert = document.getElementById("success-alert");
+            const errorText = document.getElementById("error-text");
+            const successText = document.getElementById("success-text");
+
+            if (form) {
+                form.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    if (errorAlert) errorAlert.classList.add("hidden");
+                    if (successAlert) successAlert.classList.add("hidden");
+
+                    const cardUID = document.getElementById("cardUID").value;
+                    const initialAmount = document.getElementById("initialAmount").value;
+
+                    fetch("/v1/admin/addcardauth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cardUID: cardUID, initialAmount: initialAmount })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (successAlert && successText) {
+                                successText.innerText = data.message;
+                                successAlert.classList.remove("hidden");
+                            }
+                            form.reset();
+                        } else {
+                            if (errorAlert && errorText) {
+                                errorText.innerText = data.message;
+                                errorAlert.classList.remove("hidden");
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        if (errorAlert && errorText) {
+                            errorText.innerText = "Network error. Please try again.";
+                            errorAlert.classList.remove("hidden");
+                        }
+                    });
+                });
+            }
+        });
     </script>
 </body>
 

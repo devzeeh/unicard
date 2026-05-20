@@ -103,35 +103,31 @@
                     </div>
 
                     <!-- Alert Messages -->
-                    {{if .Error}}
-                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
+                    <div id="error-alert" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-exclamation-circle text-red-400"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-red-700">{{.Error}}</p>
+                                <p id="error-text" class="text-sm text-red-700"></p>
                             </div>
                         </div>
                     </div>
-                    {{end}}
 
-                    {{if .Success}}
-                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
+                    <div id="success-alert" class="hidden bg-green-50 border-l-4 border-green-400 p-4 rounded-md shadow-sm">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-check-circle text-green-400"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm text-green-700">{{.Success}}</p>
+                                <p id="success-text" class="text-sm text-green-700"></p>
                             </div>
                         </div>
                     </div>
-                    {{end}}
 
                     <!-- Form Container -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                        <form action="/v1/admin/deactivatecardauth" method="POST" class="space-y-6">
+                        <form id="deactivate-card-form" class="space-y-6">
                             <!-- Card Number -->
                             <div>
                                 <label for="cardNumber" class="block text-sm font-semibold text-gray-700">Card Number (16-Digit)</label>
@@ -140,7 +136,7 @@
                                         <i class="fas fa-credit-card"></i>
                                     </div>
                                     <input type="text" id="cardNumber" name="cardNumber" required
-                                        placeholder="e.g. 2621020251171655" value="{{.CardNumber}}"
+                                        placeholder="e.g. 2621020251171655" value=""
                                         class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
                                 </div>
                                 <p class="mt-1.5 text-xs text-gray-500">The 16-digit number printed on the physical card.</p>
@@ -154,7 +150,7 @@
                                         <i class="fas fa-user"></i>
                                     </div>
                                     <input type="text" id="name" name="name" required
-                                        placeholder="e.g. Juan Dela Cruz" value="{{.CardHolder}}"
+                                        placeholder="e.g. Juan Dela Cruz" value=""
                                         class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
                                 </div>
                                 <p class="mt-1.5 text-xs text-gray-500">The full name of the card owner associated with this card.</p>
@@ -170,10 +166,10 @@
                                     <select id="cardType" name="cardType" required
                                         class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-white">
                                         <option value="">-- Select Card Type --</option>
-                                        <option value="Regular" {{if eq .CardType "Regular"}}selected{{end}}>Regular</option>
-                                        <option value="Student" {{if eq .CardType "Student"}}selected{{end}}>Student</option>
-                                        <option value="Senior" {{if eq .CardType "Senior"}}selected{{end}}>Senior</option>
-                                        <option value="PWD" {{if eq .CardType "PWD"}}selected{{end}}>PWD</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Student">Student</option>
+                                        <option value="Senior">Senior</option>
+                                        <option value="PWD">PWD</option>
                                     </select>
                                 </div>
                             </div>
@@ -231,7 +227,7 @@
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <a href="/login" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    <a href="/logout" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
                         Logout
                     </a>
                     <button type="button" onclick="closeLogoutModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
@@ -250,6 +246,71 @@
         function closeLogoutModal() {
             document.getElementById('logout-modal').classList.add('hidden');
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Prefill parameters from URL query
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardNum = urlParams.get("cardNumber") || "";
+            const name = urlParams.get("name") || "";
+            const cardType = urlParams.get("cardType") || "";
+
+            const cardNumInput = document.getElementById("cardNumber");
+            const nameInput = document.getElementById("name");
+            const cardTypeSelect = document.getElementById("cardType");
+
+            if (cardNumInput) cardNumInput.value = cardNum;
+            if (nameInput) nameInput.value = name;
+            if (cardTypeSelect) cardTypeSelect.value = cardType;
+
+            // Submit form via fetch
+            const form = document.getElementById("deactivate-card-form");
+            const errorAlert = document.getElementById("error-alert");
+            const successAlert = document.getElementById("success-alert");
+            const errorText = document.getElementById("error-text");
+            const successText = document.getElementById("success-text");
+
+            if (form) {
+                form.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    if (errorAlert) errorAlert.classList.add("hidden");
+                    if (successAlert) successAlert.classList.add("hidden");
+
+                    const bodyData = {
+                        cardNumber: cardNumInput.value,
+                        name: nameInput.value,
+                        cardType: cardTypeSelect.value
+                    };
+
+                    fetch("/v1/admin/deactivatecardauth", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(bodyData)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (successAlert && successText) {
+                                successText.innerText = data.message;
+                                successAlert.classList.remove("hidden");
+                            }
+                            form.reset();
+                        } else {
+                            if (errorAlert && errorText) {
+                                errorText.innerText = data.message;
+                                errorAlert.classList.remove("hidden");
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        if (errorAlert && errorText) {
+                            errorText.innerText = "Network error. Please try again.";
+                            errorAlert.classList.remove("hidden");
+                        }
+                    });
+                });
+            }
+        });
     </script>
 </body>
 

@@ -1,34 +1,54 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
+	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
-// DeleteCardHandler handles deleting a card by card_number
+// DeleteCardHandler handles deleting a card by card_number and returns JSON.
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Delete card handler running...")
+	fmt.Println("DeleteCardHandler running...")
+
+	// Verify session
+	cookie, err := r.Cookie("session_admin_username")
+	if err != nil || cookie.Value == "" {
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Unauthorized",
+		})
+		return
+	}
 
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		jsonwrite.WriteJSON(w, http.StatusMethodNotAllowed, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		http.Redirect(w, r, "/admin/dashboard?error="+url.QueryEscape("Failed to parse form"), http.StatusSeeOther)
-		return
+	var req struct {
+		CardNumber string `json:"cardNumber"`
 	}
 
-	cardNumber := strings.TrimSpace(r.PostFormValue("cardNumber"))
-	redirectURL := strings.TrimSpace(r.PostFormValue("redirect"))
-	if redirectURL == "" {
-		redirectURL = "/admin/dashboard"
+	// Try reading JSON body
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		// Fallback to post form values
+		if err := r.ParseForm(); err == nil {
+			req.CardNumber = r.PostFormValue("cardNumber")
+		}
 	}
+
+	cardNumber := strings.TrimSpace(req.CardNumber)
 
 	if cardNumber == "" {
-		http.Redirect(w, r, redirectURL+"?error="+url.QueryEscape("Card number is required for deletion."), http.StatusSeeOther)
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card number is required for deletion.",
+		})
 		return
 	}
 
@@ -36,23 +56,35 @@ func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := h.DB.Exec("DELETE FROM cards WHERE card_number = ?", cardNumber)
 	if err != nil {
 		fmt.Println("Error deleting card from DB:", err)
-		http.Redirect(w, r, redirectURL+"?error="+url.QueryEscape("Failed to delete card due to database error."), http.StatusSeeOther)
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to delete card due to database error.",
+		})
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		fmt.Println("Error reading rows affected:", err)
-		http.Redirect(w, r, redirectURL+"?error="+url.QueryEscape("Failed to confirm card deletion."), http.StatusSeeOther)
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to confirm card deletion.",
+		})
 		return
 	}
 
 	if rowsAffected == 0 {
 		fmt.Printf("Card %s not found for deletion\n", cardNumber)
-		http.Redirect(w, r, redirectURL+"?error="+url.QueryEscape("Card not found."), http.StatusSeeOther)
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card not found.",
+		})
 		return
 	}
 
 	fmt.Println("Card deleted successfully:", cardNumber)
-	http.Redirect(w, r, redirectURL+"?success="+url.QueryEscape("Card deleted successfully!"), http.StatusSeeOther)
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Card deleted successfully!",
+	})
 }
