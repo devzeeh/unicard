@@ -165,11 +165,40 @@ document.addEventListener("DOMContentLoaded", function () {
                 const accountTypeEl = document.getElementById("user-account-type");
                 const transactionsBody = document.getElementById("transactions-table-body");
 
+                const cardNoEl = document.getElementById("user-card-number");
+                const cardHolderEl = document.getElementById("user-card-holder");
+                const cardExpiryEl = document.getElementById("user-card-expiry");
+                const cardStatusEl = document.getElementById("card-status-badge");
+
                 if (fullNameEl) fullNameEl.innerText = data.name || "";
                 if (initialsEl) initialsEl.innerText = data.initials || "U";
                 if (balanceEl) balanceEl.innerText = Number(data.balance).toFixed(2);
                 if (loyaltyPointsEl) loyaltyPointsEl.innerText = Number(data.loyalty_points).toFixed(2);
                 if (accountTypeEl) accountTypeEl.innerText = data.account_type || "Regular";
+
+                if (cardNoEl) {
+                    const rawNum = data.card_number || "••••••••••••••••";
+                    const formattedNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
+                    cardNoEl.innerText = formattedNum || "•••• •••• •••• ••••";
+                }
+                if (cardHolderEl) {
+                    cardHolderEl.innerText = data.name || "CARDHOLDER NAME";
+                }
+                if (cardExpiryEl) {
+                    cardExpiryEl.innerText = data.card_expiry || "MM/YY";
+                }
+                if (cardStatusEl) {
+                    const status = data.card_status || "No Card";
+                    cardStatusEl.textContent = status;
+                    cardStatusEl.className = "px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm";
+                    if (status === "Active") {
+                        cardStatusEl.classList.add("bg-green-500", "text-white");
+                    } else if (status === "Blocked" || status === "Lost" || status === "Expired") {
+                        cardStatusEl.classList.add("bg-red-500", "text-white");
+                    } else {
+                        cardStatusEl.classList.add("bg-yellow-500", "text-white");
+                    }
+                }
 
                 if (transactionsBody) {
                     transactionsBody.innerHTML = "";

@@ -87,8 +87,8 @@
             <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800">Admin Control Panel</h2>
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Administrator</span>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                    <span class="mr-3 font-medium text-sm text-gray-600" id="admin-welcome-name">Welcome, Administrator</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100" id="admin-avatar">
                         AD
                     </div>
                 </div>
@@ -678,8 +678,33 @@
             });
         });
 
+        function fetchAdminProfile() {
+            fetch("/v1/admin/me")
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = "/login";
+                        return null;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data || !data.username) return;
+                    const username = data.username;
+                    const welcomeEl = document.getElementById('admin-welcome-name');
+                    if (welcomeEl) {
+                        welcomeEl.innerText = `Welcome, ${username}`;
+                    }
+                    const avatarEl = document.getElementById('admin-avatar');
+                    if (avatarEl) {
+                        avatarEl.innerText = username.substring(0, 2).toUpperCase();
+                    }
+                })
+                .catch(err => console.error("Error fetching admin profile:", err));
+        }
+
         // Initialize display by fetching JSON
         document.addEventListener("DOMContentLoaded", () => {
+            fetchAdminProfile();
             fetchDashboardData();
         });
     </script>

@@ -27,12 +27,15 @@ type DashboardUser struct {
 	Balance            float64       `json:"balance" db:"balance"`
 	LoyaltyPoints      float64       `json:"loyalty_points" db:"loyalty_points"`
 	AccountType        string        `db:"account_type" json:"account_type"`
+	CardNumber         string        `json:"card_number"`
+	CardExpiry         string        `json:"card_expiry"`
+	CardStatus         string        `json:"card_status"`
 	RecentTransactions []Transaction `json:"recent_transactions"` // Add recent transactions to the dashboard response
 }
 
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard view is running...")
-	
+
 	// Check if session cookie is present
 	cookie, err := r.Cookie("session_user_id")
 	if err != nil || cookie.Value == "" {
@@ -40,14 +43,14 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	
+
 	h.Tpl.ExecuteTemplate(w, "dashboard.html", nil)
 }
 
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
 
-	// 1. Get session cookie
+	// Get session cookie
 	cookie, err := r.Cookie("session_user_id")
 	if err != nil || cookie.Value == "" {
 		fmt.Println("No user session found, returning unauthorized JSON")
@@ -59,7 +62,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := cookie.Value
 
-	// 2. Fetch user details
+	// Fetch user and card details
 	var (
 		id            int
 		username      string
@@ -67,9 +70,26 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		userType      string
 		balance       float64
 		loyaltyPoints float64
+		cardNumber    string
+		expiryDate    string
+		cardStatus    string
 	)
-	stmt := "SELECT id, username, full_name, user_type, balance, loyalty_points FROM users WHERE user_id = ?"
-	err = h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &userType, &balance, &loyaltyPoints)
+	stmt := `
+		SELECT 
+    u.id,
+    u.username,
+    u.full_name,
+    u.user_type,
+    u.balance,
+    u.loyalty_points,
+    u.card_number,
+    u.status
+	FROM users u
+	LEFT JOIN cards c 
+    ON u.card_number = c.card_number
+	WHERE u.user_id = ?
+	`
+	err = h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &userType, &balance, &loyaltyPoints, &cardNumber, &cardStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
@@ -90,7 +110,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Generate Initials
+	// Generate Initials
 	initials := ""
 	parts := strings.Fields(fullName)
 	if len(parts) > 0 {
@@ -104,7 +124,16 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	initials = strings.ToUpper(initials)
 
-	// 4. Fetch recent transactions
+	// Format Expiry Date
+	expiryStr := "MM/YY"
+	if len(expiryDate) >= 10 {
+		tExpiry, errT := time.Parse("2006-01-02", expiryDate[:10])
+		if errT == nil {
+			expiryStr = tExpiry.Format("01/06")
+		}
+	}
+
+	// Fetch recent transactions
 	rows, err := h.DB.Query("SELECT created_at, description, transaction_type, amount FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", userID)
 	var transactions []Transaction
 	if err == nil {
@@ -130,6 +159,9 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		Balance:            balance,
 		LoyaltyPoints:      loyaltyPoints,
 		AccountType:        userType,
+		CardNumber:         cardNumber,
+		CardExpiry:         expiryStr,
+		CardStatus:         cardStatus,
 		RecentTransactions: transactions,
 	}
 
