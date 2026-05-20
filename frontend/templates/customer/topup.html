@@ -47,11 +47,11 @@
 
         <!-- Profile Avatar & Dropdown (On the right) -->
         <div class="flex items-center">
-            <span class="mr-3 font-medium hidden md:block">Welcome, Juan Dela Cruz</span>
+            <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">User</span></span>
             <div class="relative">
                 <button id="profile-avatar-button"
                     class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                    JD
+                    <span id="user-initials">U</span>
                 </button>
                 <div id="profile-dropdown-menu"
                     class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
@@ -295,11 +295,15 @@
                                 <h2 class="text-2xl font-bold text-gray-900">Your Balance</h2>
                                 <div class="mt-4">
                                     <p class="text-sm font-medium text-gray-500">Current Balance</p>
-                                    <p class="text-4xl font-bold text-gray-900 mt-1">₱139.60</p>
+                                    <p class="text-4xl font-bold text-gray-900 mt-1">
+                                        <span id="user-balance"><div class="h-10 bg-gray-200 rounded w-32 inline-block animate-pulse"></div></span>
+                                    </p>
                                 </div>
                                 <div class="mt-4">
                                     <p class="text-sm font-medium text-gray-500">Loyalty Points</p>
-                                    <p class="text-2xl font-bold text-green-600 mt-1">₱12.85</p>
+                                    <p class="text-2xl font-bold text-green-600 mt-1">
+                                        <span id="user-loyalty-points"><div class="h-8 bg-gray-200 rounded w-24 inline-block animate-pulse"></div></span>
+                                    </p>
                                 </div>
                             </div>
                         </section>
@@ -351,8 +355,8 @@
     </div>
 
     <!-- Link to the external JavaScript files -->
-    <script src="../assets/js/dashboard.js" defer></script>
-    <script src="../assets/js/topup.js" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
+    <script src="/assets/js/topup.js" defer></script>
 </body>
 
 </html>

@@ -3,36 +3,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- Profile Edit Elements ---
     const editProfileBtn = document.getElementById('edit-profile-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
+    const profileActions = document.getElementById('profile-edit-actions');
     const profileView = document.getElementById('profile-details-view');
     const profileEditForm = document.getElementById('profile-details-edit');
 
-    if (editProfileBtn && profileView && profileEditForm) {
+    if (editProfileBtn && cancelEditBtn && profileActions && profileView && profileEditForm && saveProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
-            const isEditing = editProfileBtn.textContent.trim() === 'Save';
+            profileView.classList.add('hidden');
+            profileEditForm.classList.remove('hidden');
+            editProfileBtn.classList.add('hidden');
+            profileActions.classList.remove('hidden');
+        });
 
-            if (isEditing) {
-                // --- THIS IS A FRONTEND-ONLY DEMO ---
-                // In a real app, you would send a fetch() request to your backend
-                // to save the new details from the form.
-                
-                // For now, we'll just update the text and switch back
-                const newName = document.getElementById('full_name').value;
-                const newEmail = document.getElementById('email').value;
-                const newPhone = document.getElementById('phone').value;
+        cancelEditBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            profileEditForm.classList.add('hidden');
+            profileView.classList.remove('hidden');
+            profileActions.classList.add('hidden');
+            editProfileBtn.classList.remove('hidden');
+        });
 
-                profileView.querySelector('dd:nth-of-type(1)').textContent = newName;
-                profileView.querySelector('dd:nth-of-type(2)').textContent = newEmail;
-                profileView.querySelector('dd:nth-of-type(3)').textContent = newPhone;
-                
-                profileView.classList.remove('hidden');
-                profileEditForm.classList.add('hidden');
-                editProfileBtn.innerHTML = '<i class="fas fa-pencil-alt mr-1"></i> <span>Edit</span>';
-            } else {
-                // Switch to edit mode
-                profileView.classList.add('hidden');
-                profileEditForm.classList.remove('hidden');
-                editProfileBtn.innerHTML = '<i class="fas fa-save mr-1"></i> <span>Save</span>';
-            }
+        saveProfileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // In a real app, send fetch() request here
+            const newName = document.getElementById('full_name').value;
+            const newEmail = document.getElementById('email').value;
+            const newPhone = document.getElementById('phone').value;
+
+            // Since dashboard.js manages the span values via ID, we just update the text content of the spans
+            const nameSpan = document.getElementById('profile-view-name');
+            const emailSpan = document.getElementById('profile-view-email');
+            const phoneSpan = document.getElementById('profile-view-phone');
+            
+            if (nameSpan) nameSpan.innerText = newName;
+            if (emailSpan) emailSpan.innerText = newEmail;
+            if (phoneSpan) phoneSpan.innerText = newPhone;
+
+            profileEditForm.classList.add('hidden');
+            profileView.classList.remove('hidden');
+            profileActions.classList.add('hidden');
+            editProfileBtn.classList.remove('hidden');
         });
     }
 

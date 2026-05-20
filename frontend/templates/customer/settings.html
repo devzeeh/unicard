@@ -47,11 +47,11 @@
 
         <!-- Profile Avatar & Dropdown (On the right) -->
         <div class="flex items-center">
-            <span class="mr-3 font-medium hidden md:block">Welcome, Juan Dela Cruz</span>
+            <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">User</span></span>
             <div class="relative">
                 <button id="profile-avatar-button"
                     class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                    JD
+                    <span id="user-initials">U</span>
                 </button>
                 <div id="profile-dropdown-menu"
                     class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
@@ -232,8 +232,7 @@
     </div>
     
     <!-- Link to the external JavaScript files -->
-    <script src="../static/javascript/dashboard.js" defer></script>
-    <script src="../static/javascript/settings.js" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
 </body>
 
 </html>

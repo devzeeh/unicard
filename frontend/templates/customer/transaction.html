@@ -90,6 +90,23 @@
                                 class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Profile</span>
                         </a>
                     </li>
+                    <!-- Top Up -->
+                    <li>
+                        <a href="/topup"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-wallet w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Top Up</span>
+                        </a>
+                    </li>
+                    <div class="w-full  border-t border-gray-200"></div>
+                    <!-- Settings -->
+                    <li>
+                        <a href="/settings"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-gear -alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Settings</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -112,14 +129,14 @@
                 <div class="w-10 h-10"></div>
 
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:block">Welcome, Juan Dela Cruz</span>
+                    <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">User</span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
                         <!-- Profile Avatar Button -->
                         <button id="profile-avatar-button"
                             class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                            JD
+                            <span id="user-initials">U</span>
                         </button>
 
                         <!-- Dropdown Menu -->
@@ -212,42 +229,29 @@
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    <!-- Sample Data Rows -->
+                                <tbody id="transactions-table-body" class="divide-y divide-gray-200">
+                                    <!-- Skeletons while loading -->
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Nov 1, 2025, 4:15
-                                            PM</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Retail
-                                            - Main St. Coffee</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Payment</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right">-₱100.00
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">₱39.60
-                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-48 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
                                     </tr>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Nov 1, 2025, 3:35
-                                            PM</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            Transport - Route 42</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Payment</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right">-₱10.40
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">₱139.60
-                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-48 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
                                     </tr>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Oct 31, 2025, 9:00
-                                            AM</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Top-up
-                                            via GCash</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Top-up</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right">
-                                            +₱250.00</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">₱150.00
-                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-48 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
+                                        <td class="px-6 py-4 whitespace-nowrap"><div class="h-4 bg-gray-200 rounded w-16 ml-auto animate-pulse"></div></td>
                                     </tr>
-                                    <!-- More rows... -->
                                 </tbody>
                             </table>
 
@@ -323,7 +327,8 @@
         </div>
     </div>
 
-    <script src="../static/javascript/dashboard.js" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
+    <script src="/assets/js/transaction.js" defer></script>
 </body>
 
 </html>

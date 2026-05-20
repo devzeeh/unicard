@@ -91,6 +91,23 @@
                                 class="ml-3 group-hove r:text-blue-500 transition duration-300 cursor-pointer">Profile</span>
                         </a>
                     </li>
+                    <!-- Top Up -->
+                    <li>
+                        <a href="/topup"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-wallet w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Top Up</span>
+                        </a>
+                    </li>
+                    <div class="w-full  border-t border-gray-200"></div>
+                    <!-- Settings -->
+                    <li>
+                        <a href="/settings"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-gear -alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Settings</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -153,96 +170,39 @@
                     <!-- Page Title -->
                     <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
 
-                    <!-- Dashboard Grid Row 1: Card & Metrics -->
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-                        <!-- Left Column: Visual UniCard -->
-                        <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-lg border border-gray-200 flex flex-col justify-between">
-                            <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Your UniCard</h2>
+                    <!-- Dashboard Grid Row 1: Account Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+                        <!-- Card 2: Current Balance -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center h-full">
+                            <div class="bg-blue-100 text-blue-600 w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center">
+                                <i class="fas fa-wallet text-2xl"></i>
                             </div>
-                            
-                            <!-- Card Mockup (Gradient & Blur Ornaments) -->
-                            <div class="relative flex flex-col justify-between p-5 rounded-xl text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] shadow-md bg-gradient-to-br from-blue-700 via-indigo-800 to-purple-900 w-full aspect-[1.586/1] mx-auto">
-                                <div class="absolute inset-0 bg-white opacity-5 mix-blend-overlay"></div>
-                                <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-blue-500 rounded-full filter blur-2xl opacity-25"></div>
-                                <div class="absolute -left-10 -top-10 w-32 h-32 bg-purple-500 rounded-full filter blur-2xl opacity-25"></div>
-                                
-                                <!-- Row 1: Logo, Status & Contactless Symbol -->
-                                <div class="relative z-10 flex justify-between items-center">
-                                    <div class="flex items-center">
-                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                        </svg>
-                                        <span class="ml-2 text-base font-bold tracking-tight text-white">UniCard</span>
-                                    </div>
-                                    <div class="flex items-center space-x-2.5">
-                                        <span id="card-status-badge" class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full bg-white bg-opacity-20 text-white backdrop-blur-md">
-                                            Loading...
-                                        </span>
-                                        <i class="fas fa-wifi text-base text-white opacity-80 -rotate-45"></i>
-                                    </div>
-                                </div>
-                                
-                                <!-- Row 2: Chip & Card Number -->
-                                <div class="relative z-10 my-auto">
-                                    <div class="w-10 h-7 bg-yellow-400 rounded border border-yellow-300 opacity-90 mb-2 shadow-inner relative overflow-hidden">
-                                        <div class="absolute inset-x-0 top-1/2 h-[1px] bg-yellow-600"></div>
-                                        <div class="absolute inset-y-0 left-1/2 w-[1px] bg-yellow-600"></div>
-                                    </div>
-                                    <p id="user-card-number" class="font-mono text-base tracking-widest text-white drop-shadow-md">
-                                        •••• •••• •••• ••••
-                                    </p>
-                                </div>
-                                
-                                <!-- Row 3: Cardholder & Expiry -->
-                                <div class="relative z-10 flex justify-between items-end font-mono">
-                                    <div>
-                                        <p class="text-[9px] uppercase tracking-wider text-gray-300 opacity-70">Cardholder</p>
-                                        <p id="user-card-holder" class="text-xs font-semibold tracking-wider uppercase text-white truncate max-w-[130px]">...</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[9px] uppercase tracking-wider text-gray-300 opacity-70">Expires</p>
-                                        <p id="user-card-expiry" class="text-xs font-semibold tracking-wider text-white">MM/YY</p>
-                                    </div>
-                                </div>
+                            <div class="ml-5">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Available Balance</p>
+                                <p class="text-2xl font-bold text-gray-900 mt-0.5">₱<span id="user-balance">0.00</span></p>
                             </div>
                         </div>
 
-                        <!-- Right Column: Account Metrics Group Container -->
-                        <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col justify-center">
-                            <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-150">
-                                <!-- Card: Current Balance -->
-                                <div class="pb-6 md:pb-0 md:pr-6 flex items-center">
-                                    <div class="bg-blue-100 text-blue-600 p-4 rounded-2xl flex-shrink-0">
-                                        <i class="fas fa-wallet text-2xl"></i>
-                                    </div>
-                                    <div class="ml-5">
-                                        <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Available Balance</p>
-                                        <p class="text-3xl font-bold text-gray-900 mt-1">₱<span id="user-balance">0.00</span></p>
-                                    </div>
-                                </div>
+                        <!-- Card 3: Loyalty Points -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center h-full">
+                            <div class="bg-green-100 text-green-600 w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center">
+                                <i class="fas fa-coins text-2xl"></i>
+                            </div>
+                            <div class="ml-5">
+                                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider leading-tight mb-0.5">Loyalty Points<br><span class="font-medium text-[10px]">(Cashback)</span></p>
+                                <p class="text-2xl font-bold text-gray-900">₱<span id="user-loyalty-points">0.00</span></p>
+                            </div>
+                        </div>
 
-                                <!-- Card: Loyalty Points -->
-                                <div class="py-6 md:py-0 md:px-6 flex items-center">
-                                    <div class="bg-green-100 text-green-600 p-4 rounded-2xl flex-shrink-0">
-                                        <i class="fas fa-coins text-2xl"></i>
-                                    </div>
-                                    <div class="ml-5">
-                                        <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Loyalty Points (Cashback)</p>
-                                        <p class="text-3xl font-bold text-gray-900 mt-1">₱<span id="user-loyalty-points">0.00</span></p>
-                                    </div>
-                                </div>
-
-                                <!-- Card: Account Type -->
-                                <div class="pt-6 md:pt-0 md:pl-6 flex items-center">
-                                    <div class="bg-purple-100 text-purple-600 p-4 rounded-2xl flex-shrink-0">
-                                        <i class="fas fa-id-card text-2xl"></i>
-                                    </div>
-                                    <div class="ml-5">
-                                        <p class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Account Type</p>
-                                        <p class="text-3xl font-bold text-gray-900 mt-1" id="user-account-type">Loading...</p>
-                                    </div>
-                                </div>
+                        <!-- Card 4: Account Type -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center h-full">
+                            <div class="bg-purple-100 text-purple-600 w-14 h-14 rounded-2xl flex flex-shrink-0 items-center justify-center">
+                                <i class="fas fa-id-card text-2xl"></i>
+                            </div>
+                            <div class="ml-5">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account Type</p>
+                                <p class="text-2xl font-bold text-gray-900 mt-0.5" id="user-account-type">Loading...</p>
                             </div>
                         </div>
                     </div>

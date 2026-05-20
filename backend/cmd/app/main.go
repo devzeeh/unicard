@@ -81,6 +81,12 @@ func main() {
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /v1/user/dashboard", userHandler.DashboardHandler)
+	mux.HandleFunc("GET /transaction", userHandler.TransactionView)
+	mux.HandleFunc("GET /topup", userHandler.TopupView)
+	mux.HandleFunc("GET /profile", userHandler.ProfileView)
+	mux.HandleFunc("GET /settings", userHandler.SettingsView)
+	mux.HandleFunc("GET /card", userHandler.CardView)
+	mux.HandleFunc("GET /v1/user/transactions", userHandler.TransactionsJSONHandler)
 	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session_user_id",

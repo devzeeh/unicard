@@ -65,13 +65,11 @@
 
         <!-- Profile Avatar & Dropdown (On the right) -->
         <div class="flex items-center">
-            <span class="mr-3 font-medium hidden md:block">Welcome, Juan Dela Cruz</span>
-
-            <!-- PROFILE DROPDOWN -->
+            <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">User</span></span>
             <div class="relative">
                 <button id="profile-avatar-button"
                     class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                    JD
+                    <span id="user-initials">U</span>
                 </button>
 
                 <!-- Dropdown Menu -->
@@ -144,6 +142,23 @@
                                 class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Profile</span>
                         </a>
                     </li>
+                    <!-- Top Up -->
+                    <li>
+                        <a href="/topup"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-wallet w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Top Up</span>
+                        </a>
+                    </li>
+                    <div class="w-full  border-t border-gray-200"></div>
+                    <!-- Settings -->
+                    <li>
+                        <a href="/settings"
+                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-gear -alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
+                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Settings</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -199,8 +214,8 @@
                                     <div class="w-full h-1/2 border-b-2 border-yellow-400"></div>
                                 </div>
                                 <!-- Card Number (Displaying only the last 4 digits) -->
-                                <p class="font-mono text-3xl tracking-widest card-text">
-                                    **** **** **9831
+                                <p id="user-card-number" class="font-mono text-3xl tracking-widest card-text">
+                                    **** **** **** ****
                                 </p>
                             </div>
                             <!-- Row 3: Cardholder and Expiry -->
@@ -208,12 +223,12 @@
                                 <!-- Cardholder Name -->
                                 <div>
                                     <p class="text-xs uppercase opacity-70">Cardholder Name</p>
-                                    <p class="text-lg font-medium tracking-wider">JUAN DELA CRUZ</p>
+                                    <p id="user-card-holder" class="text-lg font-medium tracking-wider">CARDHOLDER</p>
                                 </div>
                                 <!-- Expiry Date -->
                                 <div>
                                     <p class="text-xs uppercase opacity-70">Expires End</p>
-                                    <p class="text-lg font-medium tracking-wider">12/30</p>
+                                    <p id="user-card-expiry" class="text-lg font-medium tracking-wider">MM/YY</p>
                                 </div>
                             </div>
                         </div>
@@ -226,8 +241,10 @@
 
                             <dl class="space-y-4 mt-4">
                                 <div>
-                                    <dt class="text-sm font-medium text-gray-500">Card ID</dt>
-                                    <dd class="mt-1 text-lg font-medium text-gray-900">**** **** 9831</dd>
+                                    <dt class="text-sm font-medium text-gray-500">Card Number</dt>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900" id="card-detail-number">
+                                        <div class="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Status</dt>
@@ -241,11 +258,15 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Account Type</dt>
-                                    <dd class="mt-1 text-lg font-medium text-gray-900">PWD (20% Discount)</dd>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900" id="user-account-type">
+                                        <div class="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Expiry Date</dt>
-                                    <dd class="mt-1 text-lg font-medium text-gray-900">December 31, 2030</dd>
+                                    <dd class="mt-1 text-lg font-medium text-gray-900" id="card-detail-expiry">
+                                        <div class="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                    </dd>
                                 </div>
                             </dl>
                         </div>
@@ -392,8 +413,7 @@
         </div>
     </div>
 
-    <script src="../static/javascript/dashboard.js" defer></script>
-    <script src="../static/javascript/card.js" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
 </body>
 
 </html>
