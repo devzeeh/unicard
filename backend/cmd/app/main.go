@@ -39,9 +39,9 @@ func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Setup Templates
-	tpl, err = template.ParseGlob("./frontend/templates/*.html")
+	tpl, err = template.ParseGlob("./frontend/templates/*/*.html")
 	if err != nil {
-		log.Fatal("Templates loaded but variable is nil. Check your folder path.")
+		log.Fatalf("Failed to load templates: %v. Check your folder path.", err)
 	}
 
 	// Setup Database
@@ -79,13 +79,31 @@ func main() {
 	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
 	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
-	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
+	mux.HandleFunc("GET /dashboard", userHandler.DashboardView)
+	mux.HandleFunc("GET /v1/user/dashboard", userHandler.DashboardHandler)
+	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session_user_id",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session_admin_username",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	})
 
 	// endpoints for admin
+	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
+	mux.HandleFunc("POST /v1/admin/deletecardauth", adminHanlder.DeleteCardHandler)
 
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

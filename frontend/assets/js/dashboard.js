@@ -138,11 +138,92 @@ document.addEventListener("DOMContentLoaded", function () {
         // Confirm logout and redirect
         confirmLogoutButton.addEventListener('click', () => {
             console.log('Logging out...');
-            window.location.href = "login.html";
+            window.location.href = "/login";
         });
 
     } else {
         console.error("Logout modal elements not found. Make sure all IDs are correct.");
     }
+
+    // --- Fetch Dashboard Data ---
+    function fetchDashboardData() {
+        fetch("/v1/user/dashboard")
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "/login";
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return;
+
+                const fullNameEl = document.getElementById("user-full-name");
+                const initialsEl = document.getElementById("user-initials");
+                const balanceEl = document.getElementById("user-balance");
+                const loyaltyPointsEl = document.getElementById("user-loyalty-points");
+                const accountTypeEl = document.getElementById("user-account-type");
+                const transactionsBody = document.getElementById("transactions-table-body");
+
+                if (fullNameEl) fullNameEl.innerText = data.name || "";
+                if (initialsEl) initialsEl.innerText = data.initials || "U";
+                if (balanceEl) balanceEl.innerText = Number(data.balance).toFixed(2);
+                if (loyaltyPointsEl) loyaltyPointsEl.innerText = Number(data.loyalty_points).toFixed(2);
+                if (accountTypeEl) accountTypeEl.innerText = data.account_type || "Regular";
+
+                if (transactionsBody) {
+                    transactionsBody.innerHTML = "";
+                    if (data.recent_transactions && data.recent_transactions.length > 0) {
+                        data.recent_transactions.forEach(tx => {
+                            const tr = document.createElement("tr");
+                            const isPayment = tx.type === "Payment";
+                            const colorClass = isPayment ? "text-red-600" : "text-green-600";
+                            const sign = isPayment ? "-" : "+";
+                            const amount = Number(tx.amount).toFixed(2);
+
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    \${tx.date}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    \${tx.description}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    \${tx.type}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm \${colorClass} text-right font-medium">
+                                    \${sign}₱\${amount}
+                                </td>
+                            `;
+                            transactionsBody.appendChild(tr);
+                        });
+                    } else {
+                        transactionsBody.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">
+                                    No recent transactions found.
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error loading dashboard data:", error);
+                const transactionsBody = document.getElementById("transactions-table-body");
+                if (transactionsBody) {
+                    transactionsBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-6 py-10 text-center text-sm text-red-500">
+                                Failed to load dashboard data.
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+    }
+
+    // Call fetch on load
+    fetchDashboardData();
 
 });

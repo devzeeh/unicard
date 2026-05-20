@@ -3,6 +3,7 @@ package authentication
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
@@ -81,7 +82,42 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Query to check if credential matches
+	// Query to check if credential matches in admin_users table first
+	var adminID int
+	var adminUsername string
+	var adminHash string
+	stmtAdmin := "SELECT id, username, password_hash FROM admin_users WHERE email = ? OR username = ?"
+	errAdmin := h.DB.QueryRow(stmtAdmin, loginReq.Identifier, loginReq.Identifier).Scan(&adminID, &adminUsername, &adminHash)
+	if errAdmin == nil {
+		// Admin user found! Verify password
+		log.Println("Admin hash found, verifying password...")
+		if err = bcrypt.CompareHashAndPassword([]byte(adminHash), []byte(loginReq.Password)); err != nil {
+			log.Printf("Password mismatch for admin user: %s", loginReq.Identifier)
+			jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+				Success: false,
+				Message: "Password is incorrect",
+			})
+			return
+		}
+		// SUCCESS Admin Login
+		log.Printf("Admin login success for user: %s", loginReq.Identifier)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_admin_username",
+			Value:    adminUsername,
+			Path:     "/",
+			HttpOnly: true,
+		})
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.LoginResponse{
+			Success:     true,
+			Message:     "Admin login successful",
+			ID:          fmt.Sprintf("%d", adminID),
+			UserID:      adminUsername,
+			RedirectURL: "/admin/dashboard",
+		})
+		return
+	}
+
+	// If not an admin, query the users table
 	var (
 		hash   string // Store the password hash from the database
 		ID     string // Store the ID
@@ -112,12 +148,19 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// SUCCESS
+	// SUCCESS User Login
 	log.Printf("Login success for user: %s", loginReq.Identifier)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_user_id",
+		Value:    userID,
+		Path:     "/",
+		HttpOnly: true,
+	})
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.LoginResponse{
-		Success: true,
-		Message: "Login successful",
-		ID:      ID,
-		UserID:  userID,
+		Success:     true,
+		Message:     "Login successful",
+		ID:          ID,
+		UserID:      userID,
+		RedirectURL: "/dashboard",
 	})
 }
