@@ -68,13 +68,13 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./frontend/assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
-	// POST Request: JSON API endpoints
+	// general endpoints
+	mux.HandleFunc("GET /login", authHandler.LoginView)
+	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
 	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
-	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
 	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
 	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
@@ -103,7 +103,12 @@ func main() {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	})
 
-	// endpoints for admin
+	// super admin endpoints
+	mux.HandleFunc("GET /admin/platform-overview", adminHanlder.PlatformOverviewView)
+	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
+	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
+	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
+
 	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
 	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
@@ -111,7 +116,8 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 	mux.HandleFunc("POST /v1/admin/deletecardauth", adminHanlder.DeleteCardHandler)
-
+	
+	
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

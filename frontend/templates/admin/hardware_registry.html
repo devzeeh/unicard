@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Super Admin - Terminal Registry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                    }
+                },
+            },
+        };
+    </script>
+</head>
+<body class="font-sans antialiased text-gray-900 bg-gray-100">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">
+            <div>
+                <!-- Logo / Title -->
+                <div class="flex items-center px-6 py-5 border-b border-gray-200">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
+                        </path>
+                    </svg>
+                    <span class="ml-3 text-xl font-bold text-gray-900">Super Admin</span>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="mt-6 px-4 pb-4 overflow-y-auto" style="max-height: calc(100vh - 160px);">
+                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Core System</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="/admin/platform-overview" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-globe w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>Platform Overview</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/merchants" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-store w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>Merchant Mgmt</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/terminals" class="flex items-center px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm">
+                                <i class="fas fa-microchip w-5 h-5 text-center mr-3"></i>
+                                <span>Terminal Registry</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/settings" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-cogs w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>System Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6 border-t pt-4">Legacy Operations</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="/admin/dashboard" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-chart-line w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>Card Inventory</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/addcard" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-plus-circle w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>Add Card</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/deactivatecard" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-ban w-5 h-5 text-center mr-3 text-gray-400"></i>
+                                <span>Deactivate Card</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-gray-200">
+                <a href="/logout" class="flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition duration-150">
+                    <i class="fas fa-sign-out-alt w-5 h-5 text-center mr-3"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Terminal Registry</h2>
+                <div class="flex items-center">
+                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Super Admin</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                        SA
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                <div class="max-w-7xl mx-auto space-y-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Hardware Inventory</h1>
+                            <p class="text-gray-500 mt-1">Master list of deployed RFID/POS terminal machines and their live connection status.</p>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition duration-150 text-sm">
+                            Register Terminal
+                        </button>
+                    </div>
+
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="relative w-full md:w-80">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                                <input type="text" placeholder="Search by S/N or Merchant..." class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device ID / S/N</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Merchant</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Live Status</th>
+                                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                                    <i class="fas fa-desktop"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900 font-mono">TRM-892A41</div>
+                                                    <div class="text-xs text-gray-500 font-mono">SN: PX-2910-4412</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Alfamart Phils.</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Standard POS</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Online</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                            <button class="text-indigo-600 hover:text-indigo-900">Ping</button>
+                                            <button class="text-gray-600 hover:text-gray-900">Settings</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
+                                                    <i class="fas fa-door-open"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900 font-mono">RST-1004B2</div>
+                                                    <div class="text-xs text-gray-500 font-mono">SN: RF-9921-8843</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Metro Transport Coop</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">RFID Turnstile</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Offline</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                            <button class="text-indigo-600 hover:text-indigo-900">Ping</button>
+                                            <button class="text-gray-600 hover:text-gray-900">Settings</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
