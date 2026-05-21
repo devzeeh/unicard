@@ -19,7 +19,7 @@ CREATE TABLE regions (
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal row index optimized for database indexing and fast joins',
-    user_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public ID (e.g., UNI-2026-0001) used in APIs and frontend',
+    user_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public ID (e.g., UNI-YYMM-minsecxxxx) used in APIs and frontend',
     username VARCHAR(50) NOT NULL UNIQUE COMMENT 'Unique handle for admin/staff to log in quickly without an email',
     name VARCHAR(100) NOT NULL COMMENT 'Full name of the individual user or client contact person',
     email VARCHAR(100) UNIQUE NOT NULL COMMENT 'Primary email address used for consumer logins and notifications',
