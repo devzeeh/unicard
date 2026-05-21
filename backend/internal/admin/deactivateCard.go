@@ -1,45 +1,66 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	message "unicard-go/backend/internal/pkg"
+	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
-// This struct represents the details of a card that we want to deactivate.
-// We can use it to easily pass card data around in our functions.
-// It also helps to keep our code organized and makes it easier to manage card-related data when we process the deactivation form submission.
-type CardDetails struct {
-	CardNumber string
-	CardType   string
-}
-
-// This function renders the deactivateCard.html template when the admin visits the /admin/deactivatecard page.
-// It doesn't do any processing yet, it just shows the form to the admin.
-// We can also pass an empty   structMessage.MessageData struct to the template, which allows us to easily display error or success messages later on when we process the form submission.
+// DeactivateView renders the deactivateCard.html template after verifying session.
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
-	// Render the deactivateCard.html template
-	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{})
+	
+	// Validate admin session
+	cookie, err := r.Cookie("session_admin_username")
+	if err != nil || cookie.Value == "" {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	
+	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", nil)
 }
 
-// This function handles the form submission from the deactivateCard.html page.
+// DeactivateCardHanlder handles deactivating a card and returns a JSON response.
 func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Deactivate card handler running...")
+	fmt.Println("DeactivateCardHanlder running...")
 
-	if err := r.ParseForm(); err != nil {
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Failed to parse form"})
+	// Verify session
+	cookie, err := r.Cookie("session_admin_username")
+	if err != nil || cookie.Value == "" {
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Unauthorized",
+		})
 		return
 	}
 
-	cardNumber := strings.TrimSpace(r.PostFormValue("cardNumber"))
-	cardHolder := strings.TrimSpace(r.PostFormValue("name"))
-	cardType := strings.TrimSpace(r.PostFormValue("cardType"))
+	var req struct {
+		CardNumber string `json:"cardNumber"`
+		Name       string `json:"name"`
+		CardType   string `json:"cardType"`
+	}
+
+	// Try reading JSON body
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		// Fallback to post form values
+		if err := r.ParseForm(); err == nil {
+			req.CardNumber = r.PostFormValue("cardNumber")
+			req.Name = r.PostFormValue("name")
+			req.CardType = r.PostFormValue("cardType")
+		}
+	}
+
+	cardNumber := strings.TrimSpace(req.CardNumber)
+	cardHolder := strings.TrimSpace(req.Name)
+	cardType := strings.TrimSpace(req.CardType)
 
 	if cardNumber == "" || cardHolder == "" || cardType == "" {
-		fmt.Println("Missing required fields:", cardNumber, cardHolder, cardType)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Please fill in all required fields."})
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Please fill in all required fields.",
+		})
 		return
 	}
 
@@ -47,24 +68,31 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 	ok, err := h.deactivateCardIfActive(cardNumber, cardHolder, cardType)
 	if err != nil {
 		fmt.Println("Error while deactivating card:", err)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Failed to deactivate card."})
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to deactivate card.",
+		})
 		return
 	}
 
 	if !ok {
 		fmt.Printf("Card not found or already inactive: %s with Card Type: %s\n", cardNumber, cardType)
-		h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Error: "Card not found or already inactive."})
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card not found, name/type mismatch, or card is already inactive.",
+		})
 		return
 	}
 
 	fmt.Println("Card deactivated successfully:", cardNumber, cardType)
-	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", message.MessageData{Success: "Card deactivated successfully!"})
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Card deactivated successfully!",
+	})
 }
 
 // --- Helper functions ---
 
-// This function checks if a card with the given number and type is active,
-// and if so, it deactivates it by updating its status in the database.
 func (h *Handler) deactivateCardIfActive(cardNumber, cardHolder, cardType string) (bool, error) {
 	result, err := h.DB.Exec(`
 		UPDATE cards

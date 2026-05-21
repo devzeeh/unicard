@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        window.location.href = "/dashboard";
+                        window.location.href = data.redirect_url || "/dashboard";
                     } else {
                         if (errorMessage) {
                             errorMessage.classList.remove("hidden");

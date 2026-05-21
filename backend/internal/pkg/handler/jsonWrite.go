@@ -14,10 +14,11 @@ type APIResponse struct {
 
 // Login specific response — returns user data after login
 type LoginResponse struct {
-    Success bool   `json:"success"`
-    Message string `json:"message"`
-    ID      string `json:"id,omitempty"` // Optional: include user ID in response
-    UserID  string `json:"userid,omitempty"` // Optional: include user ID in response
+    Success     bool   `json:"success"`
+    Message     string `json:"message"`
+    ID          string `json:"id,omitempty"` // Optional: include user ID in response
+    UserID      string `json:"userid,omitempty"` // Optional: include user ID in response
+    RedirectURL string `json:"redirect_url,omitempty"`
 }
 
 // Auth Handler (POST) - Converted to JSON API

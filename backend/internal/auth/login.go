@@ -11,23 +11,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Used Login Request from Frontend
 type LoginRequest struct {
-	ID         string `json:"id,omitempty" db:"ID"`                                        // Optional: can be used for direct ID login
-	UserID     string `json:"userId,omitempty" db:"user_id"`                               // Optional: can be used for direct user ID login
-	Identifier string `json:"identifier" validate:"required" db:"full_name, email, phone"` // Allow login via email or username
-	Password   string `json:"password" db:"password_hash" validate:"required"`             // Expecting the password hash in the database
-}
-
-// This struct is used to get the data from the database
-type Login struct {
-	ID string `db:"ID"`
-	UserID string `db:"user_id"`
-	Username string `db:"username"`
-	Password string `db:"password_hash"`
+	ID         string `json:"id,omitempty" db:"id"`                                   // Optional: can be used for direct ID login
+	UserID     string `json:"userId,omitempty" db:"user_id"`                          // Optional: can be used for direct user ID login
+	Identifier string `json:"identifier" validate:"required" db:"name, email, phone"` // Allow login via email or username
+	Password   string `json:"password" db:"password_hash" validate:"required"`        // Expecting the password hash in the database
 }
 
 // Validator instance for struct validation
-// Initialize the validator for all handlers 
+// Initialize the validator for all handlers
 var Validate = validator.New()
 
 // View Handler (GET)
@@ -81,22 +74,22 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Query to check if credential matches
 	var (
 		hash   string // Store the password hash from the database
 		ID     string // Store the ID
 		userID string // Store the user ID for successful login response
+		role   string // Store the role
 	)
 
-	stmt := "SELECT ID, user_id, password_hash FROM users WHERE email = ? OR username = ? OR phone = ?"
-	err = h.DB.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userID, &hash)
+	stmt := "SELECT id, user_id, password_hash, role FROM users WHERE email = ? OR username = ? OR phone_number = ?"
+	err = h.DB.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userID, &hash, &role)
 
 	// User not found
 	if err != nil {
 		log.Printf("User not found or DB error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Incorrect phone number or password",
+			Message: "Incorrect username or password",
 		})
 		return
 	}
@@ -112,12 +105,21 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// SUCCESS
+	// Determine redirect based on role
+	redirectURL := "/dashboard" // Default for customer
+	if role == "super_admin" {
+		redirectURL = "/admin/platform-overview" // Super admin dashboard
+	} else if role == "merchant_admin" || role == "merchant_staff" {
+		redirectURL = "/merchant/dashboard" // Merchant dashboard
+	}
+
+	// SUCCESS User Login
 	log.Printf("Login success for user: %s", loginReq.Identifier)
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.LoginResponse{
-		Success: true,
-		Message: "Login successful",
-		ID:      ID,
-		UserID:  userID,
+		Success:     true,
+		Message:     "Login successful",
+		ID:          ID,
+		UserID:      userID,
+		RedirectURL: redirectURL,
 	})
 }

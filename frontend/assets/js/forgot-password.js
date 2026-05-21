@@ -233,8 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
             if (!emailVal || !emailRegex.test(emailVal)) {
-                // validateEmailDynamically will handle the UI
-                if (emailInput) emailInput.dispatchEvent(new Event('input'));
+                showFieldError(emailInput, emailError, "Invalid email format");
                 return;
             }
 

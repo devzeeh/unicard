@@ -39,9 +39,9 @@ func main() {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Setup Templates
-	tpl, err = template.ParseGlob("./frontend/templates/*.html")
+	tpl, err = template.ParseGlob("./frontend/templates/*/*.html")
 	if err != nil {
-		log.Fatal("Templates loaded but variable is nil. Check your folder path.")
+		log.Fatalf("Failed to load templates: %v. Check your folder path.", err)
 	}
 
 	// Setup Database
@@ -68,25 +68,56 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./frontend/assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
-	// POST Request: JSON API endpoints
+	// general endpoints
+	mux.HandleFunc("GET /login", authHandler.LoginView)
+	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
 	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
-	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
 	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
 	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
-	mux.HandleFunc("GET /dashboard", userHandler.DashboardHandler)
+	mux.HandleFunc("GET /dashboard", userHandler.DashboardView)
+	mux.HandleFunc("GET /v1/user/dashboard", userHandler.DashboardHandler)
+	mux.HandleFunc("GET /transaction", userHandler.TransactionView)
+	mux.HandleFunc("GET /topup", userHandler.TopupView)
+	mux.HandleFunc("GET /profile", userHandler.ProfileView)
+	mux.HandleFunc("GET /settings", userHandler.SettingsView)
+	mux.HandleFunc("GET /card", userHandler.CardView)
+	mux.HandleFunc("GET /v1/user/transactions", userHandler.TransactionsJSONHandler)
+	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session_user_id",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session_admin_username",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+	})
 
-	// endpoints for admin
+	// super admin endpoints
+	mux.HandleFunc("GET /admin/platform-overview", adminHanlder.PlatformOverviewView)
+	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
+	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
+	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
+
+	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
+	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
-
+	mux.HandleFunc("POST /v1/admin/deletecardauth", adminHanlder.DeleteCardHandler)
+	
+	
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
