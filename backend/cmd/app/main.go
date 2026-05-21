@@ -108,6 +108,7 @@ func main() {
 	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
+	mux.HandleFunc("POST /v1/admin/merchants/add", adminHanlder.AddMerchantHandler)
 
 	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
 	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
