@@ -5,20 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
 // AdminCard represents a card entry in the admin database
 type AdminCard struct {
-	ID            int     `json:"id"`
-	CardUID       string  `json:"card_uid"`
-	CardNumber    string  `json:"card_number"`
-	CardType      string  `json:"card_type"`
-	InitialAmount float64 `json:"initial_amount"`
-	ExpiryDate    string  `json:"expiry_date"`
-	Status        string  `json:"status"`
-	CreatedAt     string  `json:"created_at"`
-	CardHolder    string  `json:"card_holder"`
-	UserID        string  `json:"user_id"`
+	ID         int     `json:"id" db:"id"`
+	CardUID    string  `json:"card_uid" db:"card_uid"`
+	CardNumber string  `json:"card_number" db:"card_number"`
+	CardType   string  `json:"card_type" db:"card_type"`
+	Balance    float64 `json:"initial_amount" db:"balance"`
+	ExpiryDate string  `json:"expiry_date" db:"expiry_date"`
+	Status     string  `json:"status" db:"status"`
+	CreatedAt  string  `json:"created_at" db:"created_at"`
+	CardHolder string  `json:"card_holder" db:"card_holder"`
+	UserID     string  `json:"user_id" db:"user_id"`
 }
 
 // AdminStats contains statistics about cards
@@ -34,14 +35,7 @@ type AdminStats struct {
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DashboardView running...")
 
-	// Validate admin session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	err = h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", nil)
+	err := h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", nil)
 	if err != nil {
 		fmt.Printf("Template execution error: %v\n", err)
 	}
@@ -52,14 +46,6 @@ func (h *Handler) DashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DashboardDataHandler running...")
 
 	//time.Sleep(5 * time.Second)
-
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
-		return
-	}
 
 	// 1. Fetch Stats
 	var stats AdminStats
@@ -94,7 +80,7 @@ func (h *Handler) DashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 			&c.CardUID,
 			&c.CardNumber,
 			&c.CardType,
-			&c.InitialAmount,
+			&c.Balance,
 			&c.ExpiryDate,
 			&c.Status,
 			&createdAtNull,
@@ -106,22 +92,16 @@ func (h *Handler) DashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if createdAtNull.Valid {
-			c.CreatedAt = createdAtNull.String
-		} else {
-			c.CreatedAt = ""
-		}
+		c.CreatedAt = createdAtNull.String
 
+		c.CardHolder = "Unlinked"
 		if cardHolderNull.Valid {
 			c.CardHolder = cardHolderNull.String
-		} else {
-			c.CardHolder = "Unlinked"
 		}
 
+		c.UserID = "None"
 		if userIDNull.Valid {
 			c.UserID = userIDNull.String
-		} else {
-			c.UserID = "None"
 		}
 
 		cards = append(cards, c)
@@ -135,6 +115,5 @@ func (h *Handler) DashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 		Cards: cards,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	jsonwrite.WriteJSON(w, http.StatusOK, resp)
 }

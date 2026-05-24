@@ -12,12 +12,7 @@ import (
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
 	
-	// Validate admin session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
+
 	
 	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", nil)
 }
@@ -25,16 +20,6 @@ func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 // DeactivateCardHanlder handles deactivating a card and returns a JSON response.
 func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateCardHanlder running...")
-
-	// Verify session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
 
 	var req struct {
 		CardNumber string `json:"cardNumber"`

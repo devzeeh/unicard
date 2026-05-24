@@ -12,15 +12,6 @@ import (
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardHandler running...")
 
-	// Verify session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
 
 	if r.Method != http.MethodPost {
 		jsonwrite.WriteJSON(w, http.StatusMethodNotAllowed, jsonwrite.APIResponse{

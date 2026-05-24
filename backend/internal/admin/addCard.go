@@ -26,12 +26,7 @@ type Card struct {
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
 	
-	// Validate admin session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
+
 	
 	h.Tpl.ExecuteTemplate(w, "addCards.html", nil)
 }
@@ -39,16 +34,6 @@ func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 // AddCardHandler handles card creation and returns JSON response.
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardHandler running...")
-
-	// Verify session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
 
 	var req struct {
 		CardUID       string `json:"cardUID"`
