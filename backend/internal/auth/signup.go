@@ -25,7 +25,7 @@ type SignupRequest struct {
 	ID            string `json:"id,omitempty"`
 	FirstName     string `json:"first_name" validate:"required"`
 	LastName      string `json:"last_name" validate:"required"`
-	Name          string `json:"name" validate:"required" db:"name"`
+	Name          string `json:"name" db:"name"`
 	CardNumber    string `json:"card_number" validate:"required,numeric,len=16"`
 	Password      string `json:"password" validate:"required,min=8"`
 	Email         string `json:"email" validate:"required,email"`
@@ -133,7 +133,7 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if status != "Inactive" {
+	if status != "inactive" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Card is invalid",
@@ -308,13 +308,12 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
         UPDATE cards 
         SET status = 'active', 
             user_id = ?, 
-            card_holder = ?,
 			card_type = 'regular', 
             updated_at = CURRENT_TIMESTAMP,
 			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 5 YEAR) 
         WHERE card_number = ?`
 
-	_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.Name, user.CardNumber)
+	_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.CardNumber)
 
 	if err != nil {
 		log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)

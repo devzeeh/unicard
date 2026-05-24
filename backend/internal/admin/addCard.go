@@ -3,31 +3,27 @@ package admin
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+
+	"github.com/go-playground/validator/v10"
 )
 
-// Card struct represents a card and its attributes.
-type Card struct {
-	CardUID       string
-	CardNumber    string
-	CardType      string
-	InitialAmount float64
-	ExpiryDate    string
-	CreatedAt     string
+// CardRequest struct mapped directly to your frontend JSON payload
+type CardRequest struct {
+	CardUID       string  `json:"card_uid" db:"card_uid" validate:"required"`
+	InitialAmount float64 `json:"initial_amount" db:"balance" validate:"required,min=0"` // Native float, no string parsing needed!
 }
 
 // AddCardsView renders the addCards.html template after checking the admin session.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
-	
-
-	
 	h.Tpl.ExecuteTemplate(w, "addCards.html", nil)
 }
 
@@ -35,132 +31,102 @@ func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardHandler running...")
 
-	var req struct {
-		CardUID       string `json:"cardUID"`
-		InitialAmount string `json:"initialAmount"`
-	}
+	var req CardRequest
 
-	// Try reading JSON body first
+	// Decode JSON
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// Fallback to post form values
-		if err := r.ParseForm(); err == nil {
-			req.CardUID = r.PostFormValue("cardUID")
-			req.InitialAmount = r.PostFormValue("initialAmount")
-		}
+		log.Println("Error decoding JSON:", err)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid request format",
+		})
+		return
 	}
 
 	cardUID := strings.TrimSpace(req.CardUID)
-	initialAmount := strings.TrimSpace(req.InitialAmount)
 
 	// Validate required fields
-	if cardUID == "" || initialAmount == "" {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		errorMessage := "Invalid input provided."
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			errorMap := map[string]string{
+				"CardUID":       "Card UID is required.",
+				"InitialAmount": "Initial amount is required and cannot be negative.",
+			}
+			if msg, ok := errorMap[validationErrs[0].Field()]; ok {
+				errorMessage = msg
+			}
+		}
+
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Please fill in all required fields.",
+			Message: errorMessage,
 		})
 		return
 	}
 
-	// Auto-generate card number
-	fmt.Println("Calling generateCardNumber()...")
+	// Auto-generate data
 	cardNumber := h.generateCardNumber()
-	fmt.Printf("Generated card number: %s\n", cardNumber)
+	cardType := "regular"                                          // Lowercase to match your database ENUM
+	expiryDate := time.Now().AddDate(2, 0, 0).Format("2006-01-02") // 2 years from now unlinked
 
-	// Set default card type
-	cardType := "Regular"
-
-	// Auto-calculate expiry date as 10 years from now
-	expiryDate := time.Now().AddDate(10, 0, 0).Format("2006-01-02")
-
-	// Convert Initial Amount (String -> Float64)
-	amount, err := strconv.ParseFloat(initialAmount, 64)
+	// Check for existing UID
+	uidExists, err := h.cardUIDExist(cardUID)
 	if err != nil {
-		fmt.Printf("Error parsing amount: %v\n", err)
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Invalid amount format. Must be a number.",
+			Message: "Error verifying Card UID.",
+		})
+		return
+	}
+	if uidExists {
+		jsonwrite.WriteJSON(w, http.StatusConflict, jsonwrite.APIResponse{
+			Success: false,
+			Message: "This Card UID is already registered in the system.",
 		})
 		return
 	}
 
-	// Check for existing card UID
-	cardUidExist, err := h.cardUIDExist(cardUID)
-	if err != nil {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Error checking card UID.",
-		})
-		return
-	}
-	if cardUidExist {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Card UID already exists.",
-		})
-		return
-	}
+	// Insert card into database (Fixed column name: 'balance')
+	// We omit created_at because MySQL handles it automatically via DEFAULT CURRENT_TIMESTAMP
+	query := `
+        INSERT INTO cards (card_uid, card_number, card_type, balance, expiry_date, status) 
+        VALUES (?, ?, ?, ?, ?, 'active')
+    `
 
-	// Create a new Card struct
-	card := Card{
-		CardUID:       cardUID,
-		CardNumber:    cardNumber,
-		CardType:      cardType,
-		InitialAmount: amount,
-		ExpiryDate:    expiryDate,
-	}
-
-	// Check for existing card number
-	cardNumExists, err := h.cardNumberExist(card)
-	if err != nil {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Error checking card number.",
-		})
-		return
-	}
-	if cardNumExists {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Card number already exists.",
-		})
-		return
-	}
-
-	createdAt := time.Now().Format("2006-01-02 15:04:05")
-
-	// Insert card into database
-	query := "INSERT INTO cards (card_uid, card_number, card_type, initial_amount, expiry_date, created_at) VALUES (?, ?, ?, ?, ?, ?)"
 	_, err = h.DB.Exec(
 		query,
-		card.CardUID,
-		card.CardNumber,
-		card.CardType,
-		card.InitialAmount,
-		card.ExpiryDate,
-		createdAt,
+		cardUID,
+		cardNumber,
+		cardType,
+		req.InitialAmount, // Maps to 'balance'
+		expiryDate,
 	)
+
 	if err != nil {
 		fmt.Println("Error inserting card into database:", err)
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Error while adding card.",
+			Message: "Failed to save card to database.",
 		})
 		return
 	}
 
-	// Successfully added the card
-	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+	// Success Response
+	jsonwrite.WriteJSON(w, http.StatusCreated, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Card added successfully!",
 	})
 }
 
-//--- HELPER FUNCTIONS ---
+// --- HELPER FUNCTIONS ---
 
-func (h *Handler) cardUIDExist(card string) (bool, error) {
-	var uid string
+func (h *Handler) cardUIDExist(uid string) (bool, error) {
+	var existingUID string
 	query := "SELECT card_uid FROM cards WHERE card_uid = ?"
-	err := h.DB.QueryRow(query, card).Scan(&uid)
+	err := h.DB.QueryRow(query, uid).Scan(&existingUID)
 	if err == sql.ErrNoRows {
 		return false, nil
 	} else if err != nil {
@@ -169,26 +135,14 @@ func (h *Handler) cardUIDExist(card string) (bool, error) {
 	return true, nil
 }
 
-func (h *Handler) cardNumberExist(card Card) (bool, error) {
-	var cardNum string
-	query := "SELECT card_number FROM cards WHERE card_number = ?"
-	err := h.DB.QueryRow(query, card.CardNumber).Scan(&cardNum)
-	if err == sql.ErrNoRows {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
+// Generate Card Number of format HHMMSSYYDD + 6 random digits
 func (h *Handler) generateCardNumber() string {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	now := time.Now()
-	year := now.Format("06")
-	month := now.Format("01")
-	day := now.Format("02")
-	datePrefix := year + day + month
 
-	randomNum := rng.Intn(1000000000)
-	return fmt.Sprintf("%s%010d", datePrefix, randomNum)
+	// Format: HHMMSSYYDD + 6 random digits
+	datePrefix := now.Format("150405060201")
+	randomNum := rng.Intn(100000)
+
+	return fmt.Sprintf("%s%06d", datePrefix, randomNum)
 }
