@@ -95,9 +95,8 @@ func main() {
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
 	mux.HandleFunc("POST /v1/admin/merchants/add", adminHanlder.AddMerchantHandler)
-
-	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
-	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
+	mux.HandleFunc("GET /admin/card-inventory", adminHanlder.CardInventoryView)
+	mux.HandleFunc("GET /v1/admin/card-inventory-data", adminHanlder.CardInventoryDataHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
