@@ -8,16 +8,13 @@ import (
 	"net/http"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	"unicard-go/backend/internal/pkg/structs"
 
 	"github.com/go-playground/validator/v10"
 )
 
-// card data from the deactivate card page
-type CardData struct {
-	CardNumber string `json:"cardNumber" db:"card_number" validate:"required"`
-	CardHolder string `json:"cardHolder" db:"user_id" validate:"required"`
-	CardType   string `json:"cardType" db:"card_type" validate:"required"`
-}
+// Type alias for CardData to resolve the redeclaration error
+type CardData = structs.CardData
 
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")

@@ -12,15 +12,12 @@ import (
 	"strings"
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	"unicard-go/backend/internal/pkg/structs"
 
 	"github.com/go-playground/validator/v10"
 )
 
 // CardRequest struct mapped directly to your frontend JSON payload
-type CardRequest struct {
-	CardUID string  `json:"card_uid" db:"card_uid" validate:"required"`
-	Balance float64 `json:"initial_amount" db:"balance" validate:"required,min=0"` // Native float, no string parsing needed!
-}
 
 // AddCardsView renders the addCards.html template after checking the admin session.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +29,7 @@ func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardHandler running...")
 
-	var req CardRequest
+	var req structs.CardData
 
 	// Decode JSON
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
