@@ -22,13 +22,14 @@ const (
 
 // Create a struct to catch the incoming JSON from the frontend
 type SignupRequest struct {
-	ID            string `json:"id,omitempty" db:"ID"`
-	FirstName     string `json:"first_name" db:"first_name" validate:"required"`
-	LastName      string `json:"last_name" db:"last_name" validate:"required"`
-	CardNumber    string `json:"card_number" db:"card_number" validate:"required,numeric,len=16"`
-	Password      string `json:"password" db:"password_hash" validate:"required,min=8"`
-	Email         string `json:"email" db:"email" validate:"required,email"`
-	ContactNumber string `json:"contact_number" db:"phone" validate:"required,numeric,len=11"`
+	ID            string `json:"id,omitempty"`
+	FirstName     string `json:"first_name" validate:"required"`
+	LastName      string `json:"last_name" validate:"required"`
+	Name          string `json:"name" db:"name"`
+	CardNumber    string `json:"card_number" validate:"required,numeric,len=16"`
+	Password      string `json:"password" validate:"required,min=8"`
+	Email         string `json:"email" validate:"required,email"`
+	ContactNumber string `json:"contact_number" validate:"required,numeric,len=11"`
 }
 
 // User struct to hold signup data (Keep your existing one)
@@ -36,15 +37,17 @@ type SignupRequest struct {
 type User struct {
 	UserID     string  `db:"user_id"`
 	Username   string  `db:"username"`
-	Fullname   string  `db:"full_name"`
+	Name       string  `db:"name"`
 	Email      string  `db:"email"`
-	Phone      string  `db:"phone"`
+	Phone      string  `db:"phone_number"`
 	CardNumber string  `db:"card_number"`
 	Password   string  `db:"password_hash"`
-	CardID     string  `db:"card_id"`
-	Usertype   string  `db:"user_type"`
+	UserType   string  `db:"role"`
 	Balance    float64 `db:"balance"`
 	CreatedAt  string  `db:"created_at"`
+	Role       string  `db:"role"`
+	Status     string  `db:"status"`
+	RegionID   string  `db:"region_id"`
 }
 
 type CheckDetailsRequest struct {
@@ -130,7 +133,7 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if status != "Inactive" {
+	if status != "inactive" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Card is invalid",
@@ -187,20 +190,16 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		errorMessage := "Invalid input provided."
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {
-			firstErr := validationErrs[0]
-			switch firstErr.Field() {
-			case "FirstName":
-				errorMessage = "First name is required."
-			case "LastName":
-				errorMessage = "Last name is required."
-			case "Email":
-				errorMessage = "Please provide a valid email address."
-			case "ContactNumber":
-				errorMessage = "Contact number must be exactly 11 digits."
-			case "CardNumber":
-				errorMessage = "Card number must be exactly 16 digits."
-			case "Password":
-				errorMessage = "Password must be at least 8 characters long."
+			errorMap := map[string]string{
+				"FirstName":     "First name is required.",
+				"LastName":      "Last name is required.",
+				"Email":         "Please provide a valid email address.",
+				"ContactNumber": "Contact number must be exactly 11 digits.",
+				"CardNumber":    "Card number must be exactly 16 digits.",
+				"Password":      "Password must be at least 8 characters long.",
+			}
+			if msg, ok := errorMap[validationErrs[0].Field()]; ok {
+				errorMessage = msg
 			}
 		}
 
@@ -223,18 +222,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Password hashed successfully: %v", hashedPassword)
 
-	// Generate Username
-	generatedUsername, err := h.GenerateUniqueUsername()
-	if err != nil {
-		log.Printf("Error generating username: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error generating username. Please try again.",
-		})
-		return
-	}
-	log.Printf("Generated Username: %v", generatedUsername)
-
 	// Generate IDs
 	generateUserId, err := h.GenerateUserID()
 	if err != nil {
@@ -243,14 +230,6 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 			Success: false,
 			Message: "System error generating UserID.",
 		})
-		return
-	}
-
-	generateCardID, err := h.GenerateCardID()
-	if err != nil {
-		log.Printf("Error generating CardID: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false, Message: "System error generating CardID."})
 		return
 	}
 
@@ -280,16 +259,17 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// Build User struct
 	user := User{
 		UserID:     fmt.Sprintf("%d", generateUserId),
-		CardID:     generateCardID,
-		Usertype:   UserTypeRegular,
-		Username:   generatedUsername,
-		Fullname:   req.FirstName + " " + req.LastName,
+		UserType:   UserTypeRegular,
+		Username:   req.FirstName,
+		Name:       req.FirstName + " " + req.LastName,
 		CardNumber: req.CardNumber,
 		Password:   hashedPassword,
 		Email:      req.Email,
 		Phone:      req.ContactNumber,
 		CreatedAt:  createdAt,
 		Balance:    balance,
+		Role:       "Customer",
+		Status:     "active",
 	}
 
 	// Begin transaction: insert user + activate card atomically
@@ -306,11 +286,11 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Insert User
 	insertQuery := `INSERT INTO users 
-    (user_id, username, full_name, email, phone, password_hash, card_id, card_number, user_type, balance, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    (user_id, username, name, email, phone_number, password_hash, role, status, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err = tx.ExecContext(ctx, insertQuery,
-		user.UserID, user.Username, user.Fullname, user.Email, user.Phone,
-		user.Password, user.CardID, user.CardNumber, user.Usertype, user.Balance, user.CreatedAt,
+		user.UserID, user.Username, user.Name, user.Email, user.Phone,
+		user.Password, user.Role, user.Status, user.CreatedAt,
 	)
 	if err != nil {
 		log.Printf("Error inserting user: %v", err)
@@ -320,20 +300,21 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	log.Printf("User record inserted: %v", user.UserID)
+	log.Printf("User record inserted: %v", user.Name)
 
 	// Activate Card and Link User Details
-	// Set expiry date to 10 years from now in expiry_date column
+	// Set expiry date to 5 years from now in expiry_date column
 	updateCardQuery := `
         UPDATE cards 
-        SET status = 'Active', 
+        SET status = 'active', 
             user_id = ?, 
-            card_holder = ?, 
-            linked_at = CURRENT_TIMESTAMP,
-			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 10 YEAR) 
+			card_type = 'regular',
+			linked_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP,
+			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 5 YEAR) 
         WHERE card_number = ?`
 
-	_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.Fullname, user.CardNumber)
+	_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.CardNumber)
 
 	if err != nil {
 		log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)

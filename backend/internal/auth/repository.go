@@ -129,7 +129,7 @@ func (h *Handler) GenerateCardID() (string, error) {
 func (h *Handler) GetInitialBalance(cardNumber string) (float64, error) {
 	var initialBalance float64 // to hold the initial balance
 
-	query := "SELECT initial_amount FROM cards WHERE card_number = ?"
+	query := "SELECT balance FROM cards WHERE card_number = ?"
 	err := h.DB.QueryRow(query, cardNumber).Scan(&initialBalance)
 	if err != nil {
 		log.Printf("GetInitialBalance error for card %s: %v", cardNumber, err)
@@ -147,7 +147,7 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 	var existingPhone string
 
 	// Check query
-	query := "SELECT phone FROM users WHERE phone = ?"
+	query := "SELECT phone_number FROM users WHERE phone_number = ?"
 	err := h.DB.QueryRow(query, phone).Scan(&existingPhone)
 	if err == sql.ErrNoRows {
 		return false, nil
@@ -168,7 +168,7 @@ func (h *Handler) isFullNameExist(fullName string) (bool, error) {
 	var existingName string
 
 	// Check query
-	query := "SELECT full_name FROM users WHERE full_name = ?"
+	query := "SELECT name FROM users WHERE name = ?"
 	err := h.DB.QueryRow(query, fullName).Scan(&existingName)
 	if err == sql.ErrNoRows {
 		return false, nil

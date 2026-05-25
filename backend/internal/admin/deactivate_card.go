@@ -2,23 +2,23 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	"unicard-go/backend/internal/pkg/structs"
+
+	"github.com/go-playground/validator/v10"
 )
 
-// DeactivateView renders the deactivateCard.html template after verifying session.
+// Type alias for CardData to resolve the redeclaration error
+type CardData = structs.CardData
+
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
-	
-	// Validate admin session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	
+
 	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", nil)
 }
 
@@ -26,43 +26,43 @@ func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateCardHanlder running...")
 
-	// Verify session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
-
-	var req struct {
-		CardNumber string `json:"cardNumber"`
-		Name       string `json:"name"`
-		CardType   string `json:"cardType"`
-	}
+	var req CardData
 
 	// Try reading JSON body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// Fallback to post form values
-		if err := r.ParseForm(); err == nil {
-			req.CardNumber = r.PostFormValue("cardNumber")
-			req.Name = r.PostFormValue("name")
-			req.CardType = r.PostFormValue("cardType")
-		}
-	}
-
-	cardNumber := strings.TrimSpace(req.CardNumber)
-	cardHolder := strings.TrimSpace(req.Name)
-	cardType := strings.TrimSpace(req.CardType)
-
-	if cardNumber == "" || cardHolder == "" || cardType == "" {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		log.Println("Error decoding JSON:", err)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Please fill in all required fields.",
+			Message: "Invalid request format",
 		})
 		return
 	}
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		errorMessage := "Invalid input provided."
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			errorMap := map[string]string{
+				"CardNumber": "Card number is required.",
+				"CardHolder": "Card holder is required.",
+				"CardType":   "Card type is required.",
+			}
+			if msg, ok := errorMap[validationErrs[0].Field()]; ok {
+				errorMessage = msg
+			}
+		}
+
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: errorMessage,
+		})
+		return
+	}
+
+	cardNumber := strings.TrimSpace(req.CardNumber)
+	cardHolder := strings.TrimSpace(req.CardHolder)
+	cardType := strings.TrimSpace(req.CardType)
 
 	// Check if the card exists and is active, then deactivate it
 	ok, err := h.deactivateCardIfActive(cardNumber, cardHolder, cardType)
@@ -98,7 +98,7 @@ func (h *Handler) deactivateCardIfActive(cardNumber, cardHolder, cardType string
 		UPDATE cards
 		SET status = 'Blocked'
 		WHERE card_number = ?
-		AND card_holder = ? 
+		AND user_id = ? 
 		AND card_type = ?
 		AND status = 'Active'
 	`, cardNumber, cardHolder, cardType)

@@ -38,13 +38,7 @@ type DashboardUser struct {
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard view is running...")
 
-	// Check if session cookie is present
-	cookie, err := r.Cookie("session_user_id")
-	if err != nil || cookie.Value == "" {
-		fmt.Println("No user session found in view, redirecting to login")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
+	// Check if session cookie is present (Removed)
 
 	h.Tpl.ExecuteTemplate(w, "dashboard.html", nil)
 }
@@ -52,17 +46,8 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
 
-	// Get session cookie
-	cookie, err := r.Cookie("session_user_id")
-	if err != nil || cookie.Value == "" {
-		fmt.Println("No user session found, returning unauthorized JSON")
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
-	userID := cookie.Value
+	// Get session cookie (Removed)
+	userID := "UNI-060104051234" // Dummy user ID for testing
 
 	// Fetch user and card details
 	var (
@@ -80,35 +65,30 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	)
 	stmt := `
 		SELECT 
-    u.id,
-    u.username,
-    u.full_name,
-    u.email,
-    u.phone,
-    u.user_type,
-    u.balance,
-    u.loyalty_points,
-    u.card_number,
-    u.status
-	FROM users u
-	LEFT JOIN cards c 
-    ON u.card_number = c.card_number
-	WHERE u.user_id = ?
+			u.id,
+			u.username,
+			u.name,
+			u.email,
+			COALESCE(u.phone_number, ''),
+			u.role,
+			COALESCE(c.balance, 0),
+			COALESCE(c.loyalty_points, 0),
+			COALESCE(c.card_number, ''),
+			COALESCE(c.expiry_date, ''),
+			COALESCE(c.status, '')
+		FROM users u
+		LEFT JOIN cards c 
+			ON u.user_id = c.user_id
+		WHERE u.user_id = ?
 	`
-	err = h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &cardStatus)
+	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
 		} else {
 			fmt.Printf("Error fetching user %s from DB: %v\n", userID, err)
 		}
-		// Clear invalid session cookie and return unauthorized response
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session_user_id",
-			Value:  "",
-			Path:   "/",
-			MaxAge: -1,
-		})
+		// Clear invalid session cookie (Removed)
 		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Unauthorized: User not found",
@@ -140,7 +120,15 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch recent transactions
-	rows, err := h.DB.Query("SELECT created_at, description, transaction_type, amount FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", userID)
+	txnQuery := `
+		SELECT t.created_at, m.business_name, t.transaction_type, t.amount 
+		FROM transactions t 
+		JOIN cards c ON t.card_number = c.card_number 
+		JOIN merchants m ON t.merchant_id = m.id 
+		WHERE c.user_id = ? 
+		ORDER BY t.created_at DESC LIMIT 5
+	`
+	rows, err := h.DB.Query(txnQuery, userID)
 	var transactions []Transaction
 	if err == nil {
 		defer rows.Close()

@@ -81,36 +81,22 @@ func main() {
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /v1/user/dashboard", userHandler.DashboardHandler)
-	mux.HandleFunc("GET /transaction", userHandler.TransactionView)
-	mux.HandleFunc("GET /topup", userHandler.TopupView)
-	mux.HandleFunc("GET /profile", userHandler.ProfileView)
-	mux.HandleFunc("GET /settings", userHandler.SettingsView)
-	mux.HandleFunc("GET /card", userHandler.CardView)
-	mux.HandleFunc("GET /v1/user/transactions", userHandler.TransactionsJSONHandler)
-	mux.HandleFunc("GET /logout", func(w http.ResponseWriter, r *http.Request) {
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session_user_id",
-			Value:  "",
-			Path:   "/",
-			MaxAge: -1,
-		})
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session_admin_username",
-			Value:  "",
-			Path:   "/",
-			MaxAge: -1,
-		})
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	})
+	//mux.HandleFunc("GET /transaction", userHandler.TransactionView)
+	//mux.HandleFunc("GET /topup", userHandler.TopupView)
+	//mux.HandleFunc("GET /profile", userHandler.ProfileView)
+	//mux.HandleFunc("GET /settings", userHandler.SettingsView)
+	//mux.HandleFunc("GET /card", userHandler.CardView)
+	//mux.HandleFunc("GET /v1/user/transactions", userHandler.TransactionsJSONHandler)
+	//mux.HandleFunc("GET /logout",)
 
 	// super admin endpoints
 	mux.HandleFunc("GET /admin/platform-overview", adminHanlder.PlatformOverviewView)
 	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
-
-	mux.HandleFunc("GET /admin/dashboard", adminHanlder.DashboardView)
-	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.DashboardDataHandler)
+	mux.HandleFunc("POST /v1/admin/merchants/add", adminHanlder.AddMerchantHandler)
+	mux.HandleFunc("GET /admin/card-inventory", adminHanlder.CardInventoryView)
+	mux.HandleFunc("GET /v1/admin/card-inventory-data", adminHanlder.CardInventoryDataHandler)
 	mux.HandleFunc("GET /admin/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)

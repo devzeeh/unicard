@@ -274,19 +274,9 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            // Prefill parameters from URL query
-            const urlParams = new URLSearchParams(window.location.search);
-            const cardNum = urlParams.get("cardNumber") || "";
-            const name = urlParams.get("name") || "";
-            const cardType = urlParams.get("cardType") || "";
-
             const cardNumInput = document.getElementById("cardNumber");
             const nameInput = document.getElementById("name");
             const cardTypeSelect = document.getElementById("cardType");
-
-            if (cardNumInput) cardNumInput.value = cardNum;
-            if (nameInput) nameInput.value = name;
-            if (cardTypeSelect) cardTypeSelect.value = cardType;
 
             // Submit form via fetch
             const form = document.getElementById("deactivate-card-form");
@@ -303,7 +293,7 @@
 
                     const bodyData = {
                         cardNumber: cardNumInput.value,
-                        name: nameInput.value,
+                        cardHolder: nameInput.value,
                         cardType: cardTypeSelect.value
                     };
 

@@ -8,19 +8,15 @@ import (
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
+func (h *Handler) DeleteCardView(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("DeleteCardView running...")
+
+	h.Tpl.ExecuteTemplate(w, "deleteCard.html", nil)
+}
+
 // DeleteCardHandler handles deleting a card by card_number and returns JSON.
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardHandler running...")
-
-	// Verify session
-	cookie, err := r.Cookie("session_admin_username")
-	if err != nil || cookie.Value == "" {
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized",
-		})
-		return
-	}
 
 	if r.Method != http.MethodPost {
 		jsonwrite.WriteJSON(w, http.StatusMethodNotAllowed, jsonwrite.APIResponse{
