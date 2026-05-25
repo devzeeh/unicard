@@ -102,6 +102,7 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/addcardauth", adminHanlder.AddCardHandler)
 	mux.HandleFunc("POST /v1/admin/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 	mux.HandleFunc("POST /v1/admin/deletecardauth", adminHanlder.DeleteCardHandler)
+	mux.HandleFunc("GET /admin/delete-cards", adminHanlder.DeleteCardView)
 	
 	
 	// Wrap mux with custom handler for root redirect

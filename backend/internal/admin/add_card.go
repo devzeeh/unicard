@@ -17,8 +17,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// CardRequest struct mapped directly to your frontend JSON payload
-
 // AddCardsView renders the addCards.html template after checking the admin session.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
@@ -29,6 +27,7 @@ func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardHandler running...")
 
+	// Define request struct
 	var req structs.CardData
 
 	// Decode JSON
@@ -50,8 +49,8 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {
 			errorMap := map[string]string{
-				"CardUID":       "Card UID is required.",
-				"InitialAmount": "Initial amount is required and cannot be negative.",
+				"CardUID": "Card UID is required.",
+				"Balance": "Initial amount is required and cannot be negative.",
 			}
 			if msg, ok := errorMap[validationErrs[0].Field()]; ok {
 				errorMessage = msg

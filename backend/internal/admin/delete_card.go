@@ -2,48 +2,54 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	"unicard-go/backend/internal/pkg/structs"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func (h *Handler) DeleteCardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardView running...")
 
-	h.Tpl.ExecuteTemplate(w, "deleteCard.html", nil)
+	h.Tpl.ExecuteTemplate(w, "delete_card.html", nil)
 }
 
 // DeleteCardHandler handles deleting a card by card_number and returns JSON.
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardHandler running...")
 
-	if r.Method != http.MethodPost {
-		jsonwrite.WriteJSON(w, http.StatusMethodNotAllowed, jsonwrite.APIResponse{
+	var req structs.CardData
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Method not allowed",
+			Message: "Invalid request format",
 		})
 		return
 	}
 
-	var req struct {
-		CardNumber string `json:"cardNumber"`
-	}
-
-	// Try reading JSON body
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// Fallback to post form values
-		if err := r.ParseForm(); err == nil {
-			req.CardNumber = r.PostFormValue("cardNumber")
-		}
-	}
-
 	cardNumber := strings.TrimSpace(req.CardNumber)
 
-	if cardNumber == "" {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		errorMessage := "Invalid input provided."
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			errorMap := map[string]string{
+				"CardNumber": "Card number is required.",
+			}
+			if msg, ok := errorMap[validationErrs[0].Field()]; ok {
+				errorMessage = msg
+			}
+		}
+
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Card number is required for deletion.",
+			Message: errorMessage,
 		})
 		return
 	}
@@ -54,7 +60,7 @@ func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error deleting card from DB:", err)
 		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Failed to delete card due to database error.",
+			Message: "Failed to delete card.",
 		})
 		return
 	}
