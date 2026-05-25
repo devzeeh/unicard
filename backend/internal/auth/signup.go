@@ -308,7 +308,8 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
         UPDATE cards 
         SET status = 'active', 
             user_id = ?, 
-			card_type = 'regular', 
+			card_type = 'regular',
+			linked_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP,
 			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 5 YEAR) 
         WHERE card_number = ?`

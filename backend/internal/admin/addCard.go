@@ -1,12 +1,13 @@
 package admin
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -17,8 +18,8 @@ import (
 
 // CardRequest struct mapped directly to your frontend JSON payload
 type CardRequest struct {
-	CardUID       string  `json:"card_uid" db:"card_uid" validate:"required"`
-	InitialAmount float64 `json:"initial_amount" db:"balance" validate:"required,min=0"` // Native float, no string parsing needed!
+	CardUID string  `json:"card_uid" db:"card_uid" validate:"required"`
+	Balance float64 `json:"initial_amount" db:"balance" validate:"required,min=0"` // Native float, no string parsing needed!
 }
 
 // AddCardsView renders the addCards.html template after checking the admin session.
@@ -93,7 +94,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	// We omit created_at because MySQL handles it automatically via DEFAULT CURRENT_TIMESTAMP
 	query := `
         INSERT INTO cards (card_uid, card_number, card_type, balance, expiry_date, status) 
-        VALUES (?, ?, ?, ?, ?, 'active')
+        VALUES (?, ?, ?, ?, ?, 'inactive')
     `
 
 	_, err = h.DB.Exec(
@@ -101,7 +102,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 		cardUID,
 		cardNumber,
 		cardType,
-		req.InitialAmount, // Maps to 'balance'
+		req.Balance, // Maps to 'balance'
 		expiryDate,
 	)
 
@@ -135,14 +136,25 @@ func (h *Handler) cardUIDExist(uid string) (bool, error) {
 	return true, nil
 }
 
-// Generate Card Number of format HHMMSSYYDD + 6 random digits
+// Generate Card Number of format YYSS + 10 random digits + DD
 func (h *Handler) generateCardNumber() string {
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	now := time.Now()
+	loc, err := time.LoadLocation("Asia/Manila")
+	if err != nil {
+		loc = time.Local
+	}
+	now := time.Now().In(loc)
 
-	// Format: HHMMSSYYDD + 6 random digits
-	datePrefix := now.Format("150405060201")
-	randomNum := rng.Intn(100000)
+	yy := now.Format("06")
+	ss := now.Format("05")
+	dd := now.Format("02")
 
-	return fmt.Sprintf("%s%06d", datePrefix, randomNum)
+	max10 := big.NewInt(10000000000) // 10^10 for 10 digits
+	random10, errRand := rand.Int(rand.Reader, max10)
+
+	randomDigits := "0000000000" // Default fallback format
+	if errRand == nil {
+		randomDigits = fmt.Sprintf("%010d", random10.Int64())
+	}
+
+	return fmt.Sprintf("%s%s%s%s", yy, ss, randomDigits, dd)
 }
