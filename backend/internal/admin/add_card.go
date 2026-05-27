@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
-	"unicard-go/backend/internal/pkg/structs"
+	"unicard-go/backend/internal/pkg/structure"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -28,7 +28,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardHandler running...")
 
 	// Define request struct
-	var req structs.CardData
+	var req structure.CardData
 
 	// Decode JSON
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

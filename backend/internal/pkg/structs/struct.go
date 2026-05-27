@@ -1,4 +1,4 @@
-package structs
+package structure
 
 // AdminDashboardData struct represents the data to be displayed on the admin dashboard
 type AdminDashboardData struct {

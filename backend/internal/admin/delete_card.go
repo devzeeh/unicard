@@ -22,7 +22,7 @@ func (h *Handler) DeleteCardView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardHandler running...")
 
-	var req structs.CardData
+	var req structure.CardData
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
