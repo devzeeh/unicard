@@ -90,7 +90,8 @@ func main() {
 	//mux.HandleFunc("GET /logout",)
 
 	// super admin endpoints
-	mux.HandleFunc("GET /admin/platform-overview", adminHanlder.PlatformOverviewView)
+	mux.HandleFunc("GET /admin/dashboard", adminHanlder.AdminDashboardView)
+	mux.HandleFunc("POST /v1/admin/dashboard-data", adminHanlder.AdminDashboardDataHandler)
 	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
