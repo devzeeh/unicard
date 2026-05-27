@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UniCard Admin - Dashboard</title>
+    <title>Super Admin - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,9 +21,7 @@
         };
     </script>
 </head>
-
 <body class="font-sans antialiased text-gray-900 bg-gray-100">
-
     <div class="flex h-screen bg-gray-100">
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">
@@ -37,7 +34,7 @@
                             d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
                         </path>
                     </svg>
-                    <span class="ml-3 text-xl font-bold text-gray-900">Super Admin</span>
+                    <span class="ml-3 text-xl font-bold text-gray-900">UniCard</span>
                 </div>
 
                 <!-- Navigation Links -->
@@ -45,59 +42,50 @@
                     <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Core System</p>
                     <ul class="space-y-1">
                         <li>
-                            <a href="/admin/platform-overview"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
-                                <i class="fas fa-globe w-5 h-5 text-center mr-3 text-gray-400"></i>
-                                <span>Platform Overview</span>
+                            <a href="/admin/dashboard" class="flex items-center px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm">
+                                <i class="fas fa-globe w-5 h-5 text-center mr-3"></i>
+                                <span>Dashboard</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/admin/merchants"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                            <a href="/admin/merchants" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
                                 <i class="fas fa-store w-5 h-5 text-center mr-3 text-gray-400"></i>
-                                <span>Merchant Mgmt</span>
+                                <span>Merchants</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/admin/terminals"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                            <a href="/admin/terminals" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
                                 <i class="fas fa-microchip w-5 h-5 text-center mr-3 text-gray-400"></i>
-                                <span>Terminal Registry</span>
+                                <span>Terminals</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/admin/settings"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                            <a href="/admin/settings" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
                                 <i class="fas fa-cogs w-5 h-5 text-center mr-3 text-gray-400"></i>
-                                <span>System Settings</span>
+                                <span>System Management</span>
                             </a>
                         </li>
                     </ul>
 
-                    <p
-                        class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6 border-t pt-4">
-                        Legacy Operations</p>
+                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6 border-t pt-4">Legacy Operations</p>
                     <ul class="space-y-1">
-                        <!-- Dashboard -->
+                        <!-- Card Inventory -->
                         <li>
-                            <a href="/admin/dashboard"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm">
-                                <i class="fas fa-chart-line w-5 h-5 text-center mr-3"></i>
+                            <a href="/admin/card-inventory" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                                <i class="fas fa-chart-line w-5 h-5 text-center mr-3 text-gray-400"></i>
                                 <span>Card Inventory</span>
                             </a>
                         </li>
                         <!-- Add Card -->
                         <li>
-                            <a href="/admin/addcard"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                            <a href="/admin/addcard" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
                                 <i class="fas fa-plus-circle w-5 h-5 text-center mr-3 text-gray-400"></i>
                                 <span>Add Card</span>
                             </a>
                         </li>
                         <!-- Deactivate Card -->
                         <li>
-                            <a href="/admin/deactivatecard"
-                                class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
+                            <a href="/admin/deactivatecard" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition duration-150">
                                 <i class="fas fa-ban w-5 h-5 text-center mr-3 text-gray-400"></i>
                                 <span>Deactivate Card</span>
                             </a>
@@ -108,8 +96,7 @@
 
             <!-- Logout Link -->
             <div class="p-4 border-t border-gray-200">
-                <a href="#" onclick="openLogoutModal(); return false;"
-                    class="flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition duration-150">
+                <a href="/logout" class="flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition duration-150">
                     <i class="fas fa-sign-out-alt w-5 h-5 text-center mr-3"></i>
                     <span>Logout</span>
                 </a>
@@ -120,13 +107,11 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Navbar -->
             <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Admin Control Panel</h2>
+                <h2 class="text-lg font-semibold text-gray-800">Dashboard</h2>
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium text-sm text-gray-600" id="admin-welcome-name">Welcome,
-                        Administrator</span>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100"
-                        id="admin-avatar">
-                        AD
+                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Admin</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                        A
                     </div>
                 </div>
             </header>
@@ -136,194 +121,120 @@
                 <div class="max-w-7xl mx-auto space-y-8">
                     <!-- Page Header -->
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Card Inventory Dashboard</h1>
-                        <p class="text-gray-500 mt-1">Monitor, create, and manage cards in the system inventory.</p>
+                        <p class="text-gray-500 mt-1">Real-time metrics for UniCard system-wide performance and revenue.</p>
                     </div>
 
                     <!-- Statistics Cards -->
-                    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Gross Revenue -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Gross Revenue</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="grossRevenue">₱0.00</p>
+                                </div>
+                                <div class="bg-blue-50 text-blue-600 p-3 rounded-lg">
+                                    <i class="fas fa-chart-line text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Net Revenue -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Net Revenue</p>
+                                    <p class="text-2xl font-bold text-emerald-600 mt-1" id="netRevenue">₱0.00</p>
+                                </div>
+                                <div class="bg-emerald-50 text-emerald-600 p-3 rounded-lg">
+                                    <i class="fas fa-hand-holding-usd text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Users -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Total Users</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="totalUsers">0</p>
+                                </div>
+                                <div class="bg-purple-50 text-purple-600 p-3 rounded-lg">
+                                    <i class="fas fa-users text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Total Cards -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Total Cards</p>
-                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="stats-total">0</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="totalCards">0</p>
                                 </div>
-                                <div class="bg-blue-50 text-blue-600 p-3 rounded-lg">
-                                    <i class="fas fa-credit-card text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Active Cards -->
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Active</p>
-                                    <p class="text-2xl font-bold text-green-600 mt-1" id="stats-active">0</p>
-                                </div>
-                                <div class="bg-green-50 text-green-600 p-3 rounded-lg">
-                                    <i class="fas fa-check-circle text-xl"></i>
+                                <div class="bg-indigo-50 text-indigo-600 p-3 rounded-lg">
+                                    <i class="fas fa-id-card text-xl"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Inactive Cards -->
+                        <!-- Active Merchants -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-sm font-medium text-gray-500">Inactive</p>
-                                    <p class="text-2xl font-bold text-gray-600 mt-1" id="stats-inactive">0</p>
+                                    <p class="text-sm font-medium text-gray-500">Active Merchants</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="activeMerchants">0</p>
                                 </div>
-                                <div class="bg-gray-100 text-gray-600 p-3 rounded-lg">
-                                    <i class="fas fa-pause-circle text-xl"></i>
+                                <div class="bg-orange-50 text-orange-600 p-3 rounded-lg">
+                                    <i class="fas fa-store text-xl"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Blocked Cards -->
+                        <!-- Active Terminals -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-sm font-medium text-gray-500">Blocked</p>
-                                    <p class="text-2xl font-bold text-red-600 mt-1" id="stats-blocked">0</p>
+                                    <p class="text-sm font-medium text-gray-500">Active Terminals</p>
+                                    <p class="text-2xl font-bold text-gray-900 mt-1" id="activeTerminals">0</p>
                                 </div>
-                                <div class="bg-red-50 text-red-600 p-3 rounded-lg">
-                                    <i class="fas fa-times-circle text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Lost Cards -->
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Lost</p>
-                                    <p class="text-2xl font-bold text-yellow-600 mt-1" id="stats-lost">0</p>
-                                </div>
-                                <div class="bg-yellow-50 text-yellow-600 p-3 rounded-lg">
-                                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                                <div class="bg-teal-50 text-teal-600 p-3 rounded-lg">
+                                    <i class="fas fa-microchip text-xl"></i>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <!-- Alert Messages -->
-                    <div id="error-alert" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-circle text-red-400"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p id="error-text" class="text-sm text-red-700"></p>
-                            </div>
+                    <!-- Extra Info -->
+                    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Recent System Events</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <div class="flex-shrink-0"><i class="fas fa-server text-blue-500 mt-1"></i></div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">Main Gateway API Updated</p>
+                                        <p class="text-xs text-gray-500">v2.4.1 deployed successfully without downtime.</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="flex-shrink-0"><i class="fas fa-store text-green-500 mt-1"></i></div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">New Merchant Onboarded</p>
+                                        <p class="text-xs text-gray-500">Alfamart Phils. activated 12 new terminals.</p>
+                                    </div>
+                                </li>
+                            </ul>
                         </div>
-                    </div>
-
-                    <div id="success-alert" class="hidden bg-green-50 border-l-4 border-green-400 p-4 rounded-md">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-green-400"></i>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 w-full text-center border-b pb-2">Active Regions</h3>
+                            <div class="w-32 h-32 rounded-full border-8 border-gray-100 flex items-center justify-center mt-4 border-t-blue-500 border-r-purple-500">
+                                <span class="text-xl font-bold text-gray-900">4</span>
                             </div>
-                            <div class="ml-3">
-                                <p id="success-text" class="text-sm text-green-700"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cards Inventory Table -->
-                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <!-- Table Header Controls -->
-                        <div
-                            class="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">Physical Cards Inventory</h3>
-                                <p class="text-sm text-gray-500">View and manage all cards registered in the system
-                                    database.</p>
-                            </div>
-                            <!-- Search Bar -->
-                            <div class="relative w-full md:w-80">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <i class="fas fa-search text-gray-400"></i>
-                                </span>
-                                <input type="text" id="search-input" placeholder="Search by Card Number, Name..."
-                                    class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
-                            </div>
-                        </div>
-
-                        <!-- Data Table -->
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200" id="cards-table">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Card Number</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Cardholder</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Type</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Expiry</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Preloaded Balance</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Status</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                            Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200" id="table-body">
-                                    <tr>
-                                        <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">
-                                            Loading inventory...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination Controls -->
-                        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
-                            <div class="flex-1 flex justify-between sm:hidden">
-                                <button id="prev-btn-mobile"
-                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                    Previous
-                                </button>
-                                <button id="next-btn-mobile"
-                                    class="relative inline-flex items-center ml-3 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                    Next
-                                </button>
-                            </div>
-                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-700">
-                                        Showing <span id="start-index" class="font-medium">0</span> to <span
-                                            id="end-index" class="font-medium">0</span> of <span id="total-count"
-                                            class="font-medium">0</span> entries
-                                    </p>
-                                </div>
-                                <div>
-                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                                        aria-label="Pagination">
-                                        <button id="prev-btn"
-                                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <span class="sr-only">Previous</span>
-                                            <i class="fas fa-chevron-left"></i>
-                                        </button>
-                                        <button id="next-btn"
-                                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <span class="sr-only">Next</span>
-                                            <i class="fas fa-chevron-right"></i>
-                                        </button>
-                                    </nav>
-                                </div>
+                            <div class="mt-4 flex gap-4 text-xs text-gray-600">
+                                <div><span class="text-blue-500">●</span> Metro Manila</div>
+                                <div><span class="text-purple-500">●</span> Cebu</div>
+                                <div><span class="text-gray-300">●</span> Others</div>
                             </div>
                         </div>
                     </section>
@@ -331,141 +242,31 @@
             </main>
         </div>
     </div>
-
-    <!-- Deactivate Confirmation Modal -->
-    <div id="deactivate-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeDeactivateModal()">
-            </div>
-            <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div>
-                    <input type="hidden" id="deactivate-card-number" />
-                    <input type="hidden" id="deactivate-card-holder" />
-                    <input type="hidden" id="deactivate-card-type" />
-
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10 text-red-600">
-                                <i class="fas fa-ban text-lg"></i>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-bold text-gray-900">Deactivate Card</h3>
-                                <div class="mt-2 space-y-2">
-                                    <p class="text-sm text-gray-500">
-                                        Are you sure you want to deactivate this card? This action will set the status
-                                        to <strong>Blocked</strong>.
-                                    </p>
-                                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-150 text-sm space-y-1">
-                                        <div><strong>Card Number:</strong> <span id="deactivate-modal-num"
-                                                class="font-mono"></span></div>
-                                        <div><strong>Cardholder:</strong> <span id="deactivate-modal-holder"></span>
-                                        </div>
-                                        <div><strong>Card Type:</strong> <span id="deactivate-modal-type"></span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="button" id="confirm-deactivate-btn"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Deactivate
-                        </button>
-                        <button type="button" onclick="closeDeactivateModal()"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="delete-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeDeleteModal()"></div>
-            <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div>
-                    <input type="hidden" id="delete-card-number" />
-
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10 text-red-600">
-                                <i class="fas fa-trash-alt text-lg"></i>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-bold text-gray-900">Delete Card</h3>
-                                <div class="mt-2 space-y-2">
-                                    <p class="text-sm text-gray-500">
-                                        Are you sure you want to permanently delete this card from the database? This
-                                        action is irreversible.
-                                    </p>
-                                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-150 text-sm space-y-1">
-                                        <div><strong>Card Number:</strong> <span id="delete-modal-num"
-                                                class="font-mono"></span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="button" id="confirm-delete-btn"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Delete
-                        </button>
-                        <button type="button" onclick="closeDeleteModal()"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Logout Confirmation Modal -->
-    <div id="logout-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeLogoutModal()"></div>
-            <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div
-                            class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10 text-blue-600">
-                            <i class="fas fa-sign-out-alt text-lg"></i>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                            <h3 class="text-lg leading-6 font-bold text-gray-900">Logout Confirmation</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500">
-                                    Are you sure you want to log out of the UniCard Admin Control Panel?
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <a href="/logout"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Logout
-                    </a>
-                    <button type="button" onclick="closeLogoutModal()"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Client-Side Search and Pagination Script -->
-    <script src="../../assets/js/admin/admin-dasboard.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('/v1/admin/dashboard-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('grossRevenue').textContent = '₱' + data.data.grossRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('netRevenue').textContent = '₱' + data.data.netRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('totalUsers').textContent = data.data.totalUsers.toLocaleString();
+                    document.getElementById('totalCards').textContent = data.data.totalCards.toLocaleString();
+                    document.getElementById('activeMerchants').textContent = data.data.activeMerchants.toLocaleString();
+                    document.getElementById('activeTerminals').textContent = data.data.activeTerminals.toLocaleString();
+                } else {
+                    console.error("Failed to load dashboard data:", data.message);
+                }
+            })
+            .catch(error => console.error("Error fetching dashboard data:", error));
+        });
+    </script>
 </body>
-
 </html>

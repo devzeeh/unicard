@@ -10,6 +10,7 @@ type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 	Field   string `json:"field,omitempty"`
+    Data    any    `json:"data,omitempty"` // Optional field for additional data
 }
 
 // Login specific response — returns user data after login

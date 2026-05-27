@@ -1,7 +1,8 @@
-package structs
+package structure
 
+// CardData struct represents the data required to create a new card
 type CardData struct {
-	CardUID string  `json:"card_uid" db:"card_uid" validate:"required"`
+	CardUID    string  `json:"card_uid" db:"card_uid" validate:"required"`
 	CardNumber string  `json:"cardNumber" db:"card_number" validate:"required"`
 	CardHolder string  `json:"cardHolder" db:"user_id" validate:"required"`
 	CardType   string  `json:"cardType" db:"card_type" validate:"required"`

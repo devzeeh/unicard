@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
-	"unicard-go/backend/internal/pkg/structs"
+	structure "unicard-go/backend/internal/pkg/structs"
 
 	"github.com/go-playground/validator/v10"
 )
 
 // Type alias for CardData to resolve the redeclaration error
-type CardData = structs.CardData
+type CardData = structure.CardData
 
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
