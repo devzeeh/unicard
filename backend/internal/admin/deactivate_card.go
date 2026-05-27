@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
-	"unicard-go/backend/internal/pkg/structure"
+	structure "unicard-go/backend/internal/pkg/structs"
 
 	"github.com/go-playground/validator/v10"
 )
