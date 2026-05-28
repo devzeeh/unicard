@@ -209,41 +209,34 @@
                         </div>
                     </section>
 
-                    <!-- Extra Info -->
-                    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Recent System Events</h3>
-                            <ul class="space-y-4">
-                                <li class="flex items-start">
-                                    <div class="flex-shrink-0"><i class="fas fa-server text-blue-500 mt-1"></i></div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">Main Gateway API Updated</p>
-                                        <p class="text-xs text-gray-500">v2.4.1 deployed successfully without downtime.
-                                        </p>
-                                    </div>
-                                </li>
-                                <li class="flex items-start">
-                                    <div class="flex-shrink-0"><i class="fas fa-store text-green-500 mt-1"></i></div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">New Merchant Onboarded</p>
-                                        <p class="text-xs text-gray-500">Alfamart Phils. activated 12 new terminals.</p>
-                                    </div>
-                                </li>
-                            </ul>
+
+
+                    <!-- Merchants Table -->
+                    <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-4 border-b pb-2">
+                            <h3 class="text-lg font-bold text-gray-900">Registered Merchants</h3>
+                            <a href="/admin/merchants" class="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center transition duration-150">
+                                View All <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                            </a>
                         </div>
-                        <div
-                            class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 w-full text-center border-b pb-2">Active
-                                Regions</h3>
-                            <div
-                                class="w-32 h-32 rounded-full border-8 border-gray-100 flex items-center justify-center mt-4 border-t-blue-500 border-r-purple-500">
-                                <span class="text-xl font-bold text-gray-900">4</span>
-                            </div>
-                            <div class="mt-4 flex gap-4 text-xs text-gray-600">
-                                <div><span class="text-blue-500">●</span> Metro Manila</div>
-                                <div><span class="text-purple-500">●</span> Cebu</div>
-                                <div><span class="text-gray-300">●</span> Others</div>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
+                                        <th class="p-3 font-semibold">Merchant ID</th>
+                                        <th class="p-3 font-semibold">Business Name</th>
+                                        <th class="p-3 font-semibold">Business Type</th>
+                                        <th class="p-3 font-semibold">Owner Name</th>
+                                        <th class="p-3 font-semibold">Email</th>
+                                        <th class="p-3 font-semibold">Phone</th>
+                                        <th class="p-3 font-semibold">Status</th>
+                                        <th class="p-3 font-semibold">Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="merchantsTableBody" class="text-sm text-gray-700 divide-y divide-gray-100">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
                         </div>
                     </section>
                 </div>
@@ -251,7 +244,7 @@
         </div>
     </div>
 
-    <script src="/frontend/assets/admin/admin_dashboard.js"></script>
+    <script src="../../assets/admin/admin_dashboard.js?"></script>
 </body>
 
 </html>

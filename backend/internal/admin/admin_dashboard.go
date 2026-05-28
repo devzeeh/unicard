@@ -7,14 +7,28 @@ import (
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
+// List of all merchants
+// Merchant represents a single business tenant to be displayed in the data table
+type Merchant struct {
+	MerchantID   string `json:"merchant_id"`
+	BusinessName string `json:"business_name"`
+	BusinessType string `json:"business_type"`
+	OwnerName    string `json:"owner_name"`
+	Email        string `json:"business_email"`
+	Phone        string `json:"business_phone"`
+	Status       string `json:"status"`
+	CreatedAt    string `json:"created_at"`
+}
+
 // AdminDashboardData struct represents the data to be displayed on the admin dashboard
 type AdminDashboardData struct {
-	GrossRevenue    float64 `json:"grossRevenue"`
-	NetRevenue      float64 `json:"netRevenue"`
-	TotalUsers      int     `json:"totalUsers"`
-	TotalCards      int     `json:"totalCards"`
-	ActiveMerchants int     `json:"activeMerchants"`
-	ActiveTerminals int     `json:"activeTerminals"`
+	GrossRevenue    float64    `json:"grossRevenue"`
+	NetRevenue      float64    `json:"netRevenue"`
+	TotalUsers      int        `json:"totalUsers"`
+	TotalCards      int        `json:"totalCards"`
+	ActiveMerchants int        `json:"activeMerchants"`
+	ActiveTerminals int        `json:"activeTerminals"`
+	Merchants       []Merchant `json:"merchants"`
 }
 
 // AdminDashboardView renders the platform_overview.html template after checking the admin session.
@@ -138,6 +152,29 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	}
 	log.Println("Total terminals row:", totalTerminals)
 
+	// Fetch all merchants for the table
+	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants"
+	rows, err := h.DB.Query(merchantQuery)
+	if err != nil {
+		log.Println("Error querying merchants:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Internal server error",
+		})
+		return
+	}
+	defer rows.Close()
+
+	var merchants []Merchant
+	for rows.Next() {
+		var m Merchant
+		if err := rows.Scan(&m.MerchantID, &m.BusinessName, &m.BusinessType, &m.OwnerName, &m.Email, &m.Phone, &m.Status, &m.CreatedAt); err != nil {
+			log.Println("Error scanning merchant:", err)
+			continue
+		}
+		merchants = append(merchants, m)
+	}
+
 	// Return the data as JSON
 	response := AdminDashboardData{
 		GrossRevenue:    grossRevenue,
@@ -146,6 +183,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 		TotalCards:      totalCards,
 		ActiveMerchants: totalMerchants,
 		ActiveTerminals: totalTerminals,
+		Merchants:       merchants,
 	}
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
