@@ -1,21 +1,11 @@
 package admin
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	structs "unicard-go/backend/internal/pkg/structs"
 )
-
-// AdminDashboardData struct represents the data to be displayed on the admin dashboard
-type AdminDashboardData struct {
-	GrossRevenue    float64 `json:"grossRevenue"`
-	NetRevenue      float64 `json:"netRevenue"`
-	TotalUsers      int     `json:"totalUsers"`
-	TotalCards      int     `json:"totalCards"`
-	ActiveMerchants int     `json:"activeMerchants"`
-	ActiveTerminals int     `json:"activeTerminals"`
-}
 
 // AdminDashboardView renders the platform_overview.html template after checking the admin session.
 func (h *Handler) AdminDashboardView(w http.ResponseWriter, r *http.Request) {
@@ -27,17 +17,6 @@ func (h *Handler) AdminDashboardView(w http.ResponseWriter, r *http.Request) {
 // AdminDashboardDataHandler handles the request for admin dashboard data and returns JSON response.
 func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("AdminDashboardDataHandler running...")
-
-	var req AdminDashboardData
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Println("Error decoding JSON:", err)
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Invalid request format",
-		})
-		return
-	}
 
 	// Compute UniCard's Absolute Gross Revenue
 	// (Transaction Service Fees)
@@ -138,14 +117,38 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	}
 	log.Println("Total terminals row:", totalTerminals)
 
+	// Fetch all merchants for the table
+	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants"
+	rows, err := h.DB.Query(merchantQuery)
+	if err != nil {
+		log.Println("Error querying merchants:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Internal server error",
+		})
+		return
+	}
+	defer rows.Close()
+
+	var merchants []structs.Merchant
+	for rows.Next() {
+		var m structs.Merchant
+		if err := rows.Scan(&m.MerchantID, &m.BusinessName, &m.BusinessType, &m.OwnerName, &m.Email, &m.Phone, &m.Status, &m.CreatedAt); err != nil {
+			log.Println("Error scanning merchant:", err)
+			continue
+		}
+		merchants = append(merchants, m)
+	}
+
 	// Return the data as JSON
-	response := AdminDashboardData{
+	response := structs.AdminDashboardData{
 		GrossRevenue:    grossRevenue,
 		NetRevenue:      netRevenue,
 		TotalUsers:      totalUsers,
 		TotalCards:      totalCards,
 		ActiveMerchants: totalMerchants,
 		ActiveTerminals: totalTerminals,
+		Merchants:       merchants,
 	}
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,

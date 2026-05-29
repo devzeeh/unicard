@@ -5,22 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UniCard Admin - Add Card</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ["Inter", "sans-serif"],
-                    }
-                },
-            },
-        };
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend/assets/style/tailwind.js"></script>
 </head>
 
 <body class="font-sans antialiased text-gray-900 bg-gray-100">
@@ -272,65 +262,7 @@
         </div>
     </div>
 
-    <script>
-        function openLogoutModal() {
-            document.getElementById('logout-modal').classList.remove('hidden');
-        }
-
-        function closeLogoutModal() {
-            document.getElementById('logout-modal').classList.add('hidden');
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            const form = document.getElementById("add-card-form");
-            const errorAlert = document.getElementById("error-alert");
-            const successAlert = document.getElementById("success-alert");
-            const errorText = document.getElementById("error-text");
-            const successText = document.getElementById("success-text");
-
-            if (form) {
-                form.addEventListener("submit", function (e) {
-                    e.preventDefault();
-                    if (errorAlert) errorAlert.classList.add("hidden");
-                    if (successAlert) successAlert.classList.add("hidden");
-
-                    const cardUID = document.getElementById("cardUID").value;
-                    const initialAmount = document.getElementById("initialAmount").value;
-
-                    fetch("/v1/admin/addcardauth", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            card_uid: cardUID,
-                            initial_amount: parseFloat(initialAmount)
-                        })
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                if (successAlert && successText) {
-                                    successText.innerText = data.message;
-                                    successAlert.classList.remove("hidden");
-                                }
-                                form.reset();
-                            } else {
-                                if (errorAlert && errorText) {
-                                    errorText.innerText = data.message;
-                                    errorAlert.classList.remove("hidden");
-                                }
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            if (errorAlert && errorText) {
-                                errorText.innerText = "Network error. Please try again.";
-                                errorAlert.classList.remove("hidden");
-                            }
-                        });
-                });
-            }
-        });
-    </script>
+    <script src="/frontend/assets/admin/add_card.js"></script>
 </body>
 
 </html>
