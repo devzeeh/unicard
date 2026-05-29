@@ -45,7 +45,7 @@ func (h *Handler) PlatformOverviewView(w http.ResponseWriter, r *http.Request) {
 }
 
 // MerchantManagementView serves the Merchant Management page
-func (h *Handler) MerchantManagementView(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) MerchantManagementViews(w http.ResponseWriter, r *http.Request) {
 	err := h.Tpl.ExecuteTemplate(w, "merchant_management.html", nil)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)

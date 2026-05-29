@@ -91,8 +91,9 @@ func main() {
 
 	// super admin endpoints
 	mux.HandleFunc("GET /admin/dashboard", adminHanlder.AdminDashboardView)
-	mux.HandleFunc("POST /v1/admin/dashboard-data", adminHanlder.AdminDashboardDataHandler)
+	mux.HandleFunc("GET /v1/admin/dashboard-data", adminHanlder.AdminDashboardDataHandler)
 	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
+	mux.HandleFunc("GET /v1/admin/merchants-data", adminHanlder.MerchantManagementDataHandler)
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
 	mux.HandleFunc("POST /v1/admin/merchants/add", adminHanlder.AddMerchantHandler)
