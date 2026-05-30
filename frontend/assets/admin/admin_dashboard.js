@@ -29,14 +29,25 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
 
                         tr.innerHTML = `
-                            <td class="p-3 whitespace-nowrap">${m.merchant_id}</td>
-                            <td class="p-3 font-medium text-gray-900">${m.business_name}</td>
-                            <td class="p-3 capitalize">${m.business_type.replace(/_/g, ' ')}</td>
-                            <td class="p-3">${m.owner_name}</td>
-                            <td class="p-3">${m.business_email}</td>
-                            <td class="p-3">${m.business_phone}</td>
+                            <td class="p-3 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10l-7-5-7 5v11m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">${m.business_name}</div>
+                                        <div class="text-xs text-gray-500">ID: ${m.merchant_id}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3 capitalize text-sm text-gray-600">${m.business_type.replace(/_/g, ' ')}</td>
+                            <td class="p-3 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${m.owner_name}</div>
+                                <div class="text-xs text-gray-500">${m.business_email}</div>
+                            </td>
+                            <td class="p-3 text-sm text-gray-600">${m.business_phone}</td>
                             <td class="p-3">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor}">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor} capitalize">
                                     ${m.status.replace(/_/g, ' ')}
                                 </span>
                             </td>
@@ -47,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="p-8 text-center">
+                            <td colspan="6" class="p-8 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-500">
                                     <i class="fas fa-store-slash text-4xl mb-3 text-gray-300"></i>
                                     <p class="text-base font-medium text-gray-900">No merchants registered yet</p>

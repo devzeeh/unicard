@@ -1,7 +1,7 @@
-let originalMerchants = [];
-let allMerchants = [];
-let currentPage = 1;
-const itemsPerPage = 10;    
+let originalMerchants = []; // store all fetched merchants
+let allMerchants = []; // store filtered merchants
+let currentPage = 1; // current page
+const itemsPerPage = 10;    // items per page
 let currentSearchQuery = '';
 let currentSortOrder = 'desc';
 
@@ -176,23 +176,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+document.getElementById('addAnotherMerchantBtn').addEventListener('click', () => {
+    const container = document.getElementById('merchantBlocksContainer');
+    const firstBlock = container.querySelector('.merchant-block');
+    const newBlock = firstBlock.cloneNode(true);
+    
+    // Clear inputs (keep default commission rate)
+    const inputs = newBlock.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        if (input.name !== 'commissionRate' && input.name !== 'businessType') {
+            input.value = '';
+        }
+    });
+    
+    const blockCount = container.querySelectorAll('.merchant-block').length + 1;
+    newBlock.querySelector('.merchant-title').textContent = `Merchant #${blockCount}`;
+    
+    const removeBtn = newBlock.querySelector('.remove-merchant-btn');
+    removeBtn.classList.remove('hidden');
+    removeBtn.addEventListener('click', function() {
+        newBlock.remove();
+        updateMerchantTitles();
+    });
+    
+    container.appendChild(newBlock);
+});
+
+function updateMerchantTitles() {
+    const blocks = document.querySelectorAll('.merchant-block');
+    blocks.forEach((block, index) => {
+        block.querySelector('.merchant-title').textContent = `Merchant #${index + 1}`;
+    });
+}
+
 document.getElementById('onboardForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
+    
+    const blocks = document.querySelectorAll('.merchant-block');
+    const merchantsData = [];
+    
+    blocks.forEach(block => {
+        const inputs = block.querySelectorAll('input, select');
+        const merchantObj = {};
+        inputs.forEach(input => {
+            if (input.name) merchantObj[input.name] = input.value;
+        });
+        merchantsData.push(merchantObj);
+    });
+
     const alertBox = document.getElementById('formAlert');
+    alertBox.classList.add('hidden');
 
     fetch('/v1/admin/merchants/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(merchantsData)
     })
         .then(response => response.json())
         .then(result => {
             alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-green-50', 'text-green-600');
             if (result.success) {
                 alertBox.classList.add('bg-green-50', 'text-green-600');
-                alertBox.textContent = result.message || "Merchant onboarded successfully!";
+                alertBox.textContent = result.message || "Merchants onboarded successfully!";
                 setTimeout(() => window.location.reload(), 1500);
             } else {
                 alertBox.classList.add('bg-red-50', 'text-red-600');
