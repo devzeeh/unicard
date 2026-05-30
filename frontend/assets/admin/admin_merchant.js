@@ -1,42 +1,33 @@
-let originalMerchants = []; // store all fetched merchants
-let allMerchants = []; // store filtered merchants
 let currentPage = 1; // current page
 const itemsPerPage = 10;    // items per page
 let currentSearchQuery = '';
 let currentSortOrder = 'desc';
+let totalItemsCount = 0;
+let currentMerchants = [];
 
 function fetchMerchants() {
-    fetch('/v1/admin/merchants-data')
+    const queryParams = new URLSearchParams({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: currentSearchQuery,
+        sort: currentSortOrder
+    });
+
+    fetch(`/v1/admin/merchants-data?${queryParams.toString()}`)
         .then(response => response.json())
         .then(result => {
-            if (result.success && result.data && result.data.merchants) {
-                originalMerchants = result.data.merchants;
-                applyFiltersAndSort();
+            if (result.success && result.data) {
+                currentMerchants = result.data.merchants || [];
+                totalItemsCount = result.data.totalItems || 0;
+                renderTable();
             }
         })
         .catch(error => console.error('Error fetching merchants:', error));
 }
 
 function applyFiltersAndSort() {
-    let filtered = originalMerchants;
-
-    if (currentSearchQuery) {
-        const queryTerms = currentSearchQuery.toLowerCase().trim().split(/\s+/);
-        filtered = filtered.filter(m => {
-            const searchableText = `${m.business_name || ''} ${m.owner_name || ''} ${m.merchant_id || ''}`.toLowerCase();
-            return queryTerms.every(term => searchableText.includes(term));
-        });
-    }
-
-    filtered.sort((a, b) => {
-        const dateA = new Date(a.created_at || 0);
-        const dateB = new Date(b.created_at || 0);
-        return currentSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-    });
-
-    allMerchants = filtered;
     currentPage = 1;
-    renderTable();
+    fetchMerchants();
 }
 
 function highlightText(text, queryTerms) {
@@ -67,13 +58,9 @@ function renderTable() {
     const tbody = document.getElementById('merchantTableBody');
     tbody.innerHTML = '';
 
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, allMerchants.length);
-    const pageData = allMerchants.slice(startIndex, endIndex);
-
     const queryTerms = currentSearchQuery ? currentSearchQuery.toLowerCase().trim().split(/\s+/) : [];
 
-    pageData.forEach(merchant => {
+    currentMerchants.forEach(merchant => {
         const tr = document.createElement('tr');
         
         const highlightedBusinessName = highlightText(merchant.business_name, queryTerms);
@@ -107,9 +94,12 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
-    document.getElementById('pageStart').textContent = allMerchants.length > 0 ? startIndex + 1 : 0;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItemsCount);
+
+    document.getElementById('pageStart').textContent = totalItemsCount > 0 ? startIndex + 1 : 0;
     document.getElementById('pageEnd').textContent = endIndex;
-    document.getElementById('totalItems').textContent = allMerchants.length;
+    document.getElementById('totalItems').textContent = totalItemsCount;
 
     renderPagination();
 }
@@ -118,7 +108,7 @@ function renderPagination() {
     const paginationControls = document.getElementById('paginationControls');
     paginationControls.innerHTML = '';
 
-    const totalPages = Math.ceil(allMerchants.length / itemsPerPage);
+    const totalPages = Math.ceil(totalItemsCount / itemsPerPage);
 
     if (totalPages <= 1) return;
 
@@ -126,14 +116,14 @@ function renderPagination() {
     prevBtn.className = `px-3 py-1 rounded-md text-sm font-medium ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`;
     prevBtn.textContent = 'Previous';
     prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
+    prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; fetchMerchants(); } };
     paginationControls.appendChild(prevBtn);
 
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.className = `px-3 py-1 rounded-md text-sm font-medium ${currentPage === i ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-50'}`;
         btn.textContent = i;
-        btn.onclick = () => { currentPage = i; renderTable(); };
+        btn.onclick = () => { currentPage = i; fetchMerchants(); };
         paginationControls.appendChild(btn);
     }
 
@@ -141,7 +131,7 @@ function renderPagination() {
     nextBtn.className = `px-3 py-1 rounded-md text-sm font-medium ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`;
     nextBtn.textContent = 'Next';
     nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderTable(); } };
+    nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; fetchMerchants(); } };
     paginationControls.appendChild(nextBtn);
 }
 
@@ -149,10 +139,15 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchMerchants();
 
     const searchInput = document.getElementById('searchInput');
+    let searchTimeout = null;
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             currentSearchQuery = e.target.value;
-            applyFiltersAndSort();
+            // Debounce search
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyFiltersAndSort();
+            }, 300);
         });
     }
 
