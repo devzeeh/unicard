@@ -75,14 +75,14 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		hash   string // Store the password hash from the database
-		ID     string // Store the ID
-		userID string // Store the user ID for successful login response
-		role   string // Store the role
+		hash     string // Store the password hash from the database
+		ID       string // Store the ID
+		userName string // Store the user ID for successful login response
+		role     string // Store the role
 	)
 
-	stmt := "SELECT id, user_id, password_hash, role FROM users WHERE email = ? OR username = ? OR phone_number = ?"
-	err = h.DB.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userID, &hash, &role)
+	stmt := "SELECT id, username, password_hash, role FROM users WHERE email = ? OR username = ? OR phone_number = ?"
+	err = h.DB.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userName, &hash, &role)
 
 	// User not found
 	if err != nil {
@@ -106,10 +106,11 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Determine redirect based on role
-	redirectURL := "/dashboard" // Default for customer
-	if role == "super_admin" {
+	redirectURL := "/dashboard?user=" + userName // Default for customer
+	switch role {
+	case "super_admin":
 		redirectURL = "/admin/platform-overview" // Super admin dashboard
-	} else if role == "merchant_admin" || role == "merchant_staff" {
+	case "merchant_admin", "merchant_staff":
 		redirectURL = "/merchant/dashboard" // Merchant dashboard
 	}
 
@@ -119,7 +120,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		Success:     true,
 		Message:     "Login successful",
 		ID:          ID,
-		UserID:      userID,
+		Username:    userName,
 		RedirectURL: redirectURL,
 	})
 }

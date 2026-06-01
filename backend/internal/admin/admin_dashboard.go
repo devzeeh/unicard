@@ -117,8 +117,8 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	}
 	log.Println("Total terminals row:", totalTerminals)
 
-	// Fetch all merchants for the table
-	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants"
+	// Fetch recent merchants for the table (limit 5)
+	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants ORDER BY created_at DESC LIMIT 5"
 	rows, err := h.DB.Query(merchantQuery)
 	if err != nil {
 		log.Println("Error querying merchants:", err)

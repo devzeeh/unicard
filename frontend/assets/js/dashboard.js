@@ -147,7 +147,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- Fetch Dashboard Data ---
     function fetchDashboardData() {
-        fetch("/v1/user/dashboard")
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user');
+        
+        let endpoint = "/v1/user/dashboard";
+        if (userId) {
+            endpoint += "?user=" + encodeURIComponent(userId);
+        }
+
+        fetch(endpoint)
             .then(response => {
                 if (response.status === 401) {
                     window.location.href = "/login";

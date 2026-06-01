@@ -45,9 +45,16 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
-
-	// Get session cookie (Removed)
-	userID := "UNI-060104051234" // Dummy user ID for testing
+	
+	// Get user ID from query param (No cookies for now)
+	userID := r.URL.Query().Get("user")
+	if userID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "user is required",
+		})
+		return
+	}
 
 	// Fetch user and card details
 	var (
@@ -79,7 +86,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		FROM users u
 		LEFT JOIN cards c 
 			ON u.user_id = c.user_id
-		WHERE u.user_id = ?
+		WHERE u.username = ?
 	`
 	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
 	if err != nil {

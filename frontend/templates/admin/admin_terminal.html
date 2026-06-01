@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Super Admin - Terminal Registry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend/assets/style/tailwind.js"></script>
+</head>
+<body class="font-sans antialiased text-gray-900 bg-gray-100">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar Navigation -->
+        {{template "admin_sidebar" "terminals"}}
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Terminal Registry</h2>
+                <div class="flex items-center">
+                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Super Admin</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                        SA
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                <div class="max-w-7xl mx-auto space-y-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Hardware Inventory</h1>
+                            <p class="text-gray-500 mt-1">Master list of deployed RFID/POS terminal machines and their live connection status.</p>
+                        </div>
+                        <button onclick="document.getElementById('addTerminalModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition duration-150 text-sm">
+                            Register Terminal
+                        </button>
+                    </div>
+
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="relative w-full md:w-80">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                                <input type="text" id="searchInput" placeholder="Search by S/N or Merchant..." class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device ID / S/N</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Merchant</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Live Status</th>
+                                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="terminal-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- Dynamic content will be injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                Showing <span id="start-item" class="font-medium text-gray-900">0</span> to 
+                                <span id="end-item" class="font-medium text-gray-900">0</span> of 
+                                <span id="total-items" class="font-medium text-gray-900">0</span> results
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="prev-page" disabled class="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                                <span id="page-info" class="px-3 py-1 text-sm text-gray-700 font-medium">Page 1</span>
+                                <button id="next-page" disabled class="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Add Terminal Modal -->
+    <div id="addTerminalModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-8 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Register New Terminal</h3>
+                <button onclick="document.getElementById('addTerminalModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="addTerminalForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Terminal Serial Number</label>
+                    <input type="text" name="terminalSn" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Device Name</label>
+                    <input type="text" name="deviceName" placeholder="e.g. Turnstile 1, Front Desk POS" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="terminalFormAlert" class="hidden rounded-lg p-4 text-sm mt-4"></div>
+                <div class="flex justify-end gap-4 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="document.getElementById('addTerminalModal').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../assets/admin/admin_terminal.js"></script>
+</body>
+</html>
