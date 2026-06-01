@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -95,6 +96,49 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	}
 	if merchants == nil {
 		merchants = []structs.Merchant{}
+	} else {
+		// Fetch terminals for these merchants
+		var merchantIDs []string
+		for _, m := range merchants {
+			merchantIDs = append(merchantIDs, m.MerchantID)
+		}
+
+		placeholders := make([]string, len(merchantIDs))
+		termArgs := make([]interface{}, len(merchantIDs))
+		for i, id := range merchantIDs {
+			placeholders[i] = "?"
+			termArgs[i] = id
+		}
+
+		termQuery := fmt.Sprintf(`
+			SELECT m.merchant_id, t.terminal_id, t.terminal_sn, t.device_name, t.status 
+			FROM terminals t 
+			JOIN merchants m ON t.merchant_id = m.id 
+			WHERE m.merchant_id IN (%s)`, strings.Join(placeholders, ","))
+
+		termRows, err := h.DB.Query(termQuery, termArgs...)
+		if err == nil {
+			defer termRows.Close()
+			termMap := make(map[string][]structs.Terminal)
+			for termRows.Next() {
+				var mID string
+				var t structs.Terminal
+				if err := termRows.Scan(&mID, &t.TerminalID, &t.TerminalSN, &t.DeviceName, &t.Status); err == nil {
+					termMap[mID] = append(termMap[mID], t)
+				}
+			}
+			for i := range merchants {
+				merchants[i].Terminals = termMap[merchants[i].MerchantID]
+				if merchants[i].Terminals == nil {
+					merchants[i].Terminals = []structs.Terminal{}
+				}
+			}
+		} else {
+			log.Println("Error fetching terminals for merchants:", err)
+			for i := range merchants {
+				merchants[i].Terminals = []structs.Terminal{}
+			}
+		}
 	}
 
 	type PaginatedMerchantResponse struct {

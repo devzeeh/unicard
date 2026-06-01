@@ -73,6 +73,8 @@ func main() {
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
+	mux.HandleFunc("GET /admin-signup", authHandler.AdminSignupView)
+	mux.HandleFunc("POST /v1/admin-signup", authHandler.AdminSignupHandler)
 	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
 	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
 	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
@@ -95,6 +97,8 @@ func main() {
 	mux.HandleFunc("GET /admin/merchants", adminHanlder.MerchantManagementView)
 	mux.HandleFunc("GET /v1/admin/merchants-data", adminHanlder.MerchantManagementDataHandler)
 	mux.HandleFunc("GET /admin/terminals", adminHanlder.TerminalRegistryView)
+	mux.HandleFunc("GET /v1/admin/terminals-data", adminHanlder.TerminalRegistryDataHandler)
+	mux.HandleFunc("POST /v1/admin/terminals/add", adminHanlder.AddTerminalHandler)
 	mux.HandleFunc("GET /admin/settings", adminHanlder.SystemSettingsView)
 	mux.HandleFunc("POST /v1/admin/merchants/add", adminHanlder.AddMerchantHandler)
 	mux.HandleFunc("GET /admin/card-inventory", adminHanlder.CardInventoryView)

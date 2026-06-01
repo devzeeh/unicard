@@ -78,7 +78,7 @@ CREATE TABLE terminals (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal hardware registry auto-increment row index',
     terminal_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public hardware identifier (e.g., TRM-2026-0001) used in API payloads',
     terminal_sn VARCHAR(50) UNIQUE NOT NULL COMMENT 'Physical factory-assigned unique serial number or MAC address of the ESP32 board',
-    merchant_id INT NOT NULL COMMENT 'Links to the internal auto-increment id of the managing merchant entity',
+    merchant_id INT NULL COMMENT 'Links to the internal auto-increment id of the managing merchant entity',
     device_name VARCHAR(100) NOT NULL COMMENT 'Human-readable descriptor identifying placement (e.g., Counter 1, Jeepney Plate # ABC-123)',
     location_details VARCHAR(255) NULL COMMENT 'Optional physical sector data, such as a branch route path or stall number designation',
     status ENUM('active', 'suspended', 'offline') DEFAULT 'active' COMMENT 'Operational network connectivity state of the edge node hardware',

@@ -3,23 +3,24 @@ package structure
 // CardData struct represents the data required to create a new card
 type CardData struct {
 	CardUID    string  `json:"card_uid" db:"card_uid" validate:"required"`
-	CardNumber string  `json:"cardNumber" db:"card_number" validate:"required"`
-	CardHolder string  `json:"cardHolder" db:"user_id" validate:"required"`
-	CardType   string  `json:"cardType" db:"card_type" validate:"required"`
+	CardNumber string  `json:"cardNumber" db:"card_number"`
+	CardHolder string  `json:"cardHolder" db:"user_id"`
+	CardType   string  `json:"cardType" db:"card_type"`
 	Balance    float64 `json:"initial_amount" db:"balance" validate:"required,min=0"`
 }
 
 // List of all merchants
 // Merchant represents a single business tenant to be displayed in the data table
 type Merchant struct {
-	MerchantID   string `json:"merchant_id"`
-	BusinessName string `json:"business_name"`
-	BusinessType string `json:"business_type"`
-	OwnerName    string `json:"owner_name"`
-	Email        string `json:"business_email"`
-	Phone        string `json:"business_phone"`
-	Status       string `json:"status"`
-	CreatedAt    string `json:"created_at"`
+	MerchantID   string     `json:"merchant_id"`
+	BusinessName string     `json:"business_name"`
+	BusinessType string     `json:"business_type"`
+	OwnerName    string     `json:"owner_name"`
+	Email        string     `json:"business_email"`
+	Phone        string     `json:"business_phone"`
+	Status       string     `json:"status"`
+	CreatedAt    string     `json:"created_at"`
+	Terminals    []Terminal `json:"terminals,omitempty"`
 }
 
 // AdminDashboardData struct represents the data to be displayed on the admin dashboard
@@ -31,4 +32,33 @@ type AdminDashboardData struct {
 	ActiveMerchants int        `json:"activeMerchants"`
 	ActiveTerminals int        `json:"activeTerminals"`
 	Merchants       []Merchant `json:"merchants"`
+}
+
+// Terminal represents a hardware device in the terminal registry
+type Terminal struct {
+	TerminalID    string `json:"terminal_id"`
+	TerminalSN    string `json:"terminal_sn"`
+	AssignedMerch string `json:"assigned_merchant"`
+	DeviceName    string `json:"device_name"`
+	Status        string `json:"status"`
+}
+
+// Transaction struct represents a user's transaction for the dashboard view
+type Transaction struct {
+	Date        string  `db:"date" json:"date"`
+	Description string  `db:"description" json:"description"`
+	Type        string  `db:"transaction_type" json:"type"`
+	Amount      float64 `db:"transaction_amount" json:"amount"`
+}
+
+// DashboardUser info struct for the user dashboard view
+type DashboardUser struct {
+	ID                 int           `db:"id" json:"id,omitempty"`
+	UserID             string        `db:"user_id" json:"user_id,omitempty"`
+	Username           string        `db:"username" json:"username"`
+	Name               string        `db:"name" json:"name"`
+	Balance            float64       `db:"balance" json:"balance"`
+	LoyaltyPoints      int           `db:"loyalty_points" json:"loyalty_points"`
+	AccountType        string        `db:"account_type" json:"account_type"`
+	RecentTransactions []Transaction `json:"transactions"` // Add recent transactions to the dashboard response
 }

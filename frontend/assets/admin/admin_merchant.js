@@ -58,6 +58,15 @@ function renderTable() {
     const tbody = document.getElementById('merchantTableBody');
     tbody.innerHTML = '';
 
+    if (!currentMerchants || currentMerchants.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">No merchants found matching your criteria.</td></tr>`;
+        document.getElementById('pageStart').textContent = '0';
+        document.getElementById('pageEnd').textContent = '0';
+        document.getElementById('totalItems').textContent = '0';
+        document.getElementById('paginationControls').innerHTML = '';
+        return;
+    }
+
     const queryTerms = currentSearchQuery ? currentSearchQuery.toLowerCase().trim().split(/\s+/) : [];
 
     currentMerchants.forEach(merchant => {
@@ -83,6 +92,11 @@ function renderTable() {
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">${highlightedOwnerName}</div>
                 <div class="text-xs text-gray-500">${merchant.business_email}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">
+                    ${window.renderAssignedTerminals ? window.renderAssignedTerminals(merchant.terminals) : '<span class="text-gray-400 italic">No terminals</span>'}
+                </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${merchant.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} capitalize">${merchant.status}</span>
