@@ -12,7 +12,11 @@ import (
 
 func (h *Handler) MerchantManagementView(w http.ResponseWriter, r *http.Request) {
 	log.Println("MerchantManagementView running...")
-	h.Tpl.ExecuteTemplate(w, "admin_merchant.html", nil)
+	data := AdminPageData{
+		Page:     "merchants",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "admin_merchant.html", data)
 }
 
 func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.Request) {

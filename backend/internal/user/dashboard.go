@@ -46,8 +46,8 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
 	
-	// Get user ID from query param (No cookies for now)
-	userID := r.URL.Query().Get("user")
+	// Get user ID from path param (No cookies for now)
+	userID := r.PathValue("username")
 	if userID == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,

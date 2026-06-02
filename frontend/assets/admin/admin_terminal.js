@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentSearch = "";
 
     function fetchTerminals(page = 1, search = "") {
-        const url = `/v1/admin/terminals-data?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+        const adminUsername = window.location.pathname.split('/')[2];
+        const url = `/v1/admin/${adminUsername}/terminals-data?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
 
         fetch(url)
             .then(res => res.json())
@@ -145,7 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const alertBox = document.getElementById("terminalFormAlert");
             alertBox.classList.add("hidden");
 
-            fetch('/v1/admin/terminals/add', {
+            const adminUsername = window.location.pathname.split('/')[2];
+            fetch(`/v1/admin/${adminUsername}/terminals/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

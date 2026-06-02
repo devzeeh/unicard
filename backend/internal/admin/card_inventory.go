@@ -29,8 +29,11 @@ type AdminCardInventoryStats struct {
 // CardInventoryView handles rendering the static admin dashboard view
 func (h *Handler) CardInventoryView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("CardInventoryView running...")
-
-	err := h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", nil)
+	data := AdminPageData{
+		Page:     "card-inventory",
+		Username: r.PathValue("username"),
+	}
+	err := h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", data)
 	if err != nil {
 		fmt.Printf("Template execution error: %v\n", err)
 	}

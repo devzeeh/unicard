@@ -16,7 +16,7 @@
 <body class="font-sans antialiased text-gray-900 bg-gray-100">
     <div class="flex h-screen bg-gray-100">
         <!-- Sidebar Navigation -->
-        {{template "admin_sidebar" "addcard"}}
+        {{template "admin_sidebar" .}}
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden">
@@ -127,7 +127,7 @@
                                     class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 shadow-sm">
                                     Create Card
                                 </button>
-                                <a href="/admin/dashboard"
+                                <a href="/admin/{{.Username}}"
                                     class="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition duration-150">
                                     Cancel
                                 </a>

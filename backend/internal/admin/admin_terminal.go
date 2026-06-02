@@ -16,7 +16,11 @@ import (
 
 func (h *Handler) TerminalRegistryView(w http.ResponseWriter, r *http.Request) {
 	log.Println("TerminalRegistryView running...")
-	h.Tpl.ExecuteTemplate(w, "admin_terminal.html", nil)
+	data := AdminPageData{
+		Page:     "terminals",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "admin_terminal.html", data)
 }
 
 func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Request) {

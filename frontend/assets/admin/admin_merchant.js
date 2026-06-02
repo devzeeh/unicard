@@ -13,7 +13,8 @@ function fetchMerchants() {
         sort: currentSortOrder
     });
 
-    fetch(`/v1/admin/merchants-data?${queryParams.toString()}`)
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/merchants-data?${queryParams.toString()}`)
         .then(response => response.json())
         .then(result => {
             if (result.success && result.data) {
@@ -236,7 +237,8 @@ document.getElementById('onboardForm').addEventListener('submit', function (e) {
     const alertBox = document.getElementById('formAlert');
     alertBox.classList.add('hidden');
 
-    fetch('/v1/admin/merchants/add', {
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/merchants/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(merchantsData)

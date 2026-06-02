@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
-    fetch('/v1/admin/dashboard-data')
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/dashboard-data`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
