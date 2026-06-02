@@ -4,6 +4,31 @@ let currentSearchQuery = '';
 let currentSortOrder = 'desc';
 let totalItemsCount = 0;
 let currentMerchants = [];
+let unassignedTerminals = [];
+
+function fetchUnassignedTerminals() {
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/terminals/unassigned`)
+        .then(res => res.json())
+        .then(result => {
+            if (result.success && result.data) {
+                unassignedTerminals = result.data;
+                document.querySelectorAll('.terminal-sn-select').forEach(populateTerminalDropdown);
+            }
+        })
+        .catch(error => console.error("Error fetching unassigned terminals", error));
+}
+
+function populateTerminalDropdown(selectElement) {
+    selectElement.innerHTML = '<option value="" disabled selected>Select a terminal</option>';
+    unassignedTerminals.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.terminal_sn;
+        opt.textContent = t.terminal_sn;
+        opt.dataset.deviceName = t.device_name;
+        selectElement.appendChild(opt);
+    });
+}
 
 function fetchMerchants() {
     const queryParams = new URLSearchParams({
@@ -152,6 +177,21 @@ function renderPagination() {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchMerchants();
+    fetchUnassignedTerminals();
+    
+    // Delegate change event for terminal selection
+    document.getElementById('merchantBlocksContainer').addEventListener('change', function(e) {
+        if (e.target.classList.contains('terminal-sn-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const block = e.target.closest('.merchant-block');
+            const deviceNameInput = block.querySelector('.device-name-input');
+            if (selectedOption && selectedOption.dataset.deviceName) {
+                deviceNameInput.value = selectedOption.dataset.deviceName;
+            } else {
+                deviceNameInput.value = '';
+            }
+        }
+    });
 
     const searchInput = document.getElementById('searchInput');
     let searchTimeout = null;

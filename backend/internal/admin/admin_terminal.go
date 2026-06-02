@@ -149,8 +149,8 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a unique terminal ID
-	timestamp := time.Now().Format("06010405")
-	nTerminal, _ := rand.Int(rand.Reader, big.NewInt(100000))
+	timestamp := time.Now().Format("01020605") // MMDDYYss
+	nTerminal, _ := rand.Int(rand.Reader, big.NewInt(10000)) // max 9999
 	terminalID := fmt.Sprintf("TRM-%s%04d", timestamp, nTerminal.Int64())
 
 	// Insert into DB with NULL merchant_id
@@ -168,5 +168,42 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Terminal registered to inventory successfully",
+	})
+}
+
+type UnassignedTerminalData struct {
+	TerminalSN string `json:"terminal_sn"`
+	DeviceName string `json:"device_name"`
+}
+
+func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.DB.Query(`
+		SELECT terminal_sn, device_name 
+		FROM terminals 
+		WHERE merchant_id IS NULL AND status = 'active'
+	`)
+	if err != nil {
+		log.Printf("Error fetching unassigned terminals: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Database error",
+		})
+		return
+	}
+	defer rows.Close()
+
+	var terminals []UnassignedTerminalData
+	for rows.Next() {
+		var t UnassignedTerminalData
+		if err := rows.Scan(&t.TerminalSN, &t.DeviceName); err != nil {
+			log.Printf("Row scan error: %v", err)
+			continue
+		}
+		terminals = append(terminals, t)
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Data:    terminals,
 	})
 }

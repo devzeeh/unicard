@@ -98,6 +98,7 @@ func main() {
 	mux.HandleFunc("GET /v1/admin/{username}/merchants-data", adminHanlder.MerchantManagementDataHandler)
 	mux.HandleFunc("GET /admin/{username}/terminals", adminHanlder.TerminalRegistryView)
 	mux.HandleFunc("GET /v1/admin/{username}/terminals-data", adminHanlder.TerminalRegistryDataHandler)
+	mux.HandleFunc("GET /v1/admin/{username}/terminals/unassigned", adminHanlder.GetUnassignedTerminalsHandler)
 	mux.HandleFunc("POST /v1/admin/{username}/terminals/add", adminHanlder.AddTerminalHandler)
 	mux.HandleFunc("GET /admin/{username}/settings", adminHanlder.SystemSettingsView)
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/add", adminHanlder.AddMerchantHandler)

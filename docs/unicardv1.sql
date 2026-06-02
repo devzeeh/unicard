@@ -1,20 +1,8 @@
 -- CREATE DATABASE IF NOT EXISTS unicardv1;
--- USE unicardv1;
+--  USE unicardv2;
 
 -- =========================================================================
--- 1. LOW-GROWTH / INDEPENDENT LOOKUP TABLES
--- =========================================================================
-
-CREATE TABLE regions (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal region numeric auto-increment look-up index',
-    region_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public identifier for the region tier data metrics (e.g., REG-01)',
-    region_name VARCHAR(100) NOT NULL COMMENT 'The official geographic regional designation name (e.g., Central Luzon, NCR)',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated timestamp logging when the target region entity was first added',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically monitors administrative adjustments or title updates over time'
-) COMMENT='Geographic metadata region lookup entity driving system analytics and localized metric calculations';
-
--- =========================================================================
--- 2. CORE IDENTITY & AUTHENTICATION TABLES
+-- 1. CORE IDENTITY & AUTHENTICATION TABLES
 -- =========================================================================
 
 CREATE TABLE users (
@@ -27,15 +15,13 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL COMMENT 'Cryptographically secured password string handled via bcrypt in Go',
     role ENUM('super_admin', 'merchant_admin', 'merchant_staff', 'customer') NOT NULL COMMENT 'Defines application-wide role-based access control',
     status ENUM('active', 'suspended', 'inactive') DEFAULT 'active' COMMENT 'Account access state for platform security and compliance checks',
-    region_id INT NULL COMMENT 'Links customer location to a specific region lookup like Central Luzon',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated timestamp of account creation',
-    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated timestamp of account creation'
 ) COMMENT='Core identity table tracking authentication and tenancy access control levels';
 
 CREATE TABLE system_settings (
-    setting_key VARCHAR(50) PRIMARY KEY COMMENT 'Unique string configuration key acting as the primary look-up token (e.g., global_topup_fee, min_card_balance)',    
-    setting_value VARCHAR(255) NOT NULL COMMENT 'The active parameter threshold or value parsed directly by the Go backend business logic engines',    
-    description TEXT NULL COMMENT 'Descriptive documentation notes detailing exactly what system rules or parameters this configuration key alters',                       
+    setting_key VARCHAR(50) PRIMARY KEY COMMENT 'Unique string configuration key acting as the primary look-up token',    
+    setting_value VARCHAR(255) NOT NULL COMMENT 'The active parameter threshold or value parsed directly by the Go backend',    
+    description TEXT NULL COMMENT 'Descriptive documentation notes detailing exactly what system rules or parameters this alters',                       
     updated_by VARCHAR(50) NOT NULL COMMENT 'The public users.user_id of the Super Admin who executed the latest configuration adjustment override',                  
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp tracking when this specific configuration parameter was initialized',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically locks the exact clock timestamp whenever this system parameter value is updated',
@@ -43,7 +29,7 @@ CREATE TABLE system_settings (
 ) COMMENT='Global platform configuration matrix driving dynamic fees, operational bounds, and system constants';
 
 -- =========================================================================
--- 3. MERCHANT TENANCY & HARDWARE REGISTRY TABLES
+-- 2. MERCHANT TENANCY & HARDWARE REGISTRY TABLES
 -- =========================================================================
 
 CREATE TABLE merchants (
@@ -54,7 +40,7 @@ CREATE TABLE merchants (
     business_registration_number VARCHAR(100) NULL UNIQUE COMMENT 'Official government tracking number (e.g., DTI, SEC, or BIR TIN)',
     business_address TEXT NOT NULL COMMENT 'Physical location of the main store or corporate headquarters',
     
-    owner_user_id VARCHAR(50) NOT NULL COMMENT 'Links to the user_id in the users table who owns this business account',
+    user_id VARCHAR(50) NOT NULL COMMENT 'Links to the user_id in the users table who owns this business account',
     owner_name VARCHAR(100) NOT NULL COMMENT 'Full name of the principal owner or authorized business representative',
     business_email VARCHAR(100) NOT NULL UNIQUE COMMENT 'Official company contact email address for corporate updates and billing statements',
     business_phone VARCHAR(20) NOT NULL UNIQUE COMMENT 'Official telephone or mobile number for merchant support and emergency updates',
@@ -70,7 +56,7 @@ CREATE TABLE merchants (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated date and time record of the initial registration request',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically updates whenever any merchant profile field is modified',
     
-    FOREIGN KEY (owner_user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) COMMENT='Enterprise business registry tracking partner tenants, hardware mapping nodes, and financial settlement details';
 
@@ -78,18 +64,18 @@ CREATE TABLE terminals (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal hardware registry auto-increment row index',
     terminal_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public hardware identifier (e.g., TRM-2026-0001) used in API payloads',
     terminal_sn VARCHAR(50) UNIQUE NOT NULL COMMENT 'Physical factory-assigned unique serial number or MAC address of the ESP32 board',
-    merchant_id INT NULL COMMENT 'Links to the internal auto-increment id of the managing merchant entity',
+    merchant_id varchar(50) NULL COMMENT 'Links to the internal auto-increment id of the managing merchant entity',
     device_name VARCHAR(100) NOT NULL COMMENT 'Human-readable descriptor identifying placement (e.g., Counter 1, Jeepney Plate # ABC-123)',
     location_details VARCHAR(255) NULL COMMENT 'Optional physical sector data, such as a branch route path or stall number designation',
     status ENUM('active', 'suspended', 'offline') DEFAULT 'active' COMMENT 'Operational network connectivity state of the edge node hardware',
     last_heartbeat TIMESTAMP NULL COMMENT 'Tracks the precise timestamp of the last successful ping packet received from the ESP32 network stack',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp tracking initial edge device registration',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically monitors configuration adjustments or state transitions over time',
-    FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
+    FOREIGN KEY (merchant_id) REFERENCES merchants(user_id) ON DELETE CASCADE
 ) COMMENT='Hardware node registry tracking deployed physical authentication nodes and network heartbeat states';
 
 -- =========================================================================
--- 4. UTILITY & USER TRANSACTION LOGS TABLES (HIGH GROWING DATASETS)
+-- 3. UTILITY & USER TRANSACTION LOGS TABLES (HIGH GROWING DATASETS)
 -- =========================================================================
 
 CREATE TABLE cards (
@@ -103,6 +89,7 @@ CREATE TABLE cards (
     status ENUM('active', 'inactive', 'blocked', 'lost') DEFAULT 'inactive' COMMENT 'Lifecycle block status constraint to instantly freeze stolen or missing tokens',
     expiry_date DATE NOT NULL COMMENT 'Expiration threshold date determining card block lifecycle validations',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp tracking when the physical token record was registered in inventory',
+    linked_at TIMESTAMP NULL DEFAULT NULL COMMENT 'Timestamp tracking the exact moment the card was registered to a specific user',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically updates when balances adjust or card status switches occur',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) COMMENT='Ecosystem transit wallet asset tracker maintaining balances, hardware mapping tokens, and fare tier flags';
@@ -111,8 +98,8 @@ CREATE TABLE transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal financial primary index scaled to 64-bit headroom to comfortably support billions of platform entries',
     transaction_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom unique public reference string (e.g., TXN-2026-104294) printed on digital and paper receipts',
     card_number VARCHAR(20) NOT NULL COMMENT 'Links target token balance deduction via cards.card_number',
-    merchant_id INT NOT NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.id',
-    terminal_id INT NOT NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.id',
+    merchant_id varchar(50) NOT NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.id',
+    terminal_id varchar(50) NOT NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.id',
     transaction_type ENUM('payment', 'refund', 'reversal') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
     amount DECIMAL(10, 2) NOT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
     service_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Platform revenue slice collected by UniCard ecosystem engine per tap processing action',
@@ -120,8 +107,8 @@ CREATE TABLE transactions (
     processed_by VARCHAR(50) NOT NULL COMMENT 'Public string identifier users.user_id capturing the identity of the physical staff member operating the payment client terminal',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Cryptographic server node timestamp securing exactly when transaction settlement clearing finalized',
     FOREIGN KEY (card_number) REFERENCES cards(card_number),
-    FOREIGN KEY (merchant_id) REFERENCES merchants(id),
-    FOREIGN KEY (terminal_id) REFERENCES terminals(id),
+    FOREIGN KEY (merchant_id) REFERENCES merchants(user_id),
+    FOREIGN KEY (terminal_id) REFERENCES terminals(terminal_id),
     FOREIGN KEY (processed_by) REFERENCES users(user_id)
 ) COMMENT='High-growth financial master ledger capturing all terminal token taps, transaction classifications, and system fees';
 
@@ -131,6 +118,8 @@ CREATE TABLE top_ups (
     card_number VARCHAR(20) NOT NULL COMMENT 'Links target token balance injection via cards.card_number',
     amount DECIMAL(10, 2) NOT NULL COMMENT 'Gross load amount requested by the customer before convenience charges are applied',
     convenience_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Ecosystem engine collection fee applied to over-the-air channels like GCash or Maya webhooks',
+    gateway_cost DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Actual fee incurred from external payment providers (GCash, Maya, Bank) per transaction',
+    net_gateway_fee DECIMAL(10, 2) GENERATED ALWAYS AS (convenience_fee - gateway_cost) STORED COMMENT 'Automatically calculated net revenue kept by the platform after 3rd party costs',
     total_charged DECIMAL(10, 2) GENERATED ALWAYS AS (amount + convenience_fee) STORED COMMENT 'Automatically calculated column representing the absolute total cash value collected from the external channel source',
     payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
     handled_by VARCHAR(50) NULL COMMENT 'Public user_id string identifier referencing the administrative staff member who manually accepted physical bills if OTC cash-loaded',
