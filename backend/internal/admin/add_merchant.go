@@ -90,7 +90,7 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer merchStmt.Close()
 
-	termStmt, err := tx.Prepare(`UPDATE terminals SET merchant_id = ? WHERE terminal_sn = ?`)
+	termStmt, err := tx.Prepare(`UPDATE terminals SET merchant_id = ?, location_details = ? WHERE terminal_sn = ?`)
 	if err != nil {
 		tx.Rollback()
 		log.Printf("Error preparing terminal stmt: %v", err)
@@ -192,7 +192,7 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update the existing terminal
-		_, err = termStmt.Exec(userID, req.TerminalSN)
+		_, err = termStmt.Exec(userID, req.BusinessAddress, req.TerminalSN)
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Error creating terminal %d: %v", i+1, err)

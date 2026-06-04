@@ -117,7 +117,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		termQuery := fmt.Sprintf(`
 			SELECT m.merchant_id, t.terminal_id, t.terminal_sn, t.device_name, t.status 
 			FROM terminals t 
-			JOIN merchants m ON t.merchant_id = m.id 
+			JOIN merchants m ON t.merchant_id = m.user_id 
 			WHERE m.merchant_id IN (%s)`, strings.Join(placeholders, ","))
 
 		termRows, err := h.DB.Query(termQuery, termArgs...)

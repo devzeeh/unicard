@@ -30,21 +30,21 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
 
                         tr.innerHTML = `
-                            <td class="p-3 whitespace-nowrap">
+                            <td class="p-3 whitespace-nowrap max-w-[250px]" title="${m.business_name}">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10l-7-5-7 5v11m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">${m.business_name}</div>
-                                        <div class="text-xs text-gray-500">ID: ${m.merchant_id}</div>
+                                    <div class="ml-4 truncate">
+                                        <div class="text-sm font-medium text-gray-900 truncate">${m.business_name}</div>
+                                        <div class="text-xs text-gray-500 truncate">ID: ${m.merchant_id}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="p-3 capitalize text-sm text-gray-600">${m.business_type.replace(/_/g, ' ')}</td>
-                            <td class="p-3 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">${m.owner_name}</div>
-                                <div class="text-xs text-gray-500">${m.business_email}</div>
+                            <td class="p-3 capitalize text-sm text-gray-600 max-w-[150px] truncate" title="${m.business_type}">${m.business_type.replace(/_/g, ' ')}</td>
+                            <td class="p-3 whitespace-nowrap max-w-[250px]" title="${m.owner_name} / ${m.business_email}">
+                                <div class="text-sm text-gray-900 truncate">${m.owner_name}</div>
+                                <div class="text-xs text-gray-500 truncate">${m.business_email}</div>
                             </td>
                             <td class="p-3 text-sm text-gray-600">${m.business_phone}</td>
                             <td class="p-3">

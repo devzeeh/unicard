@@ -64,18 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 h-10 w-10 ${iconBg} rounded-lg flex items-center justify-center">
-                            <i class="fas ${icon}"></i>
-                        </div>
-                        <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900 font-mono">${terminal.terminal_id}</div>
-                            <div class="text-xs text-gray-500 font-mono">SN: ${terminal.terminal_sn}</div>
-                        </div>
-                    </div>
+                    <div class="text-sm font-medium text-gray-900 font-mono">${terminal.terminal_id}</div>
+                    <div class="text-xs text-gray-500 font-mono">SN: ${terminal.terminal_sn}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${terminal.assigned_merchant}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${terminal.device_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 max-w-[200px] truncate" title="${terminal.assigned_merchant}">${terminal.assigned_merchant}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 max-w-[150px] truncate" title="${terminal.device_name}">${terminal.device_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 max-w-[250px] truncate" title="${terminal.location_details || 'Not Set'}">${terminal.location_details || 'Not Set'}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
                 </td>

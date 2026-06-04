@@ -43,7 +43,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	offset := (page - 1) * limit
 
 	// Build query
-	baseQuery := `FROM terminals t LEFT JOIN merchants m ON t.merchant_id = m.id`
+	baseQuery := `FROM terminals t LEFT JOIN merchants m ON t.merchant_id = m.user_id`
 	var args []interface{}
 	var conditions []string
 
@@ -72,7 +72,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 
 	// Get paginated data
 	orderClause := " ORDER BY t.created_at DESC"
-	query := `SELECT t.terminal_id, t.terminal_sn, COALESCE(m.business_name, 'Unassigned / Inventory'), t.device_name, t.status ` +
+	query := `SELECT t.terminal_id, t.terminal_sn, COALESCE(m.business_name, 'Unassigned / Inventory'), t.device_name, COALESCE(t.location_details, 'Not Set'), t.status ` +
 		baseQuery + whereClause + orderClause + ` LIMIT ? OFFSET ?`
 
 	args = append(args, limit, offset)
@@ -91,7 +91,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	var terminals []structs.Terminal
 	for rows.Next() {
 		var t structs.Terminal
-		if err := rows.Scan(&t.TerminalID, &t.TerminalSN, &t.AssignedMerch, &t.DeviceName, &t.Status); err != nil {
+		if err := rows.Scan(&t.TerminalID, &t.TerminalSN, &t.AssignedMerch, &t.DeviceName, &t.LocationDetails, &t.Status); err != nil {
 			log.Println("Error scanning terminal:", err)
 			continue
 		}
@@ -154,7 +154,7 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	terminalID := fmt.Sprintf("TRM-%s%04d", timestamp, nTerminal.Int64())
 
 	// Insert into DB with NULL merchant_id
-	query := `INSERT INTO terminals (terminal_id, terminal_sn, merchant_id, device_name, status) VALUES (?, ?, NULL, ?, 'active')`
+	query := `INSERT INTO terminals (terminal_id, terminal_sn, merchant_id, device_name, status) VALUES (?, ?, NULL, ?, 'offline')`
 	_, err := h.DB.Exec(query, terminalID, req.TerminalSN, req.DeviceName)
 	if err != nil {
 		log.Printf("Error inserting standalone terminal: %v", err)

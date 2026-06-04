@@ -6,6 +6,18 @@ let totalItemsCount = 0;
 let currentMerchants = [];
 let unassignedTerminals = [];
 
+window.renderAssignedTerminals = function(terminals) {
+    if (!terminals || terminals.length === 0) {
+        return '<span class="text-gray-400 italic">No terminals</span>';
+    }
+    return terminals.map(t => {
+        return `<div class="mb-1 max-w-[200px]" title="${t.device_name || t.terminal_id}">
+            <div class="text-sm text-gray-900 truncate">${t.device_name || t.terminal_id}</div>
+            <div class="text-xs text-gray-500 truncate">SN: ${t.terminal_sn}</div>
+        </div>`;
+    }).join('');
+};
+
 function fetchUnassignedTerminals() {
     const adminUsername = window.location.pathname.split('/')[2];
     fetch(`/v1/admin/${adminUsername}/terminals/unassigned`)
@@ -101,23 +113,17 @@ function renderTable() {
         const highlightedBusinessName = highlightText(merchant.business_name, queryTerms);
         const highlightedMerchantId = highlightText(merchant.merchant_id, queryTerms);
         const highlightedOwnerName = highlightText(merchant.owner_name, queryTerms);
+        const highlightedEmail = highlightText(merchant.business_email, queryTerms);
 
         tr.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10l-7-5-7 5v11m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">${highlightedBusinessName}</div>
-                        <div class="text-xs text-gray-500">ID: ${highlightedMerchantId}</div>
-                    </div>
-                </div>
+            <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.business_name}">
+                <div class="text-sm font-medium text-gray-900 truncate">${highlightedBusinessName}</div>
+                <div class="text-xs text-gray-500 truncate">ID: ${highlightedMerchantId}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">${merchant.business_type.replace(/_/g, ' ')}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${highlightedOwnerName}</div>
-                <div class="text-xs text-gray-500">${merchant.business_email}</div>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize max-w-[150px] truncate" title="${merchant.business_type}">${merchant.business_type.replace(/_/g, ' ')}</td>
+            <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.owner_name} / ${merchant.business_email}">
+                <div class="text-sm text-gray-900 truncate">${highlightedOwnerName}</div>
+                <div class="text-xs text-gray-500 truncate">${highlightedEmail}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">
