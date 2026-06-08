@@ -39,8 +39,9 @@ type Terminal struct {
 	TerminalID    string `json:"terminal_id"`
 	TerminalSN    string `json:"terminal_sn"`
 	AssignedMerch string `json:"assigned_merchant"`
-	DeviceName    string `json:"device_name"`
-	Status        string `json:"status"`
+	DeviceName      string `json:"device_name"`
+	LocationDetails string `json:"location_details"`
+	Status          string `json:"status"`
 }
 
 // Transaction struct represents a user's transaction for the dashboard view

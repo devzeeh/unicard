@@ -30,7 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 cardType: cardTypeSelect.value
             };
 
-            fetch("/v1/admin/deactivatecardauth", {
+            const adminUsername = window.location.pathname.split('/')[2];
+            fetch(`/v1/admin/${adminUsername}/deactivatecardauth`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bodyData)

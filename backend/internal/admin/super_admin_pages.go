@@ -12,7 +12,8 @@ var Validate = validator.New()
 
 // PlatformOverviewView serves the new Super Admin Platform Overview
 func (h *Handler) PlatformOverviewView(w http.ResponseWriter, r *http.Request) {
-	err := h.Tpl.ExecuteTemplate(w, "platform_overview.html", nil)
+	data := AdminPageData{Page: "dashboard", Username: r.PathValue("username")}
+	err := h.Tpl.ExecuteTemplate(w, "platform_overview.html", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -24,7 +25,8 @@ func (h *Handler) PlatformOverviewView(w http.ResponseWriter, r *http.Request) {
 
 // MerchantManagementView serves the Merchant Management page
 func (h *Handler) MerchantManagementViews(w http.ResponseWriter, r *http.Request) {
-	err := h.Tpl.ExecuteTemplate(w, "merchant_management.html", nil)
+	data := AdminPageData{Page: "merchants", Username: r.PathValue("username")}
+	err := h.Tpl.ExecuteTemplate(w, "merchant_management.html", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -36,7 +38,8 @@ func (h *Handler) MerchantManagementViews(w http.ResponseWriter, r *http.Request
 
 // TerminalRegistryView serves the Hardware Registry page
 func (h *Handler) TerminalRegistryViews(w http.ResponseWriter, r *http.Request) {
-	err := h.Tpl.ExecuteTemplate(w, "hardware_registry.html", nil)
+	data := AdminPageData{Page: "terminals", Username: r.PathValue("username")}
+	err := h.Tpl.ExecuteTemplate(w, "hardware_registry.html", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -48,7 +51,8 @@ func (h *Handler) TerminalRegistryViews(w http.ResponseWriter, r *http.Request) 
 
 // SystemSettingsView serves the System Settings page
 func (h *Handler) SystemSettingsView(w http.ResponseWriter, r *http.Request) {
-	err := h.Tpl.ExecuteTemplate(w, "system_settings.html", nil)
+	data := AdminPageData{Page: "settings", Username: r.PathValue("username")}
+	err := h.Tpl.ExecuteTemplate(w, "system_settings.html", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

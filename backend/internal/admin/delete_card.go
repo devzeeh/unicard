@@ -14,8 +14,11 @@ import (
 
 func (h *Handler) DeleteCardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeleteCardView running...")
-
-	h.Tpl.ExecuteTemplate(w, "delete_card.html", nil)
+	data := AdminPageData{
+		Page:     "delete-cards",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "delete_card.html", data)
 }
 
 // DeleteCardHandler handles deleting a card by card_number and returns JSON.

@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"strings"
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
@@ -19,17 +20,17 @@ import (
 type AddMerchantRequest struct {
 	BusinessName      string `json:"businessName" validate:"required" db:"business_name"`
 	BusinessType      string `json:"businessType" validate:"required" db:"business_type"`
-	RegistrationNum   string `json:"registrationNum" validate:"required" db:"registration_num"`
+	RegistrationNum   string `json:"registrationNum" db:"registration_num"`
 	BusinessAddress   string `json:"businessAddress" validate:"required" db:"business_address"`
 	OwnerName         string `json:"ownerName" validate:"required" db:"owner_name"`
 	BusinessEmail     string `json:"businessEmail" validate:"required,email" db:"business_email"`
 	BusinessPhone     string `json:"businessPhone" validate:"required" db:"business_phone"`
-	CommissionRate    string `json:"commissionRate" validate:"required" db:"commission_rate"`
+	CommissionRate    string `json:"commissionRate" db:"commission_rate"`
 	SettlementName    string `json:"settlementName" validate:"required" db:"settlement_name"`
 	SettlementAccount string `json:"settlementAccount" validate:"required" db:"settlement_account_number"`
 	SettlementBank    string `json:"settlementBank" validate:"required" db:"settlement_bank_name"`
 	TerminalSN        string `json:"terminalSn" validate:"required" db:"terminal_sn"`
-	DeviceName        string `json:"deviceName" validate:"required" db:"device_name"`
+	DeviceName        string `json:"deviceName" db:"device_name"`
 }
 
 // AddMerchantHandler creates new merchants and their corresponding owner users in bulk
@@ -76,7 +77,7 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 
 	merchStmt, err := tx.Prepare(`INSERT INTO merchants (
 		merchant_id, business_name, business_type, business_registration_number, business_address, 
-		owner_user_id, owner_name, business_email, business_phone, commission_rate, 
+		user_id, owner_name, business_email, business_phone, commission_rate, 
 		settlement_account_name, settlement_account_number, settlement_bank_name, status
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
@@ -90,9 +91,8 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer merchStmt.Close()
 
-	termStmt, err := tx.Prepare(`INSERT INTO terminals (
-		terminal_id, terminal_sn, merchant_id, device_name, status
-	) VALUES (?, ?, ?, ?, ?)`)
+	// Update terminal status to active and assign merchant_id
+	termStmt, err := tx.Prepare(`UPDATE terminals SET merchant_id = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?`)
 	if err != nil {
 		tx.Rollback()
 		log.Printf("Error preparing terminal stmt: %v", err)
@@ -105,6 +105,20 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	defer termStmt.Close()
 
 	for i, req := range reqs {
+		// Clean and format string fields
+		req.BusinessName = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessName)))
+		req.BusinessAddress = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessAddress)))
+		req.OwnerName = strings.Title(strings.ToLower(strings.TrimSpace(req.OwnerName)))
+		req.SettlementName = strings.Title(strings.ToLower(strings.TrimSpace(req.SettlementName)))
+		
+		// Some fields don't need title case but should be trimmed
+		req.BusinessEmail = strings.ToLower(strings.TrimSpace(req.BusinessEmail))
+		req.BusinessPhone = strings.TrimSpace(req.BusinessPhone)
+		req.TerminalSN = strings.TrimSpace(req.TerminalSN)
+		req.DeviceName = strings.TrimSpace(req.DeviceName)
+		
+		reqs[i] = req // update back to slice
+
 		err := Validate.Struct(req)
 		if err != nil {
 			tx.Rollback()
@@ -116,17 +130,14 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 				fieldMessages := map[string]string{
 					"BusinessName":      "Business name is required",
 					"BusinessType":      "Business type is required",
-					"RegistrationNum":   "Registration number is required",
 					"BusinessAddress":   "Business address is required",
 					"OwnerName":         "Owner name is required",
 					"BusinessEmail":     "A valid business email is required",
 					"BusinessPhone":     "Business phone number is required",
-					"CommissionRate":    "Commission rate is required",
 					"SettlementName":    "Settlement name is required",
 					"SettlementAccount": "Settlement account number is required",
 					"SettlementBank":    "Settlement bank name is required",
 					"TerminalSN":        "Terminal serial number is required",
-					"DeviceName":        "Device name is required",
 				}
 				if customMsg, ok := fieldMessages[firstErr.Field()]; ok {
 					msg = fmt.Sprintf("Merchant #%d: %s", i+1, customMsg)
@@ -140,12 +151,12 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Generate IDs (Format: YYMMminsecxxxxx where xxxxx is 5 random numbers)
-		timestamp := time.Now().Format("06010405") // YYMMDDHH
+		timestamp := time.Now().Format("01020605") // MMDDYYss
 
-		nUser, _ := rand.Int(rand.Reader, big.NewInt(100000))
+		nUser, _ := rand.Int(rand.Reader, big.NewInt(10000)) // max 9999
 		userID := fmt.Sprintf("UNI-%s%04d", timestamp, nUser.Int64())
 
-		nMerchant, _ := rand.Int(rand.Reader, big.NewInt(100000))
+		nMerchant, _ := rand.Int(rand.Reader, big.NewInt(10000))
 		merchantID := fmt.Sprintf("MCH-%s%04d", timestamp, nMerchant.Int64())
 
 		// Create user for the merchant owner
@@ -173,9 +184,16 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		res, err := merchStmt.Exec(
-			merchantID, req.BusinessName, req.BusinessType, req.RegistrationNum, req.BusinessAddress,
-			userID, req.OwnerName, req.BusinessEmail, req.BusinessPhone, req.CommissionRate,
+		// Generate registration number (UCBZ-MMDDss-xxxxxxxxxx)
+		nReg, _ := rand.Int(rand.Reader, big.NewInt(10000000000))
+		regNum := fmt.Sprintf("UCBZ-%s-%010d", time.Now().Format("010205"), nReg.Int64())
+
+		// Set commission rate
+		fixedCommissionRate := 2.00
+
+		_, err = merchStmt.Exec(
+			merchantID, req.BusinessName, req.BusinessType, regNum, req.BusinessAddress,
+			userID, req.OwnerName, req.BusinessEmail, req.BusinessPhone, fixedCommissionRate,
 			req.SettlementName, req.SettlementAccount, req.SettlementBank, "active",
 		)
 
@@ -189,21 +207,8 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		internalMerchantID, err := res.LastInsertId()
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Error getting last insert ID for merchant %d: %v", i+1, err)
-			jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-				Success: false,
-				Message: "Database error",
-			})
-			return
-		}
-
-		nTerminal, _ := rand.Int(rand.Reader, big.NewInt(100000))
-		terminalID := fmt.Sprintf("TRM-%s%04d", timestamp, nTerminal.Int64())
-
-		_, err = termStmt.Exec(terminalID, req.TerminalSN, internalMerchantID, req.DeviceName, "active")
+		// Update the existing terminal
+		_, err = termStmt.Exec(userID, req.BusinessAddress, req.TerminalSN)
 		if err != nil {
 			tx.Rollback()
 			log.Printf("Error creating terminal %d: %v", i+1, err)

@@ -18,8 +18,11 @@ type CardData = structure.CardData
 
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("DeactivateView running...")
-
-	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", nil)
+	data := AdminPageData{
+		Page:     "deactivatecard",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "deactivateCard.html", data)
 }
 
 // DeactivateCardHanlder handles deactivating a card and returns a JSON response.

@@ -2,18 +2,60 @@ let currentPage = 1; // current page
 const itemsPerPage = 10;    // items per page
 let currentSearchQuery = '';
 let currentSortOrder = 'desc';
+let currentCategory = '';
+let currentStatus = '';
 let totalItemsCount = 0;
 let currentMerchants = [];
+let unassignedTerminals = [];
+
+window.renderAssignedTerminals = function(terminals) {
+    if (!terminals || terminals.length === 0) {
+        return '<span class="text-gray-400 italic">No terminals</span>';
+    }
+    return terminals.map(t => {
+        return `<div class="mb-1 max-w-[200px]" title="${t.device_name || t.terminal_id}">
+            <div class="text-sm text-gray-900 truncate">${t.device_name || t.terminal_id}</div>
+            <div class="text-xs text-gray-500 truncate">SN: ${t.terminal_sn}</div>
+        </div>`;
+    }).join('');
+};
+
+function fetchUnassignedTerminals() {
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/terminals/unassigned`)
+        .then(res => res.json())
+        .then(result => {
+            if (result.success && result.data) {
+                unassignedTerminals = result.data;
+                document.querySelectorAll('.terminal-sn-select').forEach(populateTerminalDropdown);
+            }
+        })
+        .catch(error => console.error("Error fetching unassigned terminals", error));
+}
+
+function populateTerminalDropdown(selectElement) {
+    selectElement.innerHTML = '<option value="" disabled selected>Select a terminal</option>';
+    unassignedTerminals.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.terminal_sn;
+        opt.textContent = t.terminal_sn;
+        opt.dataset.deviceName = t.device_name;
+        selectElement.appendChild(opt);
+    });
+}
 
 function fetchMerchants() {
     const queryParams = new URLSearchParams({
         page: currentPage,
         limit: itemsPerPage,
         search: currentSearchQuery,
-        sort: currentSortOrder
+        sort: currentSortOrder,
+        category: currentCategory,
+        status: currentStatus
     });
 
-    fetch(`/v1/admin/merchants-data?${queryParams.toString()}`)
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/merchants-data?${queryParams.toString()}`)
         .then(response => response.json())
         .then(result => {
             if (result.success && result.data) {
@@ -75,23 +117,38 @@ function renderTable() {
         const highlightedBusinessName = highlightText(merchant.business_name, queryTerms);
         const highlightedMerchantId = highlightText(merchant.merchant_id, queryTerms);
         const highlightedOwnerName = highlightText(merchant.owner_name, queryTerms);
+        const highlightedEmail = highlightText(merchant.business_email, queryTerms);
+
+        tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+        tr.onclick = (e) => {
+            if (e.target.closest('button')) return; // Ignore button clicks
+            document.getElementById('modalBusinessName').textContent = merchant.business_name;
+            document.getElementById('modalMerchantId').textContent = merchant.merchant_id;
+            document.getElementById('modalBusinessType').textContent = merchant.business_type.replace(/_/g, ' ');
+            document.getElementById('modalOwnerName').textContent = merchant.owner_name;
+            document.getElementById('modalContactEmail').textContent = merchant.business_email;
+            document.getElementById('modalContactPhone').textContent = merchant.business_phone;
+            
+            const statusEl = document.getElementById('modalStatus');
+            statusEl.textContent = merchant.status.replace(/_/g, ' ');
+            statusEl.className = 'capitalize px-2 py-1 text-xs font-medium rounded-full';
+            if (merchant.status.toLowerCase() === 'active') statusEl.classList.add('bg-green-100', 'text-green-800');
+            else if (merchant.status.toLowerCase() === 'pending_approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+            else statusEl.classList.add('bg-red-100', 'text-red-800');
+
+            document.getElementById('modalCreatedAt').textContent = new Date(merchant.created_at).toLocaleDateString();
+            document.getElementById('merchantDetailsModal').classList.remove('hidden');
+        };
 
         tr.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10l-7-5-7 5v11m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">${highlightedBusinessName}</div>
-                        <div class="text-xs text-gray-500">ID: ${highlightedMerchantId}</div>
-                    </div>
-                </div>
+            <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.business_name}">
+                <div class="text-sm font-medium text-gray-900 truncate">${highlightedBusinessName}</div>
+                <div class="text-xs text-gray-500 truncate">ID: ${highlightedMerchantId}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">${merchant.business_type.replace(/_/g, ' ')}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${highlightedOwnerName}</div>
-                <div class="text-xs text-gray-500">${merchant.business_email}</div>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize max-w-[150px] truncate" title="${merchant.business_type}">${merchant.business_type.replace(/_/g, ' ')}</td>
+            <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.owner_name} / ${merchant.business_email}">
+                <div class="text-sm text-gray-900 truncate">${highlightedOwnerName}</div>
+                <div class="text-xs text-gray-500 truncate">${highlightedEmail}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">
@@ -151,6 +208,36 @@ function renderPagination() {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchMerchants();
+    fetchUnassignedTerminals();
+    
+    // Delegate change event for terminal selection
+    const container = document.getElementById('merchantBlocksContainer');
+    container.addEventListener('change', function(e) {
+        if (e.target.classList.contains('terminal-sn-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const block = e.target.closest('.merchant-block');
+            const deviceNameInput = block.querySelector('.device-name-input');
+            if (selectedOption && selectedOption.dataset.deviceName) {
+                deviceNameInput.value = selectedOption.dataset.deviceName;
+            } else {
+                deviceNameInput.value = '';
+            }
+        }
+    });
+
+    // Auto-format fields on focus out to trim spaces and format as Title Case
+    container.addEventListener('focusout', function(e) {
+        if (e.target.tagName === 'INPUT') {
+            let val = e.target.value;
+            if (e.target.type === 'text' && !['businessPhone', 'commissionRate', 'registrationNum', 'deviceName'].includes(e.target.name)) {
+                e.target.value = val.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+            } else if (e.target.type === 'email') {
+                e.target.value = val.trim().toLowerCase();
+            } else {
+                e.target.value = val.trim();
+            }
+        }
+    });
 
     const searchInput = document.getElementById('searchInput');
     let searchTimeout = null;
@@ -173,13 +260,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const filterCategory = document.getElementById('filterCategory');
+    if (filterCategory) {
+        filterCategory.addEventListener('change', (e) => {
+            currentCategory = e.target.value;
+            applyFiltersAndSort();
+        });
+    }
+
+    const filterStatus = document.getElementById('filterStatus');
+    if (filterStatus) {
+        filterStatus.addEventListener('change', (e) => {
+            currentStatus = e.target.value;
+            applyFiltersAndSort();
+        });
+    }
+
     const resetFiltersBtn = document.getElementById('resetFilters');
     if (resetFiltersBtn) {
         resetFiltersBtn.addEventListener('click', () => {
             if (searchInput) searchInput.value = '';
             if (sortOrder) sortOrder.value = 'desc';
+            if (filterCategory) filterCategory.value = '';
+            if (filterStatus) filterStatus.value = '';
+            
             currentSearchQuery = '';
             currentSortOrder = 'desc';
+            currentCategory = '';
+            currentStatus = '';
             applyFiltersAndSort();
         });
     }
@@ -236,7 +344,8 @@ document.getElementById('onboardForm').addEventListener('submit', function (e) {
     const alertBox = document.getElementById('formAlert');
     alertBox.classList.add('hidden');
 
-    fetch('/v1/admin/merchants/add', {
+    const adminUsername = window.location.pathname.split('/')[2];
+    fetch(`/v1/admin/${adminUsername}/merchants/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(merchantsData)

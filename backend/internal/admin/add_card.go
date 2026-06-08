@@ -20,7 +20,11 @@ import (
 // AddCardsView renders the addCards.html template after checking the admin session.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
-	h.Tpl.ExecuteTemplate(w, "addCards.html", nil)
+	data := AdminPageData{
+		Page:     "addcard",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "addCards.html", data)
 }
 
 // AddCardHandler handles card creation and returns JSON response.

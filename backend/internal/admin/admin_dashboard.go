@@ -7,10 +7,19 @@ import (
 	structs "unicard-go/backend/internal/pkg/structs"
 )
 
+type AdminPageData struct {
+	Page     string
+	Username string
+}
+
 // AdminDashboardView renders the platform_overview.html template after checking the admin session.
 func (h *Handler) AdminDashboardView(w http.ResponseWriter, r *http.Request) {
 	log.Println("AdminDashboardView running...")
-	h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", nil)
+	data := AdminPageData{
+		Page:     "dashboard",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", data)
 }
 
 // AdminDashboardDataHandler handles the request for admin dashboard data and returns JSON response.

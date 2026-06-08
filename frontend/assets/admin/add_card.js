@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const cardUID = document.getElementById("cardUID").value;
             const initialAmount = document.getElementById("initialAmount").value;
 
-            fetch("/v1/admin/addcardauth", {
+            const adminUsername = window.location.pathname.split('/')[2];
+            fetch(`/v1/admin/${adminUsername}/addcardauth`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

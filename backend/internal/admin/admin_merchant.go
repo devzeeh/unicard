@@ -12,7 +12,11 @@ import (
 
 func (h *Handler) MerchantManagementView(w http.ResponseWriter, r *http.Request) {
 	log.Println("MerchantManagementView running...")
-	h.Tpl.ExecuteTemplate(w, "admin_merchant.html", nil)
+	data := AdminPageData{
+		Page:     "merchants",
+		Username: r.PathValue("username"),
+	}
+	h.Tpl.ExecuteTemplate(w, "admin_merchant.html", data)
 }
 
 func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,6 +27,8 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	limitStr := r.URL.Query().Get("limit")
 	search := r.URL.Query().Get("search")
 	sortOrder := r.URL.Query().Get("sort") // desc or asc
+	category := r.URL.Query().Get("category")
+	status := r.URL.Query().Get("status")
 
 	page := 1
 	limit := 10
@@ -44,6 +50,16 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		conditions = append(conditions, `(business_name LIKE ? OR owner_name LIKE ? OR merchant_id LIKE ?)`)
 		searchPattern := "%" + search + "%"
 		args = append(args, searchPattern, searchPattern, searchPattern)
+	}
+
+	if category != "" {
+		conditions = append(conditions, `business_type = ?`)
+		args = append(args, category)
+	}
+
+	if status != "" {
+		conditions = append(conditions, `status = ?`)
+		args = append(args, status)
 	}
 
 	whereClause := ""
@@ -113,7 +129,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		termQuery := fmt.Sprintf(`
 			SELECT m.merchant_id, t.terminal_id, t.terminal_sn, t.device_name, t.status 
 			FROM terminals t 
-			JOIN merchants m ON t.merchant_id = m.id 
+			JOIN merchants m ON t.merchant_id = m.user_id 
 			WHERE m.merchant_id IN (%s)`, strings.Join(placeholders, ","))
 
 		termRows, err := h.DB.Query(termQuery, termArgs...)

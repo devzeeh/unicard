@@ -147,12 +147,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- Fetch Dashboard Data ---
     function fetchDashboardData() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user');
-        
-        let endpoint = "/v1/user/dashboard";
+        const pathSegments = window.location.pathname.split('/');
+        let userId = null;
+        if (pathSegments.length >= 2 && pathSegments[1] !== '') {
+            userId = pathSegments[1];
+        } else {
+            // fallback if it's still somehow in query string
+            const urlParams = new URLSearchParams(window.location.search);
+            userId = urlParams.get('username');
+        }
+
+        let endpoint = "/v1/user/";
         if (userId) {
-            endpoint += "?user=" + encodeURIComponent(userId);
+            endpoint += encodeURIComponent(userId);
         }
 
         fetch(endpoint)
