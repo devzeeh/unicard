@@ -17,7 +17,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.data.merchants && data.data.merchants.length > 0) {
                     data.data.merchants.forEach(m => {
                         const tr = document.createElement('tr');
-                        tr.className = 'hover:bg-gray-50';
+                        tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+
+                        tr.onclick = () => {
+                            document.getElementById('modalBusinessName').textContent = m.business_name;
+                            document.getElementById('modalMerchantId').textContent = m.merchant_id;
+                            document.getElementById('modalBusinessType').textContent = m.business_type.replace(/_/g, ' ');
+                            document.getElementById('modalOwnerName').textContent = m.owner_name;
+                            document.getElementById('modalContactEmail').textContent = m.business_email;
+                            document.getElementById('modalContactPhone').textContent = m.business_phone;
+                            
+                            const statusEl = document.getElementById('modalStatus');
+                            statusEl.textContent = m.status.replace(/_/g, ' ');
+                            statusEl.className = 'capitalize px-2 py-1 text-xs font-medium rounded-full';
+                            if (m.status === 'active') statusEl.classList.add('bg-green-100', 'text-green-800');
+                            else if (m.status === 'pending_approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+                            else statusEl.classList.add('bg-red-100', 'text-red-800');
+
+                            document.getElementById('modalCreatedAt').textContent = new Date(m.created_at).toLocaleDateString();
+                            document.getElementById('merchantDetailsModal').classList.remove('hidden');
+                        };
 
                         // Status badge styling
                         let statusColor = 'bg-gray-100 text-gray-800';
@@ -31,14 +50,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         tr.innerHTML = `
                             <td class="p-3 whitespace-nowrap max-w-[250px]" title="${m.business_name}">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V10l-7-5-7 5v11m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                    </div>
-                                    <div class="ml-4 truncate">
-                                        <div class="text-sm font-medium text-gray-900 truncate">${m.business_name}</div>
-                                        <div class="text-xs text-gray-500 truncate">ID: ${m.merchant_id}</div>
-                                    </div>
+                                <div class="truncate">
+                                    <div class="text-sm font-medium text-gray-900 truncate">${m.business_name}</div>
+                                    <div class="text-xs text-gray-500 truncate">ID: ${m.merchant_id}</div>
                                 </div>
                             </td>
                             <td class="p-3 capitalize text-sm text-gray-600 max-w-[150px] truncate" title="${m.business_type}">${m.business_type.replace(/_/g, ' ')}</td>

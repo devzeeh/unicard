@@ -2,6 +2,8 @@ let currentPage = 1; // current page
 const itemsPerPage = 10;    // items per page
 let currentSearchQuery = '';
 let currentSortOrder = 'desc';
+let currentCategory = '';
+let currentStatus = '';
 let totalItemsCount = 0;
 let currentMerchants = [];
 let unassignedTerminals = [];
@@ -47,7 +49,9 @@ function fetchMerchants() {
         page: currentPage,
         limit: itemsPerPage,
         search: currentSearchQuery,
-        sort: currentSortOrder
+        sort: currentSortOrder,
+        category: currentCategory,
+        status: currentStatus
     });
 
     const adminUsername = window.location.pathname.split('/')[2];
@@ -114,6 +118,27 @@ function renderTable() {
         const highlightedMerchantId = highlightText(merchant.merchant_id, queryTerms);
         const highlightedOwnerName = highlightText(merchant.owner_name, queryTerms);
         const highlightedEmail = highlightText(merchant.business_email, queryTerms);
+
+        tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+        tr.onclick = (e) => {
+            if (e.target.closest('button')) return; // Ignore button clicks
+            document.getElementById('modalBusinessName').textContent = merchant.business_name;
+            document.getElementById('modalMerchantId').textContent = merchant.merchant_id;
+            document.getElementById('modalBusinessType').textContent = merchant.business_type.replace(/_/g, ' ');
+            document.getElementById('modalOwnerName').textContent = merchant.owner_name;
+            document.getElementById('modalContactEmail').textContent = merchant.business_email;
+            document.getElementById('modalContactPhone').textContent = merchant.business_phone;
+            
+            const statusEl = document.getElementById('modalStatus');
+            statusEl.textContent = merchant.status.replace(/_/g, ' ');
+            statusEl.className = 'capitalize px-2 py-1 text-xs font-medium rounded-full';
+            if (merchant.status.toLowerCase() === 'active') statusEl.classList.add('bg-green-100', 'text-green-800');
+            else if (merchant.status.toLowerCase() === 'pending_approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+            else statusEl.classList.add('bg-red-100', 'text-red-800');
+
+            document.getElementById('modalCreatedAt').textContent = new Date(merchant.created_at).toLocaleDateString();
+            document.getElementById('merchantDetailsModal').classList.remove('hidden');
+        };
 
         tr.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.business_name}">
@@ -186,7 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUnassignedTerminals();
     
     // Delegate change event for terminal selection
-    document.getElementById('merchantBlocksContainer').addEventListener('change', function(e) {
+    const container = document.getElementById('merchantBlocksContainer');
+    container.addEventListener('change', function(e) {
         if (e.target.classList.contains('terminal-sn-select')) {
             const selectedOption = e.target.options[e.target.selectedIndex];
             const block = e.target.closest('.merchant-block');
@@ -195,6 +221,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 deviceNameInput.value = selectedOption.dataset.deviceName;
             } else {
                 deviceNameInput.value = '';
+            }
+        }
+    });
+
+    // Auto-format fields on focus out to trim spaces and format as Title Case
+    container.addEventListener('focusout', function(e) {
+        if (e.target.tagName === 'INPUT') {
+            let val = e.target.value;
+            if (e.target.type === 'text' && !['businessPhone', 'commissionRate', 'registrationNum', 'deviceName'].includes(e.target.name)) {
+                e.target.value = val.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+            } else if (e.target.type === 'email') {
+                e.target.value = val.trim().toLowerCase();
+            } else {
+                e.target.value = val.trim();
             }
         }
     });
@@ -220,13 +260,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const filterCategory = document.getElementById('filterCategory');
+    if (filterCategory) {
+        filterCategory.addEventListener('change', (e) => {
+            currentCategory = e.target.value;
+            applyFiltersAndSort();
+        });
+    }
+
+    const filterStatus = document.getElementById('filterStatus');
+    if (filterStatus) {
+        filterStatus.addEventListener('change', (e) => {
+            currentStatus = e.target.value;
+            applyFiltersAndSort();
+        });
+    }
+
     const resetFiltersBtn = document.getElementById('resetFilters');
     if (resetFiltersBtn) {
         resetFiltersBtn.addEventListener('click', () => {
             if (searchInput) searchInput.value = '';
             if (sortOrder) sortOrder.value = 'desc';
+            if (filterCategory) filterCategory.value = '';
+            if (filterStatus) filterStatus.value = '';
+            
             currentSearchQuery = '';
             currentSortOrder = 'desc';
+            currentCategory = '';
+            currentStatus = '';
             applyFiltersAndSort();
         });
     }

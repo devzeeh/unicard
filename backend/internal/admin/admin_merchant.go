@@ -27,6 +27,8 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	limitStr := r.URL.Query().Get("limit")
 	search := r.URL.Query().Get("search")
 	sortOrder := r.URL.Query().Get("sort") // desc or asc
+	category := r.URL.Query().Get("category")
+	status := r.URL.Query().Get("status")
 
 	page := 1
 	limit := 10
@@ -48,6 +50,16 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		conditions = append(conditions, `(business_name LIKE ? OR owner_name LIKE ? OR merchant_id LIKE ?)`)
 		searchPattern := "%" + search + "%"
 		args = append(args, searchPattern, searchPattern, searchPattern)
+	}
+
+	if category != "" {
+		conditions = append(conditions, `business_type = ?`)
+		args = append(args, category)
+	}
+
+	if status != "" {
+		conditions = append(conditions, `status = ?`)
+		args = append(args, status)
 	}
 
 	whereClause := ""

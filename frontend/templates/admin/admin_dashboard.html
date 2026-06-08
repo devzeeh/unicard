@@ -116,6 +116,50 @@
             </main>
         </div>
     </div>
+    <!-- Merchant Details Modal -->
+    <div id="merchantDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-6 border w-full max-w-lg shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-gray-900" id="modalBusinessName">Merchant Details</h3>
+                <button onclick="document.getElementById('merchantDetailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Merchant ID</span>
+                    <span class="font-semibold text-gray-900" id="modalMerchantId"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Business Type</span>
+                    <span class="capitalize" id="modalBusinessType"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Owner Name</span>
+                    <span class="text-gray-900" id="modalOwnerName"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Contact Email</span>
+                    <span class="text-gray-900" id="modalContactEmail"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Contact Phone</span>
+                    <span class="text-gray-900" id="modalContactPhone"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Status</span>
+                    <span class="capitalize px-2 py-1 text-xs font-medium rounded-full" id="modalStatus"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium text-gray-500">Date Created</span>
+                    <span class="text-gray-900" id="modalCreatedAt"></span>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="document.getElementById('merchantDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium transition duration-150">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../../assets/admin/admin_dashboard.js?"></script>
 </body>

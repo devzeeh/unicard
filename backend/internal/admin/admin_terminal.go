@@ -30,6 +30,8 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 	search := r.URL.Query().Get("search")
+	status := r.URL.Query().Get("status")
+	sortOrder := r.URL.Query().Get("sort")
 
 	page := 1
 	limit := 10
@@ -53,6 +55,11 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 		args = append(args, searchPattern, searchPattern, searchPattern)
 	}
 
+	if status != "" {
+		conditions = append(conditions, `t.status = ?`)
+		args = append(args, status)
+	}
+
 	whereClause := ""
 	if len(conditions) > 0 {
 		whereClause = " WHERE " + strings.Join(conditions, " AND ")
@@ -72,6 +79,9 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 
 	// Get paginated data
 	orderClause := " ORDER BY t.created_at DESC"
+	if strings.ToLower(sortOrder) == "asc" {
+		orderClause = " ORDER BY t.created_at ASC"
+	}
 	query := `SELECT t.terminal_id, t.terminal_sn, COALESCE(m.business_name, 'Unassigned / Inventory'), t.device_name, COALESCE(t.location_details, 'Not Set'), t.status ` +
 		baseQuery + whereClause + orderClause + ` LIMIT ? OFFSET ?`
 
@@ -101,18 +111,26 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 		terminals = []structs.Terminal{}
 	}
 
+	var activeCount, inactiveCount int
+	h.DB.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('active', 'online')`).Scan(&activeCount)
+	h.DB.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('inactive', 'offline')`).Scan(&inactiveCount)
+
 	type PaginatedTerminalResponse struct {
-		Terminals  []structs.Terminal `json:"terminals"`
-		TotalItems int                `json:"totalItems"`
-		Page       int                `json:"page"`
-		Limit      int                `json:"limit"`
+		Terminals     []structs.Terminal `json:"terminals"`
+		TotalItems    int                `json:"totalItems"`
+		Page          int                `json:"page"`
+		Limit         int                `json:"limit"`
+		ActiveCount   int                `json:"activeCount"`
+		InactiveCount int                `json:"inactiveCount"`
 	}
 
 	terminalData := PaginatedTerminalResponse{
-		Terminals:  terminals,
-		TotalItems: totalItems,
-		Page:       page,
-		Limit:      limit,
+		Terminals:     terminals,
+		TotalItems:    totalItems,
+		Page:          page,
+		Limit:         limit,
+		ActiveCount:   activeCount,
+		InactiveCount: inactiveCount,
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
@@ -149,12 +167,12 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a unique terminal ID
-	timestamp := time.Now().Format("01020605") // MMDDYYss
+	timestamp := time.Now().Format("01020605")               // MMDDYYss
 	nTerminal, _ := rand.Int(rand.Reader, big.NewInt(10000)) // max 9999
 	terminalID := fmt.Sprintf("TRM-%s%04d", timestamp, nTerminal.Int64())
 
 	// Insert into DB with NULL merchant_id
-	query := `INSERT INTO terminals (terminal_id, terminal_sn, merchant_id, device_name, status) VALUES (?, ?, NULL, ?, 'offline')`
+	query := `INSERT INTO terminals (terminal_id, terminal_sn, merchant_id, device_name, status) VALUES (?, ?, NULL, ?, 'inactive')`
 	_, err := h.DB.Exec(query, terminalID, req.TerminalSN, req.DeviceName)
 	if err != nil {
 		log.Printf("Error inserting standalone terminal: %v", err)
@@ -174,13 +192,14 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 type UnassignedTerminalData struct {
 	TerminalSN string `json:"terminal_sn"`
 	DeviceName string `json:"device_name"`
+	Status     string `json:"status"`
 }
 
 func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := h.DB.Query(`
-		SELECT terminal_sn, device_name 
+		SELECT terminal_sn, device_name, status 
 		FROM terminals 
-		WHERE merchant_id IS NULL AND status = 'active'
+		WHERE merchant_id IS NULL AND status = 'inactive'
 	`)
 	if err != nil {
 		log.Printf("Error fetching unassigned terminals: %v", err)
@@ -195,7 +214,7 @@ func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.R
 	var terminals []UnassignedTerminalData
 	for rows.Next() {
 		var t UnassignedTerminalData
-		if err := rows.Scan(&t.TerminalSN, &t.DeviceName); err != nil {
+		if err := rows.Scan(&t.TerminalSN, &t.DeviceName, &t.Status); err != nil {
 			log.Printf("Row scan error: %v", err)
 			continue
 		}

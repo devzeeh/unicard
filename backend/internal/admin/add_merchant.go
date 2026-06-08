@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"strings"
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
@@ -90,7 +91,8 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer merchStmt.Close()
 
-	termStmt, err := tx.Prepare(`UPDATE terminals SET merchant_id = ?, location_details = ? WHERE terminal_sn = ?`)
+	// Update terminal status to active and assign merchant_id
+	termStmt, err := tx.Prepare(`UPDATE terminals SET merchant_id = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?`)
 	if err != nil {
 		tx.Rollback()
 		log.Printf("Error preparing terminal stmt: %v", err)
@@ -103,6 +105,20 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	defer termStmt.Close()
 
 	for i, req := range reqs {
+		// Clean and format string fields
+		req.BusinessName = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessName)))
+		req.BusinessAddress = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessAddress)))
+		req.OwnerName = strings.Title(strings.ToLower(strings.TrimSpace(req.OwnerName)))
+		req.SettlementName = strings.Title(strings.ToLower(strings.TrimSpace(req.SettlementName)))
+		
+		// Some fields don't need title case but should be trimmed
+		req.BusinessEmail = strings.ToLower(strings.TrimSpace(req.BusinessEmail))
+		req.BusinessPhone = strings.TrimSpace(req.BusinessPhone)
+		req.TerminalSN = strings.TrimSpace(req.TerminalSN)
+		req.DeviceName = strings.TrimSpace(req.DeviceName)
+		
+		reqs[i] = req // update back to slice
+
 		err := Validate.Struct(req)
 		if err != nil {
 			tx.Rollback()

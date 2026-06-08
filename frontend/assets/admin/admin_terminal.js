@@ -20,10 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPage = 1;
     const limit = 10;
     let currentSearch = "";
+    let currentSortOrder = "desc";
+    let currentStatus = "";
 
-    function fetchTerminals(page = 1, search = "") {
+    function fetchTerminals(page = 1, search = "", sort = currentSortOrder, status = currentStatus) {
         const adminUsername = window.location.pathname.split('/')[2];
-        const url = `/v1/admin/${adminUsername}/terminals-data?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+        const url = `/v1/admin/${adminUsername}/terminals-data?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&sort=${sort}&status=${status}`;
 
         fetch(url)
             .then(res => res.json())
@@ -31,6 +33,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (data.success) {
                     renderTable(data.data.terminals || []);
                     updatePagination(data.data.totalItems, data.data.page, data.data.limit);
+                    
+                    const activeCountEl = document.getElementById("activeTerminalCount");
+                    const inactiveCountEl = document.getElementById("inactiveTerminalCount");
+                    if (activeCountEl) activeCountEl.textContent = data.data.activeCount || 0;
+                    if (inactiveCountEl) inactiveCountEl.textContent = data.data.inactiveCount || 0;
                 } else {
                     console.error("Failed to fetch terminals:", data.message);
                 }
@@ -49,9 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
         terminals.forEach(terminal => {
             const statusClass = terminal.status === 'active' || terminal.status === 'Online'
                 ? 'bg-green-100 text-green-800' 
-                : terminal.status === 'offline' || terminal.status === 'Offline'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800';
+                : terminal.status === 'inactive' || terminal.status === 'Inactive'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800';
 
             const statusText = terminal.status.charAt(0).toUpperCase() + terminal.status.slice(1);
             
@@ -62,6 +69,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const iconBg = statusText === 'Online' || statusText === 'Active' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600';
 
             const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+            row.onclick = (e) => {
+                if (e.target.closest('button')) return; // Ignore button clicks
+                document.getElementById('modalDeviceName').textContent = terminal.device_name;
+                document.getElementById('modalTerminalId').textContent = terminal.terminal_id;
+                document.getElementById('modalTerminalSn').textContent = terminal.terminal_sn;
+                document.getElementById('modalAssignedMerchant').textContent = terminal.assigned_merchant;
+                document.getElementById('modalLocationDetails').textContent = terminal.location_details || 'Not Set';
+                
+                const statusEl = document.getElementById('modalTerminalStatus');
+                statusEl.textContent = statusText;
+                statusEl.className = `capitalize px-2 py-1 text-xs font-medium rounded-full ${statusClass}`;
+                
+                document.getElementById('terminalDetailsModal').classList.remove('hidden');
+            };
+
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900 font-mono">${terminal.terminal_id}</div>
@@ -109,12 +132,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     prevPageBtn.addEventListener("click", () => {
         if (currentPage > 1) {
-            fetchTerminals(currentPage - 1, currentSearch);
+            fetchTerminals(currentPage - 1, currentSearch, currentSortOrder, currentStatus);
         }
     });
 
     nextPageBtn.addEventListener("click", () => {
-        fetchTerminals(currentPage + 1, currentSearch);
+        fetchTerminals(currentPage + 1, currentSearch, currentSortOrder, currentStatus);
     });
 
     // Debounce search input
@@ -123,9 +146,39 @@ document.addEventListener("DOMContentLoaded", () => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             currentSearch = e.target.value.trim();
-            fetchTerminals(1, currentSearch);
+            fetchTerminals(1, currentSearch, currentSortOrder, currentStatus);
         }, 300);
     });
+
+    const sortOrder = document.getElementById("sortOrder");
+    if (sortOrder) {
+        sortOrder.addEventListener("change", (e) => {
+            currentSortOrder = e.target.value;
+            fetchTerminals(1, currentSearch, currentSortOrder, currentStatus);
+        });
+    }
+
+    const filterStatus = document.getElementById("filterStatus");
+    if (filterStatus) {
+        filterStatus.addEventListener("change", (e) => {
+            currentStatus = e.target.value;
+            fetchTerminals(1, currentSearch, currentSortOrder, currentStatus);
+        });
+    }
+
+    const resetFiltersBtn = document.getElementById("resetFilters");
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener("click", () => {
+            if (searchInput) searchInput.value = "";
+            if (sortOrder) sortOrder.value = "desc";
+            if (filterStatus) filterStatus.value = "";
+            
+            currentSearch = "";
+            currentSortOrder = "desc";
+            currentStatus = "";
+            fetchTerminals(1, currentSearch, currentSortOrder, currentStatus);
+        });
+    }
 
     const addTerminalForm = document.getElementById("addTerminalForm");
     if (addTerminalForm) {
@@ -156,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         document.getElementById('addTerminalModal').classList.add('hidden');
                         addTerminalForm.reset();
                         alertBox.classList.add("hidden");
-                        fetchTerminals(1, currentSearch);
+                        fetchTerminals(1, currentSearch, currentSortOrder, currentStatus);
                     }, 1500);
                 } else {
                     alertBox.classList.add("bg-red-50", "text-red-600");

@@ -67,7 +67,7 @@ CREATE TABLE terminals (
     merchant_id varchar(50) NULL COMMENT 'Links to the internal auto-increment id of the managing merchant entity',
     device_name VARCHAR(100) NOT NULL COMMENT 'Human-readable descriptor identifying placement (e.g., Counter 1, Jeepney Plate # ABC-123)',
     location_details VARCHAR(255) NULL COMMENT 'Optional physical sector data, such as a branch route path or stall number designation',
-    status ENUM('active', 'suspended', 'offline') DEFAULT 'active' COMMENT 'Operational network connectivity state of the edge node hardware',
+    status ENUM('active', 'suspended', 'inactive') DEFAULT 'inactive' COMMENT 'Operational network connectivity state of the edge node hardware',
     last_heartbeat TIMESTAMP NULL COMMENT 'Tracks the precise timestamp of the last successful ping packet received from the ESP32 network stack',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp tracking initial edge device registration',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically monitors configuration adjustments or state transitions over time',
