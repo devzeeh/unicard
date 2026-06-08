@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Merchant Info</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/style/tailwind.js"></script>
+</head>
+
+<body class="font-sans antialiased text-gray-900 bg-gray-100">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar Navigation -->
+        {{template "admin_sidebar" .}}
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navbar -->
+            <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
+                <div class="flex items-center gap-4">
+                    <a href="/admin/{{.Username}}/merchants" class="text-gray-500 hover:text-blue-600 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <h2 class="text-lg font-semibold text-gray-800">Merchant Info</h2>
+                </div>
+                <div class="flex items-center">
+                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Admin</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                        A
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Scrollable Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                <div class="max-w-4xl mx-auto">
+                    
+                    <!-- Header Info -->
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-6 flex justify-between items-start">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2" id="businessName">Loading...</h1>
+                            <p class="text-gray-500">Merchant ID: <span id="merchantId" class="font-mono text-gray-700">...</span></p>
+                        </div>
+                        <div>
+                            <span id="merchantStatus" class="capitalize px-4 py-2 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
+                                Loading
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Business Details -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">Business Details</h3>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Business Type</span>
+                                    <span class="block text-gray-900 capitalize" id="businessType">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Registration Number</span>
+                                    <span class="block text-gray-900" id="registrationNum">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Business Address</span>
+                                    <span class="block text-gray-900" id="businessAddress">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Date Created</span>
+                                    <span class="block text-gray-900" id="createdAt">...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Details -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">Contact Information</h3>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Owner Name</span>
+                                    <span class="block text-gray-900" id="ownerName">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Business Email</span>
+                                    <span class="block text-gray-900" id="businessEmail">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Business Phone</span>
+                                    <span class="block text-gray-900" id="businessPhone">...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Details (Hidden by default) -->
+                        <div id="settlementDetailsContainer" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 md:col-span-2">
+                            <h3 class="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">Settlement Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-sm">
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Commission Rate</span>
+                                    <span class="block text-gray-900" id="commissionRate">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Settlement Bank</span>
+                                    <span class="block text-gray-900" id="settlementBank">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Account Name</span>
+                                    <span class="block text-gray-900" id="settlementName">...</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500 font-medium">Account Number</span>
+                                    <span class="block text-gray-900" id="settlementAcct">...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions (Hidden by default) -->
+                    <div class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-end gap-4" id="actionButtons">
+                        <button id="btnRejectMerchant" class="px-6 py-2 border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition duration-150">Reject Application</button>
+                        <button id="btnApproveMerchant" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition duration-150 shadow-sm">Approve Merchant</button>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Approve Merchant Modal -->
+    <div id="approveMerchantModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-8 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Approve Merchant: <span id="approveModalBusinessName" class="text-blue-600"></span></h3>
+                <button onclick="document.getElementById('approveMerchantModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-6">Please provide the missing settlement and terminal information to activate this merchant.</p>
+            <form id="approveForm" class="space-y-6">
+                <input type="hidden" id="approveMerchantId" name="merchantId" value="">
+                <div class="space-y-8 pr-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Commission Rate (%)</label>
+                            <input type="number" step="0.01" name="commissionRate" id="approveCommissionRate" value="2.00" required
+                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-800 mb-4 border-t pt-4 border-gray-200">Settlement Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Settlement Bank Name</label>
+                            <select name="settlementBank" id="approveSettlementBank" required
+                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="" disabled selected>Select a bank</option>
+                                <option value="BDO">BDO Unibank</option>
+                                <option value="BPI">Bank of the Philippine Islands (BPI)</option>
+                                <option value="Metrobank">Metrobank</option>
+                                <option value="Landbank">Land Bank of the Philippines</option>
+                                <option value="GCash">GCash</option>
+                                <option value="Maya">Maya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Settlement Account Name</label>
+                            <input type="text" name="settlementName" id="approveSettlementName" required
+                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Settlement Account Number</label>
+                            <input type="text" name="settlementAccount" id="approveSettlementAccount" required
+                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-800 mb-4 border-t pt-4 border-gray-200">Terminal Assignment</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Terminal Serial Number</label>
+                            <select name="terminalSn" id="approveTerminalSn" required
+                                class="terminal-sn-select mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="" disabled selected>Select a terminal</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Device Name</label>
+                            <input type="text" name="deviceName" id="approveDeviceName" required disabled placeholder="Auto-filled based on terminal"
+                                class="device-name-input mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="approveFormAlert" class="hidden rounded-lg p-4 text-sm mt-4"></div>
+
+                <div class="flex justify-end gap-4 mt-8 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="document.getElementById('approveMerchantModal').classList.add('hidden')"
+                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Approve & Activate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/assets/admin/merchant_info.js"></script>
+</body>
+</html>

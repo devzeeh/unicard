@@ -50,7 +50,7 @@ CREATE TABLE merchants (
     settlement_account_number VARCHAR(50) NOT NULL COMMENT 'The actual bank account number or mobile number (GCash/Maya) for payouts',
     settlement_bank_name VARCHAR(100) NOT NULL COMMENT 'The target bank or e-wallet company name (e.g., BDO, BPI, GCash, Maya)',
     
-    status ENUM('pending_approval', 'active', 'suspended') DEFAULT 'pending_approval' COMMENT 'Operational state of the merchant ecosystem tenancy',
+    status ENUM('pending_approval', 'approved', 'rejected', 'active', 'suspended') DEFAULT 'pending_approval' COMMENT 'Operational state of the merchant ecosystem tenancy',
     approved_by VARCHAR(50) NULL COMMENT 'The user_id of the Super Admin who verified and activated this company profile',
     approved_at TIMESTAMP NULL COMMENT 'The specific date and timestamp when the business was activated',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated date and time record of the initial registration request',

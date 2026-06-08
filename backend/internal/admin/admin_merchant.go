@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -177,4 +179,239 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		Data:    merchantData,
 	})
 	log.Println("MerchantManagementDataHandler finished")
+}
+
+type ApproveMerchantRequest struct {
+	CommissionRate    string `json:"commissionRate" validate:"required"`
+	SettlementBank    string `json:"settlementBank" validate:"required"`
+	SettlementName    string `json:"settlementName" validate:"required"`
+	SettlementAccount string `json:"settlementAccount" validate:"required"`
+	TerminalSn        string `json:"terminalSn" validate:"required"`
+	DeviceName        string `json:"deviceName"`
+}
+
+func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+	adminUsername := r.PathValue("username")
+
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant ID is required"})
+		return
+	}
+
+	var req ApproveMerchantRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid request payload"})
+		return
+	}
+
+	// Begin TX
+	tx, err := h.DB.Begin()
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
+		return
+	}
+	defer tx.Rollback()
+
+	// Get admin user_id
+	var adminUserID string
+	err = tx.QueryRow("SELECT user_id FROM users WHERE username = ?", adminUsername).Scan(&adminUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Admin user not found"})
+		return
+	}
+
+	// Get merchant user_id
+	var merchantUserID string
+	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
+		return
+	}
+
+	// Update merchants table
+	_, err = tx.Exec(`
+		UPDATE merchants 
+		SET status = 'active',
+			commission_rate = ?,
+			settlement_bank_name = ?,
+			settlement_account_name = ?,
+			settlement_account_number = ?,
+			approved_by = ?,
+			approved_at = CURRENT_TIMESTAMP
+		WHERE merchant_id = ?`,
+		req.CommissionRate, req.SettlementBank, req.SettlementName, req.SettlementAccount, adminUserID, merchantID)
+
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to update merchant"})
+		return
+	}
+
+	// Update users table
+	_, err = tx.Exec("UPDATE users SET status = 'active' WHERE user_id = ?", merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to update user status"})
+		return
+	}
+
+	// Update terminals table
+	// First get business address for location details
+	var businessAddress string
+	_ = tx.QueryRow("SELECT business_address FROM merchants WHERE merchant_id = ?", merchantID).Scan(&businessAddress)
+
+	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantUserID, businessAddress, req.TerminalSn)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to assign terminal"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to finalize approval"})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant approved successfully"})
+}
+
+func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant ID is required"})
+		return
+	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
+		return
+	}
+	defer tx.Rollback()
+
+	var merchantUserID string
+	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE merchants SET status = 'rejected' WHERE merchant_id = ?", merchantID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to reject merchant"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE users SET status = 'inactive' WHERE user_id = ?", merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to deactivate user"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to finalize rejection"})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant rejected successfully"})
+}
+
+type MerchantDetailsData struct {
+	MerchantID      string
+	UserID          string
+	BusinessName    string
+	BusinessType    string
+	RegistrationNum string
+	BusinessAddress string
+	OwnerName       string
+	BusinessEmail   string
+	BusinessPhone   string
+	Status          string
+	CommissionRate  float64
+	SettlementBank  string
+	SettlementName  string
+	SettlementAcct  string
+	CreatedAt       string
+}
+
+type MerchantInfoViewData struct {
+	Page     string
+	Username string
+}
+
+func (h *Handler) MerchantInfoView(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("username")
+
+	data := MerchantInfoViewData{
+		Page:     "merchants",
+		Username: username,
+	}
+
+	err := h.Tpl.ExecuteTemplate(w, "merchant_info.html", data)
+	if err != nil {
+		fmt.Printf("Template execution error: %v\n", err)
+	}
+}
+
+func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Merchant ID required",
+		})
+		return
+	}
+
+	var m MerchantDetailsData
+	var commRate sql.NullFloat64
+	var setBank, setName, setAcct, regNum sql.NullString
+
+	err := h.DB.QueryRow(`
+		SELECT merchant_id, user_id, business_name, business_type, business_registration_number, 
+		       business_address, owner_name, business_email, business_phone, status, 
+		       commission_rate, settlement_bank_name, settlement_account_name, 
+		       settlement_account_number, created_at
+		FROM merchants WHERE merchant_id = ?`, merchantID).Scan(
+		&m.MerchantID, &m.UserID, &m.BusinessName, &m.BusinessType, &regNum,
+		&m.BusinessAddress, &m.OwnerName, &m.BusinessEmail, &m.BusinessPhone, &m.Status,
+		&commRate, &setBank, &setName, &setAcct, &m.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			jsonwrite.WriteJSON(w, http.StatusNotFound, jsonwrite.APIResponse{
+				Success: false,
+				Message: "Merchant not found",
+			})
+			return
+		}
+		log.Println("Error querying merchant details:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Database error",
+		})
+		return
+	}
+
+	if regNum.Valid {
+		m.RegistrationNum = regNum.String
+	}
+
+	if commRate.Valid {
+		m.CommissionRate = commRate.Float64
+	}
+	if setBank.Valid {
+		m.SettlementBank = setBank.String
+	}
+	if setName.Valid {
+		m.SettlementName = setName.String
+	}
+	if setAcct.Valid {
+		m.SettlementAcct = setAcct.String
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Data:    m,
+	})
 }

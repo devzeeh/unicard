@@ -8,7 +8,7 @@ let totalItemsCount = 0;
 let currentMerchants = [];
 let unassignedTerminals = [];
 
-window.renderAssignedTerminals = function(terminals) {
+window.renderAssignedTerminals = function (terminals) {
     if (!terminals || terminals.length === 0) {
         return '<span class="text-gray-400 italic">No terminals</span>';
     }
@@ -79,20 +79,20 @@ function highlightText(text, queryTerms) {
         div.innerText = text;
         return div.innerHTML;
     }
-    
+
     const escapedTerms = queryTerms.filter(t => t.length > 0).map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     if (escapedTerms.length === 0) {
         const div = document.createElement('div');
         div.innerText = text;
         return div.innerHTML;
     }
-    
+
     const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
-    
+
     const div = document.createElement('div');
     div.innerText = text;
     const safeText = div.innerHTML;
-    
+
     return safeText.replace(regex, '<mark class="bg-yellow-200 text-gray-900 rounded-sm px-0.5">$1</mark>');
 }
 
@@ -113,7 +113,7 @@ function renderTable() {
 
     currentMerchants.forEach(merchant => {
         const tr = document.createElement('tr');
-        
+
         const highlightedBusinessName = highlightText(merchant.business_name, queryTerms);
         const highlightedMerchantId = highlightText(merchant.merchant_id, queryTerms);
         const highlightedOwnerName = highlightText(merchant.owner_name, queryTerms);
@@ -122,22 +122,8 @@ function renderTable() {
         tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
         tr.onclick = (e) => {
             if (e.target.closest('button')) return; // Ignore button clicks
-            document.getElementById('modalBusinessName').textContent = merchant.business_name;
-            document.getElementById('modalMerchantId').textContent = merchant.merchant_id;
-            document.getElementById('modalBusinessType').textContent = merchant.business_type.replace(/_/g, ' ');
-            document.getElementById('modalOwnerName').textContent = merchant.owner_name;
-            document.getElementById('modalContactEmail').textContent = merchant.business_email;
-            document.getElementById('modalContactPhone').textContent = merchant.business_phone;
-            
-            const statusEl = document.getElementById('modalStatus');
-            statusEl.textContent = merchant.status.replace(/_/g, ' ');
-            statusEl.className = 'capitalize px-2 py-1 text-xs font-medium rounded-full';
-            if (merchant.status.toLowerCase() === 'active') statusEl.classList.add('bg-green-100', 'text-green-800');
-            else if (merchant.status.toLowerCase() === 'pending_approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
-            else statusEl.classList.add('bg-red-100', 'text-red-800');
-
-            document.getElementById('modalCreatedAt').textContent = new Date(merchant.created_at).toLocaleDateString();
-            document.getElementById('merchantDetailsModal').classList.remove('hidden');
+            const adminUsername = window.location.pathname.split('/')[2];
+            window.location.href = `/admin/${adminUsername}/merchants/${merchant.merchant_id}`;
         };
 
         tr.innerHTML = `
@@ -209,10 +195,10 @@ function renderPagination() {
 document.addEventListener('DOMContentLoaded', () => {
     fetchMerchants();
     fetchUnassignedTerminals();
-    
+
     // Delegate change event for terminal selection
     const container = document.getElementById('merchantBlocksContainer');
-    container.addEventListener('change', function(e) {
+    container.addEventListener('change', function (e) {
         if (e.target.classList.contains('terminal-sn-select')) {
             const selectedOption = e.target.options[e.target.selectedIndex];
             const block = e.target.closest('.merchant-block');
@@ -226,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Auto-format fields on focus out to trim spaces and format as Title Case
-    container.addEventListener('focusout', function(e) {
+    container.addEventListener('focusout', function (e) {
         if (e.target.tagName === 'INPUT') {
             let val = e.target.value;
             if (e.target.type === 'text' && !['businessPhone', 'commissionRate', 'registrationNum', 'deviceName'].includes(e.target.name)) {
@@ -283,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sortOrder) sortOrder.value = 'desc';
             if (filterCategory) filterCategory.value = '';
             if (filterStatus) filterStatus.value = '';
-            
+
             currentSearchQuery = '';
             currentSortOrder = 'desc';
             currentCategory = '';
@@ -297,7 +283,7 @@ document.getElementById('addAnotherMerchantBtn').addEventListener('click', () =>
     const container = document.getElementById('merchantBlocksContainer');
     const firstBlock = container.querySelector('.merchant-block');
     const newBlock = firstBlock.cloneNode(true);
-    
+
     // Clear inputs (keep default commission rate)
     const inputs = newBlock.querySelectorAll('input, select');
     inputs.forEach(input => {
@@ -305,17 +291,17 @@ document.getElementById('addAnotherMerchantBtn').addEventListener('click', () =>
             input.value = '';
         }
     });
-    
+
     const blockCount = container.querySelectorAll('.merchant-block').length + 1;
     newBlock.querySelector('.merchant-title').textContent = `Merchant #${blockCount}`;
-    
+
     const removeBtn = newBlock.querySelector('.remove-merchant-btn');
     removeBtn.classList.remove('hidden');
-    removeBtn.addEventListener('click', function() {
+    removeBtn.addEventListener('click', function () {
         newBlock.remove();
         updateMerchantTitles();
     });
-    
+
     container.appendChild(newBlock);
 });
 
@@ -328,10 +314,10 @@ function updateMerchantTitles() {
 
 document.getElementById('onboardForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    
+
     const blocks = document.querySelectorAll('.merchant-block');
     const merchantsData = [];
-    
+
     blocks.forEach(block => {
         const inputs = block.querySelectorAll('input, select');
         const merchantObj = {};
