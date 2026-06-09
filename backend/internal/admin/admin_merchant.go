@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	smtp "unicard-go/backend/internal/pkg/smtpbody"
 	structs "unicard-go/backend/internal/pkg/structs"
+
+	"gopkg.in/gomail.v2"
 )
 
 func (h *Handler) MerchantManagementView(w http.ResponseWriter, r *http.Request) {
@@ -183,9 +187,6 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 
 type ApproveMerchantRequest struct {
 	CommissionRate    string `json:"commissionRate" validate:"required"`
-	SettlementBank    string `json:"settlementBank" validate:"required"`
-	SettlementName    string `json:"settlementName" validate:"required"`
-	SettlementAccount string `json:"settlementAccount" validate:"required"`
 	TerminalSn        string `json:"terminalSn" validate:"required"`
 	DeviceName        string `json:"deviceName"`
 }
@@ -221,26 +222,24 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get merchant user_id
-	var merchantUserID string
-	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	// Get merchant user_id, email, and owner_name for the notification email
+	var merchantUserID, merchantEmail, ownerName string
+	err = tx.QueryRow("SELECT user_id, business_email, owner_name FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &merchantEmail, &ownerName)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
 		return
 	}
 
 	// Update merchants table
+	// Force commission_rate to 2.00 as per requirements
 	_, err = tx.Exec(`
 		UPDATE merchants 
 		SET status = 'active',
-			commission_rate = ?,
-			settlement_bank_name = ?,
-			settlement_account_name = ?,
-			settlement_account_number = ?,
+			commission_rate = 2.00,
 			approved_by = ?,
 			approved_at = CURRENT_TIMESTAMP
 		WHERE merchant_id = ?`,
-		req.CommissionRate, req.SettlementBank, req.SettlementName, req.SettlementAccount, adminUserID, merchantID)
+		adminUserID, merchantID)
 
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to update merchant"})
@@ -270,6 +269,35 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Send approval email to merchant
+	go func(email, name string) {
+		smtpHost := os.Getenv("SMTP_HOST")
+		smtpPort := 587
+		smtpEmail := os.Getenv("SMTP_EMAIL")
+		smtpSender := os.Getenv("SMTP_SENDER")
+		smtpPass := os.Getenv("SMTP_PASSWORD")
+		if smtpHost == "" || smtpEmail == "" {
+			log.Println("SMTP credentials not configured, skipping approval email")
+			return
+		}
+
+		m := gomail.NewMessage()
+		m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+		m.SetHeader("To", email)
+		m.SetHeader("Subject", "Unicard Application Approved")
+
+		loginURL := "http://localhost:3000/login" // Adjust if there's an env var for frontend URL
+		htmlBody := fmt.Sprintf(smtp.MerchantApprovedEmail(), name, loginURL)
+		m.SetBody("text/html", htmlBody)
+
+		d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+		if err := d.DialAndSend(m); err != nil {
+			log.Printf("Failed to send approval email to %s: %v", email, err)
+		} else {
+			log.Printf("Approval email sent successfully to %s", email)
+		}
+	}(merchantEmail, ownerName)
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant approved successfully"})
 }
 
@@ -280,6 +308,18 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid request body"})
+		return
+	}
+	if req.Reason == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Rejection reason is required"})
+		return
+	}
+
 	tx, err := h.DB.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
@@ -287,8 +327,8 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	defer tx.Rollback()
 
-	var merchantUserID string
-	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	var merchantUserID, merchantEmail, ownerName string
+	err = tx.QueryRow("SELECT user_id, business_email, owner_name FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &merchantEmail, &ownerName)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
 		return
@@ -311,7 +351,116 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Send rejection email to merchant
+	go func(email, name, reason string) {
+		smtpHost := os.Getenv("SMTP_HOST")
+		smtpPort := 587
+		smtpEmail := os.Getenv("SMTP_EMAIL")
+		smtpSender := os.Getenv("SMTP_SENDER")
+		smtpPass := os.Getenv("SMTP_PASSWORD")
+		if smtpHost == "" || smtpEmail == "" {
+			log.Println("SMTP credentials not configured, skipping rejection email")
+			return
+		}
+
+		m := gomail.NewMessage()
+		m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+		m.SetHeader("To", email)
+		m.SetHeader("Subject", "Unicard Application Update")
+
+		htmlBody := fmt.Sprintf(smtp.MerchantRejectedEmail(), name, reason)
+		m.SetBody("text/html", htmlBody)
+
+		d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+		if err := d.DialAndSend(m); err != nil {
+			log.Printf("Failed to send rejection email to %s: %v", email, err)
+		} else {
+			log.Printf("Rejection email sent successfully to %s", email)
+		}
+	}(merchantEmail, ownerName, req.Reason)
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant rejected successfully"})
+}
+
+func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant ID is required"})
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid request body"})
+		return
+	}
+	if req.Reason == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Suspension reason is required"})
+		return
+	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
+		return
+	}
+	defer tx.Rollback()
+
+	var merchantUserID, merchantEmail, ownerName string
+	err = tx.QueryRow("SELECT user_id, business_email, owner_name FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &merchantEmail, &ownerName)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE merchants SET status = 'suspended' WHERE merchant_id = ?", merchantID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to suspend merchant"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE users SET status = 'inactive' WHERE user_id = ?", merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to deactivate user"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to finalize suspension"})
+		return
+	}
+
+	// Send suspension email to merchant
+	go func(email, name, reason string) {
+		smtpHost := os.Getenv("SMTP_HOST")
+		smtpPort := 587
+		smtpEmail := os.Getenv("SMTP_EMAIL")
+		smtpSender := os.Getenv("SMTP_SENDER")
+		smtpPass := os.Getenv("SMTP_PASSWORD")
+		if smtpHost == "" || smtpEmail == "" {
+			log.Println("SMTP credentials not configured, skipping suspension email")
+			return
+		}
+
+		m := gomail.NewMessage()
+		m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+		m.SetHeader("To", email)
+		m.SetHeader("Subject", "Unicard Account Suspended")
+
+		htmlBody := fmt.Sprintf(smtp.MerchantSuspendedEmail(), name, reason)
+		m.SetBody("text/html", htmlBody)
+
+		d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+		if err := d.DialAndSend(m); err != nil {
+			log.Printf("Failed to send suspension email to %s: %v", email, err)
+		} else {
+			log.Printf("Suspension email sent successfully to %s", email)
+		}
+	}(merchantEmail, ownerName, req.Reason)
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant suspended successfully"})
 }
 
 type MerchantDetailsData struct {

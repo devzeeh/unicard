@@ -60,10 +60,10 @@ function populateMerchantUI(merchant) {
     const renderDoc = (url, elId) => {
         const el = document.getElementById(elId);
         if (url) {
-            el.innerHTML = `<a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1">
+            el.innerHTML = `<button type="button" onclick="openDocumentViewer('${url}')" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 View Document
-            </a>`;
+            </button>`;
         } else {
             el.textContent = "Not provided";
         }
@@ -86,21 +86,48 @@ function populateMerchantUI(merchant) {
         statusEl.classList.add('bg-red-100', 'text-red-800');
     }
 
-    if (statusLower === 'active') {
-        document.getElementById('settlementDetailsContainer').classList.remove('hidden');
-        document.getElementById('commissionRate').textContent = merchant.CommissionRate + '%';
-        document.getElementById('settlementBank').textContent = merchant.SettlementBank || 'N/A';
-        document.getElementById('settlementName').textContent = merchant.SettlementName || 'N/A';
-        document.getElementById('settlementAcct').textContent = merchant.SettlementAcct || 'N/A';
-    }
+    // Show settlement details regardless of status
+    document.getElementById('settlementDetailsContainer').classList.remove('hidden');
+    document.getElementById('commissionRate').textContent = merchant.CommissionRate + '%';
+    document.getElementById('settlementBank').textContent = merchant.SettlementBank || 'N/A';
+    document.getElementById('settlementName').textContent = merchant.SettlementName || 'N/A';
+    document.getElementById('settlementAcct').textContent = merchant.SettlementAcct || 'N/A';
 
-    if (statusLower === 'pending_approval' || statusLower === 'pending approval') {
-        const actionButtons = document.getElementById('actionButtons');
+    const actionButtons = document.getElementById('actionButtons');
+    const btnApprove = document.getElementById('btnApproveMerchant');
+    const btnReject = document.getElementById('btnRejectMerchant');
+    const btnSuspend = document.getElementById('btnSuspendMerchant');
+
+    if (statusLower === 'pending_approval' || statusLower === 'pending approval' || statusLower === 'active') {
         actionButtons.classList.remove('hidden');
         actionButtons.dataset.merchantId = merchant.MerchantID;
         actionButtons.dataset.businessName = merchant.BusinessName;
+
+        if (statusLower === 'active') {
+            btnSuspend.classList.remove('hidden');
+            btnApprove.classList.add('hidden');
+            btnReject.classList.add('hidden');
+        } else {
+            btnSuspend.classList.add('hidden');
+            btnApprove.classList.remove('hidden');
+            btnReject.classList.remove('hidden');
+        }
+    } else {
+        actionButtons.classList.add('hidden');
     }
 }
+
+window.openDocumentViewer = function(url) {
+    const modal = document.getElementById('documentViewerModal');
+    const iframe = document.getElementById('documentViewerFrame');
+    const downloadBtn = document.getElementById('downloadDocumentBtn');
+    
+    if (modal && iframe && downloadBtn) {
+        iframe.src = url;
+        downloadBtn.href = url;
+        modal.classList.remove('hidden');
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchUnassignedTerminals();
@@ -124,29 +151,137 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const rejectModal = document.getElementById('rejectMerchantModal');
+    const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+    let rejectMerchantId = null;
+
     if (btnReject && actionButtons) {
         btnReject.addEventListener('click', () => {
             const merchantId = actionButtons.dataset.merchantId;
+            const businessName = actionButtons.dataset.businessName;
             if (!merchantId) return;
             
-            if (!confirm("Are you sure you want to reject this merchant application?")) return;
+            document.getElementById('rejectModalBusinessName').textContent = businessName;
+            rejectMerchantId = merchantId;
+            rejectModal.classList.remove('hidden');
+        });
+    }
+
+    if (confirmRejectBtn) {
+        confirmRejectBtn.addEventListener('click', () => {
+            if (!rejectMerchantId) return;
 
             const adminUsername = window.location.pathname.split('/')[2];
-            fetch(`/v1/admin/${adminUsername}/merchants/${merchantId}/reject`, {
-                method: 'POST'
+            const alertBox = document.getElementById('rejectFormAlert');
+            alertBox.classList.add('hidden');
+            
+            const reason = document.getElementById('rejectReason').value;
+            if (!reason) {
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "Please provide a reason for rejection.";
+                return;
+            }
+
+            confirmRejectBtn.disabled = true;
+            confirmRejectBtn.textContent = 'Rejecting...';
+
+            fetch(`/v1/admin/${adminUsername}/merchants/${rejectMerchantId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
             })
             .then(res => res.json())
             .then(result => {
+                alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-green-50', 'text-green-600');
                 if (result.success) {
-                    alert("Merchant application rejected successfully.");
-                    window.location.reload();
+                    alertBox.classList.add('bg-green-50', 'text-green-600');
+                    alertBox.textContent = result.message || "Merchant application rejected successfully.";
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
-                    alert(result.message || "Failed to reject merchant.");
+                    alertBox.classList.add('bg-red-50', 'text-red-600');
+                    alertBox.textContent = result.message || "Failed to reject merchant.";
+                    confirmRejectBtn.disabled = false;
+                    confirmRejectBtn.textContent = 'Reject Application';
                 }
             })
             .catch(err => {
                 console.error("Error rejecting merchant:", err);
-                alert("Network error. Please try again.");
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "Network error. Please try again.";
+                confirmRejectBtn.disabled = false;
+                confirmRejectBtn.textContent = 'Reject Application';
+            });
+        });
+    }
+
+    const btnSuspend = document.getElementById('btnSuspendMerchant');
+    const suspendModal = document.getElementById('suspendMerchantModal');
+    const confirmSuspendBtn = document.getElementById('confirmSuspendBtn');
+    let suspendMerchantId = null;
+
+    if (btnSuspend && actionButtons) {
+        btnSuspend.addEventListener('click', () => {
+            const merchantId = actionButtons.dataset.merchantId;
+            const businessName = actionButtons.dataset.businessName;
+            if (!merchantId) return;
+            
+            document.getElementById('suspendModalBusinessName').textContent = businessName;
+            suspendMerchantId = merchantId;
+            suspendModal.classList.remove('hidden');
+        });
+    }
+
+    if (confirmSuspendBtn) {
+        confirmSuspendBtn.addEventListener('click', () => {
+            if (!suspendMerchantId) return;
+
+            const adminUsername = window.location.pathname.split('/')[2];
+            const alertBox = document.getElementById('suspendFormAlert');
+            alertBox.classList.add('hidden');
+            
+            const reason = document.getElementById('suspendReason').value;
+            if (!reason) {
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "Please provide a reason for suspension.";
+                return;
+            }
+
+            confirmSuspendBtn.disabled = true;
+            confirmSuspendBtn.textContent = 'Suspending...';
+
+            fetch(`/v1/admin/${adminUsername}/merchants/${suspendMerchantId}/suspend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            })
+            .then(res => res.json())
+            .then(result => {
+                alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-green-50', 'text-green-600');
+                if (result.success) {
+                    alertBox.classList.add('bg-green-50', 'text-green-600');
+                    alertBox.textContent = result.message || "Merchant account suspended successfully.";
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alertBox.classList.add('bg-red-50', 'text-red-600');
+                    alertBox.textContent = result.message || "Failed to suspend merchant.";
+                    confirmSuspendBtn.disabled = false;
+                    confirmSuspendBtn.textContent = 'Suspend Account';
+                }
+            })
+            .catch(err => {
+                console.error("Error suspending merchant:", err);
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "Network error. Please try again.";
+                confirmSuspendBtn.disabled = false;
+                confirmSuspendBtn.textContent = 'Suspend Account';
             });
         });
     }
@@ -172,17 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const merchantId = document.getElementById('approveMerchantId').value;
             const commissionRate = document.getElementById('approveCommissionRate').value;
-            const settlementBank = document.getElementById('approveSettlementBank').value;
-            const settlementName = document.getElementById('approveSettlementName').value;
-            const settlementAccount = document.getElementById('approveSettlementAccount').value;
             const terminalSn = document.getElementById('approveTerminalSn').value;
             const deviceName = document.getElementById('approveDeviceName').value;
 
             const payload = {
                 commissionRate,
-                settlementBank,
-                settlementName,
-                settlementAccount,
                 terminalSn,
                 deviceName
             };

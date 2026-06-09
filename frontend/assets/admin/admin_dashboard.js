@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             statusEl.textContent = m.status.replace(/_/g, ' ');
                             statusEl.className = 'capitalize px-2 py-1 text-xs font-medium rounded-full';
                             if (m.status === 'active') statusEl.classList.add('bg-green-100', 'text-green-800');
-                            else if (m.status === 'pending_approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+                            else if (m.status === 'pending_approval' || m.status === 'pending approval') statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
                             else statusEl.classList.add('bg-red-100', 'text-red-800');
 
                             document.getElementById('modalCreatedAt').textContent = new Date(m.created_at).toLocaleDateString();
@@ -42,9 +42,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         let statusColor = 'bg-gray-100 text-gray-800';
                         if (m.status === 'active') {
                             statusColor = 'bg-green-100 text-green-800';
-                        } else if (m.status === 'pending_approval') {
+                        } else if (m.status === 'pending_approval' || m.status === 'pending approval') {
                             statusColor = 'bg-yellow-100 text-yellow-800';
-                        } else if (m.status === 'suspended') {
+                        } else if (m.status === 'suspended' || m.status === 'rejected') {
                             statusColor = 'bg-red-100 text-red-800';
                         }
 
