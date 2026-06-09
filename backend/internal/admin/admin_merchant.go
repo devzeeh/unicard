@@ -330,6 +330,9 @@ type MerchantDetailsData struct {
 	SettlementName  string
 	SettlementAcct  string
 	CreatedAt       string
+	DtiDocument     string
+	BirDocument     string
+	OtherDocument   string
 }
 
 type MerchantInfoViewData struct {
@@ -364,17 +367,19 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 
 	var m MerchantDetailsData
 	var commRate sql.NullFloat64
-	var setBank, setName, setAcct, regNum sql.NullString
+	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc sql.NullString
 
 	err := h.DB.QueryRow(`
 		SELECT merchant_id, user_id, business_name, business_type, business_registration_number, 
 		       business_address, owner_name, business_email, business_phone, status, 
 		       commission_rate, settlement_bank_name, settlement_account_name, 
-		       settlement_account_number, created_at
+		       settlement_account_number, created_at,
+		       dti_document, bir_document, other_document
 		FROM merchants WHERE merchant_id = ?`, merchantID).Scan(
 		&m.MerchantID, &m.UserID, &m.BusinessName, &m.BusinessType, &regNum,
 		&m.BusinessAddress, &m.OwnerName, &m.BusinessEmail, &m.BusinessPhone, &m.Status,
 		&commRate, &setBank, &setName, &setAcct, &m.CreatedAt,
+		&dtiDoc, &birDoc, &otherDoc,
 	)
 
 	if err != nil {
@@ -408,6 +413,15 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 	}
 	if setAcct.Valid {
 		m.SettlementAcct = setAcct.String
+	}
+	if dtiDoc.Valid {
+		m.DtiDocument = dtiDoc.String
+	}
+	if birDoc.Valid {
+		m.BirDocument = birDoc.String
+	}
+	if otherDoc.Valid {
+		m.OtherDocument = otherDoc.String
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{

@@ -2,12 +2,15 @@ package authentication
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicard-go/backend/internal/pkg/account"
@@ -24,6 +27,40 @@ type MerchantSignupRequest struct {
 	BusinessPhone   string `json:"businessPhone" validate:"required"`
 	BusinessEmail   string `json:"businessEmail" validate:"required,email"`
 	Password        string `json:"password" validate:"required,min=6"`
+	DtiDocument     string `json:"dtiDocument"`
+	BirDocument     string `json:"birDocument"`
+	OtherDocument   string `json:"otherDocument"`
+}
+
+// Helper to save base64 to file
+func saveBase64ToFile(b64data, merchantID, docType string) string {
+	if b64data == "" {
+		return ""
+	}
+	parts := strings.SplitN(b64data, ",", 2)
+	if len(parts) != 2 {
+		return ""
+	}
+	ext := ".png"
+	if strings.Contains(parts[0], "application/pdf") {
+		ext = ".pdf"
+	} else if strings.Contains(parts[0], "image/jpeg") {
+		ext = ".jpg"
+	}
+	data, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return ""
+	}
+	// Create directory if not exists
+	os.MkdirAll("./storage/documents", os.ModePerm)
+	fileName := fmt.Sprintf("%s_%s_%d%s", merchantID, docType, time.Now().Unix(), ext)
+	filePath := filepath.Join("./storage/documents", fileName)
+	
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		return ""
+	}
+	return "/storage/documents/" + fileName
 }
 
 func (h *Handler) MerchantSignupView(w http.ResponseWriter, r *http.Request) {
@@ -146,18 +183,24 @@ func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) 
 	nReg, _ := rand.Int(rand.Reader, big.NewInt(10000000000))
 	regNum := fmt.Sprintf("UCBZ-%s-%010d", time.Now().Format("010205"), nReg.Int64())
 
+	// Save Documents
+	dtiPath := saveBase64ToFile(req.DtiDocument, merchantID, "DTI")
+	birPath := saveBase64ToFile(req.BirDocument, merchantID, "BIR")
+	otherPath := saveBase64ToFile(req.OtherDocument, merchantID, "OTHER")
+
 	// Insert Merchant with placeholder 'PENDING' for settlement fields
 	fixedCommissionRate := 2.00
 	merchStmt := `INSERT INTO merchants (
 		merchant_id, business_name, business_type, business_registration_number, business_address, 
 		user_id, owner_name, business_email, business_phone, commission_rate, 
-		settlement_account_name, settlement_account_number, settlement_bank_name, status
+		status, dti_document, bir_document, other_document
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	
 	_, err = tx.ExecContext(ctx, merchStmt,
 		merchantID, req.BusinessName, req.BusinessType, regNum, req.BusinessAddress,
 		userID, req.OwnerName, req.BusinessEmail, req.BusinessPhone, fixedCommissionRate,
-		"PENDING", "PENDING", "PENDING", "pending approval",
+		"pending approval",
+		dtiPath, birPath, otherPath,
 	)
 
 	if err != nil {

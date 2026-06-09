@@ -68,6 +68,10 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./frontend/assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
+	// Serve storage directory for uploaded documents and images (locally stored)
+	storageServer := http.FileServer(http.Dir("./storage"))
+	mux.Handle("/storage/", http.StripPrefix("/storage/", storageServer))
+
 	// general endpoints
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)

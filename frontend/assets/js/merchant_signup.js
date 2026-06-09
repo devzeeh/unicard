@@ -29,21 +29,44 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Prepare payload
-        const payload = {
-            businessName,
-            businessType,
-            businessAddress,
-            ownerName,
-            businessPhone,
-            businessEmail,
-            password
-        };
-
         // Disable button to prevent double submission
         setLoading(true);
 
         try {
+            // Function to convert file to base64
+            const toBase64 = file => new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+
+            const dtiFile = document.getElementById("dtiDocument").files[0];
+            const birFile = document.getElementById("birDocument").files[0];
+            const otherFile = document.getElementById("otherDocument").files[0];
+
+            const dtiDocument = await toBase64(dtiFile);
+            const birDocument = await toBase64(birFile);
+            const otherDocument = await toBase64(otherFile);
+
+            // Prepare payload
+            const payload = {
+                businessName,
+                businessType,
+                businessAddress,
+                ownerName,
+                businessPhone,
+                businessEmail,
+                password,
+                dtiDocument,
+                birDocument,
+                otherDocument
+            };
+
             const response = await fetch("/v1/merchant-signup", {
                 method: "POST",
                 headers: {
