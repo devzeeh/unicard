@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Card Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend/assets/style/tailwind.js"></script>
+</head>
+
+<body class="font-sans antialiased text-gray-900 bg-gray-100">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar Navigation -->
+        {{template "admin_sidebar" .}}
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Card Inventory</h2>
+                <div class="flex items-center">
+                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Super Admin</span>
+                    <div
+                        class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+                        SA
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                <div class="max-w-7xl mx-auto space-y-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Card Inventory</h1>
+                        <p class="text-gray-500 mt-1">Manage and track all physical cards across the ecosystem.</p>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Total Cards</p>
+                            <p class="text-3xl font-bold text-gray-900" id="totalCards">0</p>
+                        </div>
+                        <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="grid grid-cols-4 divide-x divide-gray-200">
+                                <div class="pr-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Active</p>
+                                    <p class="text-2xl font-bold text-green-600" id="activeCards">0</p>
+                                </div>
+                                <div class="px-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Inactive</p>
+                                    <p class="text-2xl font-bold text-gray-600" id="inactiveCards">0</p>
+                                </div>
+                                <div class="px-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Blocked</p>
+                                    <p class="text-2xl font-bold text-red-600" id="blockedCards">0</p>
+                                </div>
+                                <div class="pl-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Lost</p>
+                                    <p class="text-2xl font-bold text-orange-600" id="lostCards">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                            <!-- Left: Search -->
+                            <div class="relative w-full xl:w-80">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input type="text" id="searchInput" placeholder="Search cards by UID or number..."
+                                    class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                            </div>
+                            
+                            <!-- Right: Filters & Sort -->
+                            <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                                <select id="filterStatus" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="blocked">Blocked</option>
+                                    <option value="lost">Lost</option>
+                                </select>
+                                <select id="filterType" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="all">All Types</option>
+                                    <option value="regular">Regular</option>
+                                    <option value="student">Student</option>
+                                    <option value="pwd">PWD</option>
+                                    <option value="senior">Senior</option>
+                                </select>
+                                <select id="sortOrder" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="date_desc">Newest First</option>
+                                    <option value="date_asc">Oldest First</option>
+                                    <option value="balance_desc">Highest Balance</option>
+                                    <option value="balance_asc">Lowest Balance</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="overflow-hidden">
+                            <table class="w-full table-fixed text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
+                                        <th class="p-4 font-semibold w-[22%]">Card Number & UID</th>
+                                        <th class="p-4 font-semibold w-[18%]">User ID</th>
+                                        <th class="p-4 font-semibold w-[12%]">Type</th>
+                                        <th class="p-4 font-semibold w-[15%]">Balance</th>
+                                        <th class="p-4 font-semibold w-[10%]">Status</th>
+                                        <th class="p-4 font-semibold w-[15%]">Created At</th>
+                                        <th class="p-4 font-semibold w-[8%] text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cardsTableBody" class="text-sm text-gray-700 divide-y divide-gray-100">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                            <p class="text-sm text-gray-500">Showing <span class="font-medium" id="pageStart">0</span> to <span class="font-medium" id="pageEnd">0</span> of <span class="font-medium" id="totalItems">0</span> cards</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="../../assets/admin/admin_card_inventory.js?"></script>
+
+    <!-- Card Details Modal -->
+    <div id="cardDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-gray-900">Card Details</h3>
+                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Card Number</span>
+                    <span class="font-semibold text-gray-900" id="modalCardNumber"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Card UID</span>
+                    <span class="text-gray-900" id="modalCardUID"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">User ID</span>
+                    <span class="text-gray-900" id="modalUserID"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Type</span>
+                    <span class="capitalize text-gray-900" id="modalCardType"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Balance</span>
+                    <span class="text-gray-900 font-medium" id="modalBalance"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Status</span>
+                    <span class="capitalize px-2 py-1 text-xs font-medium rounded-full" id="modalStatus"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Expiry Date</span>
+                    <span class="text-gray-900" id="modalExpiryDate"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium text-gray-500">Created At</span>
+                    <span class="text-gray-900" id="modalCreatedAt"></span>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium transition duration-150">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

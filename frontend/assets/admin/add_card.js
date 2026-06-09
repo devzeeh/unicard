@@ -14,6 +14,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const successText = document.getElementById("success-text");
 
     if (form) {
+        // Dynamic Card Preview Listeners
+        const uidInput = document.getElementById("cardUID");
+        const amountInput = document.getElementById("initialAmount");
+        const previewUid = document.getElementById("preview-uid");
+        const previewBalance = document.getElementById("preview-balance");
+
+        if(uidInput && previewUid) {
+            uidInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                previewUid.textContent = val || 'A346F101';
+            });
+        }
+
+        if(amountInput && previewBalance) {
+            amountInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                    previewBalance.textContent = val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                } else {
+                    previewBalance.textContent = '0.00';
+                }
+            });
+        }
+
         form.addEventListener("submit", function (e) {
             e.preventDefault();
             if (errorAlert) errorAlert.classList.add("hidden");
