@@ -68,11 +68,17 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./frontend/assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
+	// Serve storage directory for uploaded documents and images (locally stored)
+	storageServer := http.FileServer(http.Dir("./storage"))
+	mux.Handle("/storage/", http.StripPrefix("/storage/", storageServer))
+
 	// general endpoints
 	mux.HandleFunc("GET /login", authHandler.LoginView)
 	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
 	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
+	mux.HandleFunc("GET /merchant-signup", authHandler.MerchantSignupView)
+	mux.HandleFunc("POST /v1/merchant-signup", authHandler.MerchantSignupHandler)
 	mux.HandleFunc("GET /admin-signup", authHandler.AdminSignupView)
 	mux.HandleFunc("POST /v1/admin-signup", authHandler.AdminSignupHandler)
 	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
@@ -102,8 +108,15 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/terminals/add", adminHanlder.AddTerminalHandler)
 	mux.HandleFunc("GET /admin/{username}/settings", adminHanlder.SystemSettingsView)
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/add", adminHanlder.AddMerchantHandler)
+	mux.HandleFunc("GET /admin/{username}/merchants/{id}", adminHanlder.MerchantInfoView)
+	mux.HandleFunc("GET /v1/admin/{username}/merchants/{id}/data", adminHanlder.MerchantInfoDataHandler)
+	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/approve", adminHanlder.ApproveMerchantHandler)
+	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/reject", adminHanlder.RejectMerchantHandler)
+	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/suspend", adminHanlder.SuspendMerchantHandler)
+	mux.HandleFunc("DELETE /v1/admin/{username}/merchants/{id}/delete", adminHanlder.DeleteMerchantHandler)
 	mux.HandleFunc("GET /admin/{username}/card-inventory", adminHanlder.CardInventoryView)
 	mux.HandleFunc("GET /v1/admin/{username}/card-inventory-data", adminHanlder.CardInventoryDataHandler)
+	mux.HandleFunc("POST /v1/admin/{username}/cards/{id}/block", adminHanlder.BlockCardHandler)
 	mux.HandleFunc("GET /admin/{username}/addcard", adminHanlder.AddCardsView)
 	mux.HandleFunc("GET /admin/{username}/deactivatecard", adminHanlder.DeactivateView)
 	mux.HandleFunc("POST /v1/admin/{username}/addcardauth", adminHanlder.AddCardHandler)

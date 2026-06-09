@@ -38,12 +38,12 @@
                     <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Revenue Card -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
+                            <div class="grid grid-cols-2 divide-x divide-gray-200">
+                                <div class="pr-4">
                                     <p class="text-sm font-medium text-gray-500 mb-2">Gross Revenue</p>
                                     <p class="text-2xl font-bold text-gray-900" id="grossRevenue">₱0.00</p>
                                 </div>
-                                <div>
+                                <div class="pl-4">
                                     <p class="text-sm font-medium text-gray-500 mb-2">Net Revenue</p>
                                     <p class="text-2xl font-bold text-emerald-600" id="netRevenue">₱0.00</p>
                                 </div>
@@ -52,12 +52,12 @@
 
                         <!-- Users & Cards Card -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
+                            <div class="grid grid-cols-2 divide-x divide-gray-200">
+                                <div class="pr-4">
                                     <p class="text-sm font-medium text-gray-500 mb-2">Total Users</p>
                                     <p class="text-2xl font-bold text-gray-900" id="totalUsers">0</p>
                                 </div>
-                                <div>
+                                <div class="pl-4">
                                     <p class="text-sm font-medium text-gray-500 mb-2">Total Cards</p>
                                     <p class="text-2xl font-bold text-gray-900" id="totalCards">0</p>
                                 </div>
@@ -66,14 +66,14 @@
 
                         <!-- Merchants & Terminals Card -->
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500 mb-2">Active Merchants</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="activeMerchants">0</p>
+                            <div class="grid grid-cols-2 divide-x divide-gray-200">
+                                <div class="pr-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Total Merchants</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="totalMerchants">0</p>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500 mb-2">Active Terminals</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="activeTerminals">0</p>
+                                <div class="pl-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Total Terminals</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="totalTerminals">0</p>
                                 </div>
                             </div>
                         </div>
@@ -83,7 +83,7 @@
 
                     <!-- Merchants Table -->
                     <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <div class="flex items-center justify-between mb-4 border-b pb-2">
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
                             <h3 class="text-lg font-bold text-gray-900">Registered Merchants</h3>
                             <a href="/admin/{{.Username}}/merchants"
                                 class="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center transition duration-150">
@@ -93,6 +93,22 @@
                                         d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                                 </svg>
                             </a>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-4 mb-4 text-sm">
+                            <div class="text-gray-500 font-medium hidden sm:block">Status Overview:</div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-yellow-800 bg-yellow-100 font-medium">Pending: <span id="pendingMerchants" class="ml-1 font-bold">0</span></span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-orange-800 bg-orange-100 font-medium">Suspended: <span id="suspendedMerchants" class="ml-1 font-bold">0</span></span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-red-800 bg-red-100 font-medium">Rejected: <span id="rejectedMerchants" class="ml-1 font-bold">0</span></span>
+                                </div>
+                                <div class="w-px h-4 bg-gray-300 hidden md:block"></div>
+                                <div class="text-gray-500 font-medium hidden sm:block">Terminals:</div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-green-800 bg-green-100 font-medium">Active: <span id="activeTerminals" class="ml-1 font-bold">0</span></span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-gray-800 bg-gray-100 font-medium">Inactive: <span id="inactiveTerminals" class="ml-1 font-bold">0</span></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full table-fixed text-left border-collapse">
@@ -114,50 +130,6 @@
                     </section>
                 </div>
             </main>
-        </div>
-    </div>
-    <!-- Merchant Details Modal -->
-    <div id="merchantDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-6 border w-full max-w-lg shadow-lg rounded-xl bg-white">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="text-xl font-bold text-gray-900" id="modalBusinessName">Merchant Details</h3>
-                <button onclick="document.getElementById('merchantDetailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="space-y-4 text-sm text-gray-700">
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Merchant ID</span>
-                    <span class="font-semibold text-gray-900" id="modalMerchantId"></span>
-                </div>
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Business Type</span>
-                    <span class="capitalize" id="modalBusinessType"></span>
-                </div>
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Owner Name</span>
-                    <span class="text-gray-900" id="modalOwnerName"></span>
-                </div>
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Contact Email</span>
-                    <span class="text-gray-900" id="modalContactEmail"></span>
-                </div>
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Contact Phone</span>
-                    <span class="text-gray-900" id="modalContactPhone"></span>
-                </div>
-                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Status</span>
-                    <span class="capitalize px-2 py-1 text-xs font-medium rounded-full" id="modalStatus"></span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="font-medium text-gray-500">Date Created</span>
-                    <span class="text-gray-900" id="modalCreatedAt"></span>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button onclick="document.getElementById('merchantDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium transition duration-150">Close</button>
-            </div>
         </div>
     </div>
 

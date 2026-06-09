@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
@@ -8,13 +9,14 @@ import (
 
 // AdminCard represents a card entry in the admin database
 type AdminCard struct {
-	UserID     string  `json:"user_id" db:"user_id"`
-	CardNumber string  `json:"card_number" db:"card_number"`
-	CardType   string  `json:"card_type" db:"card_type"`
-	Balance    float64 `json:"initial_amount" db:"balance"`
-	ExpiryDate string  `json:"expiry_date" db:"expiry_date"`
-	Status     string  `json:"status" db:"status"`
-	CreatedAt  string  `json:"created_at" db:"created_at"`
+	UserID     sql.NullString `json:"user_id" db:"user_id"`
+	CardUID    string         `json:"card_uid" db:"card_uid"`
+	CardNumber string         `json:"card_number" db:"card_number"`
+	CardType   string         `json:"card_type" db:"card_type"`
+	Balance    float64        `json:"initial_amount" db:"balance"`
+	ExpiryDate string         `json:"expiry_date" db:"expiry_date"`
+	Status     string         `json:"status" db:"status"`
+	CreatedAt  string         `json:"created_at" db:"created_at"`
 }
 
 // AdminCardInventoryStats contains statistics about cards
@@ -33,7 +35,7 @@ func (h *Handler) CardInventoryView(w http.ResponseWriter, r *http.Request) {
 		Page:     "card-inventory",
 		Username: r.PathValue("username"),
 	}
-	err := h.Tpl.ExecuteTemplate(w, "admin_dashboard.html", data)
+	err := h.Tpl.ExecuteTemplate(w, "admin_card_inventory.html", data)
 	if err != nil {
 		fmt.Printf("Template execution error: %v\n", err)
 	}
@@ -53,7 +55,7 @@ func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Reques
 
 	// Fetch Cards
 	rows, err := h.DB.Query(`
-		SELECT user_id, card_number, card_type, balance, status, expiry_date, created_at
+		SELECT user_id, card_uid, card_number, card_type, balance, status, expiry_date, created_at
 		FROM cards
 		ORDER BY created_at DESC
 	`)
@@ -72,6 +74,7 @@ func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Reques
 		var c AdminCard
 		err := rows.Scan(
 			&c.UserID,
+			&c.CardUID,
 			&c.CardNumber,
 			&c.CardType,
 			&c.Balance,
@@ -96,4 +99,46 @@ func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, resp)
+}
+
+// BlockCardHandler blocks a card from the inventory page
+func (h *Handler) BlockCardHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("BlockCardHandler running...")
+	cardID := r.PathValue("id")
+	if cardID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card ID is required",
+		})
+		return
+	}
+
+	result, err := h.DB.Exec(`
+		UPDATE cards
+		SET status = 'Blocked'
+		WHERE card_number = ? OR card_uid = ?
+	`, cardID, cardID)
+
+	if err != nil {
+		fmt.Printf("Error blocking card: %v\n", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to block card",
+		})
+		return
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		jsonwrite.WriteJSON(w, http.StatusNotFound, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card not found or could not be blocked",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Card blocked successfully",
+	})
 }

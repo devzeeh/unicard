@@ -46,11 +46,14 @@ CREATE TABLE merchants (
     business_phone VARCHAR(20) NOT NULL UNIQUE COMMENT 'Official telephone or mobile number for merchant support and emergency updates',
     
     commission_rate DECIMAL(5, 2) DEFAULT 2.00 COMMENT 'Percentage cut taken by UniCard per processed card transaction (e.g., 2.50 = 2.5%)',
-    settlement_account_name VARCHAR(100) NOT NULL COMMENT 'The name on the merchant bank account or mobile wallet for payouts',
-    settlement_account_number VARCHAR(50) NOT NULL COMMENT 'The actual bank account number or mobile number (GCash/Maya) for payouts',
-    settlement_bank_name VARCHAR(100) NOT NULL COMMENT 'The target bank or e-wallet company name (e.g., BDO, BPI, GCash, Maya)',
+    settlement_account_name VARCHAR(100) NULL COMMENT 'The name on the merchant bank account or mobile wallet for payouts',
+    settlement_account_number VARCHAR(50) NULL COMMENT 'The actual bank account number or mobile number (GCash/Maya) for payouts',
+    settlement_bank_name VARCHAR(100) NULL COMMENT 'The target bank or e-wallet company name (e.g., BDO, BPI, GCash, Maya)',
     
-    status ENUM('pending_approval', 'active', 'suspended') DEFAULT 'pending_approval' COMMENT 'Operational state of the merchant ecosystem tenancy',
+    status ENUM('pending approval', 'approved', 'rejected', 'active', 'suspended') DEFAULT 'pending approval' COMMENT 'Operational state of the merchant ecosystem tenancy',
+    dti_document VARCHAR(255) NULL COMMENT 'File path for the uploaded DTI registration document',
+    bir_document VARCHAR(255) NULL COMMENT 'File path for the uploaded BIR registration document',
+    other_document VARCHAR(255) NULL COMMENT 'File path for any other uploaded business documents',
     approved_by VARCHAR(50) NULL COMMENT 'The user_id of the Super Admin who verified and activated this company profile',
     approved_at TIMESTAMP NULL COMMENT 'The specific date and timestamp when the business was activated',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated date and time record of the initial registration request',
