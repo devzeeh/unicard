@@ -185,8 +185,14 @@ document.addEventListener("DOMContentLoaded", () => {
         addTerminalForm.addEventListener("submit", (e) => {
             e.preventDefault();
             const formData = new FormData(addTerminalForm);
+            
+            let terminalSn = formData.get("terminalSnPrefix");
+            if (terminalSn && !terminalSn.startsWith("UC-TRM-")) {
+                terminalSn = "UC-TRM-" + terminalSn;
+            }
+
             const data = {
-                terminalSn: formData.get("terminalSn"),
+                terminalSn: terminalSn,
                 deviceName: formData.get("deviceName")
             };
 

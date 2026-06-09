@@ -89,6 +89,10 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	orderClause := " ORDER BY created_at DESC"
 	if strings.ToLower(sortOrder) == "asc" {
 		orderClause = " ORDER BY created_at ASC"
+	} else if strings.ToLower(sortOrder) == "name_asc" {
+		orderClause = " ORDER BY business_name ASC"
+	} else if strings.ToLower(sortOrder) == "name_desc" {
+		orderClause = " ORDER BY business_name DESC"
 	}
 
 	query := `SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at ` +
@@ -286,7 +290,7 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 		m.SetHeader("To", email)
 		m.SetHeader("Subject", "Unicard Application Approved")
 
-		loginURL := "http://localhost:3000/login" // Adjust if there's an env var for frontend URL
+		loginURL := "http://0.0.0.0:3000" // Adjust if there's an env var for frontend URL
 		htmlBody := fmt.Sprintf(smtp.MerchantApprovedEmail(), name, loginURL)
 		m.SetBody("text/html", htmlBody)
 
@@ -461,6 +465,56 @@ func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request)
 	}(merchantEmail, ownerName, req.Reason)
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant suspended successfully"})
+}
+
+func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant ID is required"})
+		return
+	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
+		return
+	}
+	defer tx.Rollback()
+
+	var merchantUserID string
+	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
+		return
+	}
+
+	// Update terminals assigned to this merchant
+	_, err = tx.Exec("UPDATE terminals SET merchant_id = NULL, location_details = '', status = 'inactive' WHERE merchant_id = ?", merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to reset terminals"})
+		return
+	}
+
+	// Delete from merchants
+	_, err = tx.Exec("DELETE FROM merchants WHERE merchant_id = ?", merchantID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to delete merchant"})
+		return
+	}
+
+	// Delete from users
+	_, err = tx.Exec("DELETE FROM users WHERE user_id = ?", merchantUserID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to delete user"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to finalize deletion"})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant deleted successfully"})
 }
 
 type MerchantDetailsData struct {

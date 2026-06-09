@@ -113,6 +113,7 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/approve", adminHanlder.ApproveMerchantHandler)
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/reject", adminHanlder.RejectMerchantHandler)
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/{id}/suspend", adminHanlder.SuspendMerchantHandler)
+	mux.HandleFunc("DELETE /v1/admin/{username}/merchants/{id}/delete", adminHanlder.DeleteMerchantHandler)
 	mux.HandleFunc("GET /admin/{username}/card-inventory", adminHanlder.CardInventoryView)
 	mux.HandleFunc("GET /v1/admin/{username}/card-inventory-data", adminHanlder.CardInventoryDataHandler)
 	mux.HandleFunc("GET /admin/{username}/addcard", adminHanlder.AddCardsView)

@@ -145,6 +145,7 @@
                         <button id="btnSuspendMerchant" class="hidden px-6 py-2 border border-orange-200 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 font-medium transition duration-150">Suspend Account</button>
                         <button id="btnRejectMerchant" class="hidden px-6 py-2 border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition duration-150">Reject Application</button>
                         <button id="btnApproveMerchant" class="hidden px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition duration-150 shadow-sm">Approve Merchant</button>
+                        <button id="btnDeleteMerchant" class="hidden px-6 py-2 border border-red-200 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition duration-150">Delete Merchant</button>
                     </div>
 
                 </div>
@@ -275,6 +276,34 @@
                 <button onclick="document.getElementById('suspendMerchantModal').classList.add('hidden')"
                     class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
                 <button id="confirmSuspendBtn" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Suspend Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Merchant Modal -->
+    <div id="deleteMerchantModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-1/4 mx-auto p-8 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Delete Merchant</h3>
+                <button onclick="document.getElementById('deleteMerchantModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <p class="text-center text-gray-600">Are you sure you want to permanently delete the merchant <span id="deleteModalBusinessName" class="font-bold text-gray-800"></span>?</p>
+                <p class="text-center text-sm text-gray-500 mt-2">All assigned terminals will be set to inactive and made available for reassignment. This action cannot be undone.</p>
+            </div>
+            <div id="deleteFormAlert" class="hidden rounded-lg p-4 text-sm mb-4"></div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="document.getElementById('deleteMerchantModal').classList.add('hidden')"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>
+                <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">Delete Merchant</button>
             </div>
         </div>
     </div>

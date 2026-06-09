@@ -126,6 +126,16 @@ function renderTable() {
             window.location.href = `/admin/${adminUsername}/merchants/${merchant.merchant_id}`;
         };
 
+        let statusClass = 'bg-gray-100 text-gray-800';
+        switch (merchant.status.toLowerCase()) {
+            case 'active': statusClass = 'bg-green-100 text-green-800'; break;
+            case 'pending approval':
+            case 'pending_approval': statusClass = 'bg-yellow-100 text-yellow-800'; break;
+            case 'suspended': statusClass = 'bg-orange-100 text-orange-800'; break;
+            case 'rejected': statusClass = 'bg-red-100 text-red-800'; break;
+            case 'approved': statusClass = 'bg-blue-100 text-blue-800'; break;
+        }
+
         tr.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${merchant.business_name}">
                 <div class="text-sm font-medium text-gray-900 truncate">${highlightedBusinessName}</div>
@@ -142,10 +152,11 @@ function renderTable() {
                 </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${merchant.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} capitalize">${merchant.status}</span>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass} capitalize">${merchant.status.replace(/_/g, ' ')}</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 <button class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                <button class="text-red-600 hover:text-red-900 ml-2" onclick="deleteMerchant('${merchant.merchant_id}', '${merchant.business_name.replace(/'/g, "\\'")}')">Delete</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -192,7 +203,61 @@ function renderPagination() {
     paginationControls.appendChild(nextBtn);
 }
 
+let currentDeleteMerchantId = null;
+
+function deleteMerchant(merchantId, businessName) {
+    currentDeleteMerchantId = merchantId;
+    document.getElementById('deleteModalBusinessName').textContent = businessName || 'this merchant';
+    document.getElementById('deleteMerchantModal').classList.remove('hidden');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (!currentDeleteMerchantId) return;
+
+            const adminUsername = window.location.pathname.split('/')[2];
+            const alertBox = document.getElementById('deleteFormAlert');
+            alertBox.classList.add('hidden');
+            
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = 'Deleting...';
+
+            fetch(`/v1/admin/${adminUsername}/merchants/${currentDeleteMerchantId}/delete`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(result => {
+                alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-green-50', 'text-green-600');
+                if (result.success) {
+                    alertBox.classList.add('bg-green-50', 'text-green-600');
+                    alertBox.textContent = result.message || "Merchant deleted successfully";
+                    setTimeout(() => {
+                        document.getElementById('deleteMerchantModal').classList.add('hidden');
+                        fetchMerchants();
+                        fetchUnassignedTerminals();
+                        confirmDeleteBtn.disabled = false;
+                        confirmDeleteBtn.textContent = 'Delete Merchant';
+                    }, 1000);
+                } else {
+                    alertBox.classList.add('bg-red-50', 'text-red-600');
+                    alertBox.textContent = result.message || "Failed to delete merchant";
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.textContent = 'Delete Merchant';
+                }
+            })
+            .catch(error => {
+                console.error("Error deleting merchant:", error);
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "An error occurred while deleting the merchant.";
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Delete Merchant';
+            });
+        });
+    }
+
     fetchMerchants();
     fetchUnassignedTerminals();
 

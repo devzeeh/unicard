@@ -96,35 +96,46 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	}
 	log.Println("Total cards row:", totalCards)
 
-	// Display the number of merchants
-	// Counting only 'active' merchants (excluding 'pending_approval' or 'suspended')
-	row = h.DB.QueryRow("SELECT COUNT(*) FROM merchants WHERE status = 'active'")
+	// Display the number of merchants and breakdown
+	row = h.DB.QueryRow(`
+		SELECT 
+			COUNT(*),
+			COALESCE(SUM(CASE WHEN status = 'pending_approval' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END), 0)
+		FROM merchants
+	`)
 
-	var totalMerchants int
-	if err := row.Scan(&totalMerchants); err != nil {
-		log.Println("Error scanning total merchants:", err)
+	var totalMerchants, pendingMerchants, suspendedMerchants, rejectedMerchants int
+	if err := row.Scan(&totalMerchants, &pendingMerchants, &suspendedMerchants, &rejectedMerchants); err != nil {
+		log.Println("Error scanning merchants stats:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Internal server error",
 		})
 		return
 	}
-	log.Println("Total merchants row:", totalMerchants)
+	log.Println("Total merchants:", totalMerchants, "Pending:", pendingMerchants)
 
-	// Display the number of terminals
-	// Counting 'active' ESP32 nodes (excluding 'offline' or 'suspended')
-	row = h.DB.QueryRow("SELECT COUNT(*) FROM terminals WHERE status = 'active'")
+	// Display the number of terminals and breakdown
+	row = h.DB.QueryRow(`
+		SELECT 
+			COUNT(*),
+			COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END), 0)
+		FROM terminals
+	`)
 
-	var totalTerminals int
-	if err := row.Scan(&totalTerminals); err != nil {
-		log.Println("Error scanning total terminals:", err)
+	var totalTerminals, activeTerminals, inactiveTerminals int
+	if err := row.Scan(&totalTerminals, &activeTerminals, &inactiveTerminals); err != nil {
+		log.Println("Error scanning terminals stats:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Internal server error",
 		})
 		return
 	}
-	log.Println("Total terminals row:", totalTerminals)
+	log.Println("Total terminals:", totalTerminals, "Active:", activeTerminals, "Inactive:", inactiveTerminals)
 
 	// Fetch recent merchants for the table (limit 5)
 	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants ORDER BY created_at DESC LIMIT 5"
@@ -151,13 +162,18 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 
 	// Return the data as JSON
 	response := structs.AdminDashboardData{
-		GrossRevenue:    grossRevenue,
-		NetRevenue:      netRevenue,
-		TotalUsers:      totalUsers,
-		TotalCards:      totalCards,
-		ActiveMerchants: totalMerchants,
-		ActiveTerminals: totalTerminals,
-		Merchants:       merchants,
+		GrossRevenue:       grossRevenue,
+		NetRevenue:         netRevenue,
+		TotalUsers:         totalUsers,
+		TotalCards:         totalCards,
+		TotalMerchants:     totalMerchants,
+		PendingMerchants:   pendingMerchants,
+		SuspendedMerchants: suspendedMerchants,
+		RejectedMerchants:  rejectedMerchants,
+		TotalTerminals:     totalTerminals,
+		ActiveTerminals:    activeTerminals,
+		InactiveTerminals:  inactiveTerminals,
+		Merchants:          merchants,
 	}
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,

@@ -97,23 +97,28 @@ function populateMerchantUI(merchant) {
     const btnApprove = document.getElementById('btnApproveMerchant');
     const btnReject = document.getElementById('btnRejectMerchant');
     const btnSuspend = document.getElementById('btnSuspendMerchant');
+    const btnDelete = document.getElementById('btnDeleteMerchant');
 
-    if (statusLower === 'pending_approval' || statusLower === 'pending approval' || statusLower === 'active') {
-        actionButtons.classList.remove('hidden');
-        actionButtons.dataset.merchantId = merchant.MerchantID;
-        actionButtons.dataset.businessName = merchant.BusinessName;
+    // Always show action buttons so delete is always available
+    actionButtons.classList.remove('hidden');
+    actionButtons.dataset.merchantId = merchant.MerchantID;
+    actionButtons.dataset.businessName = merchant.BusinessName;
 
-        if (statusLower === 'active') {
-            btnSuspend.classList.remove('hidden');
-            btnApprove.classList.add('hidden');
-            btnReject.classList.add('hidden');
-        } else {
-            btnSuspend.classList.add('hidden');
-            btnApprove.classList.remove('hidden');
-            btnReject.classList.remove('hidden');
-        }
+    if (statusLower === 'active') {
+        btnSuspend.classList.remove('hidden');
+        btnApprove.classList.add('hidden');
+        btnReject.classList.add('hidden');
+        btnDelete.classList.remove('hidden');
+    } else if (statusLower === 'pending_approval' || statusLower === 'pending approval') {
+        btnSuspend.classList.add('hidden');
+        btnApprove.classList.remove('hidden');
+        btnReject.classList.remove('hidden');
+        btnDelete.classList.remove('hidden');
     } else {
-        actionButtons.classList.add('hidden');
+        btnSuspend.classList.add('hidden');
+        btnApprove.classList.add('hidden');
+        btnReject.classList.add('hidden');
+        btnDelete.classList.remove('hidden');
     }
 }
 
@@ -344,6 +349,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
                 alertBox.classList.add('bg-red-50', 'text-red-600');
                 alertBox.textContent = "Network error. Please try again.";
+            });
+        });
+    }
+
+    const btnDelete = document.getElementById('btnDeleteMerchant');
+    const deleteModal = document.getElementById('deleteMerchantModal');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    let deleteMerchantId = null;
+
+    if (btnDelete && actionButtons) {
+        btnDelete.addEventListener('click', () => {
+            const merchantId = actionButtons.dataset.merchantId;
+            const businessName = actionButtons.dataset.businessName;
+            if (!merchantId) return;
+            
+            document.getElementById('deleteModalBusinessName').textContent = businessName;
+            deleteMerchantId = merchantId;
+            deleteModal.classList.remove('hidden');
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (!deleteMerchantId) return;
+
+            const adminUsername = window.location.pathname.split('/')[2];
+            const alertBox = document.getElementById('deleteFormAlert');
+            alertBox.classList.add('hidden');
+
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = 'Deleting...';
+
+            fetch(`/v1/admin/${adminUsername}/merchants/${deleteMerchantId}/delete`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(result => {
+                alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-green-50', 'text-green-600');
+                if (result.success) {
+                    alertBox.classList.add('bg-green-50', 'text-green-600');
+                    alertBox.textContent = result.message || "Merchant deleted successfully.";
+                    setTimeout(() => {
+                        window.location.href = `/admin/${adminUsername}/merchants`;
+                    }, 1500);
+                } else {
+                    alertBox.classList.add('bg-red-50', 'text-red-600');
+                    alertBox.textContent = result.message || "Failed to delete merchant.";
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.textContent = 'Delete Merchant';
+                }
+            })
+            .catch(err => {
+                console.error("Error deleting merchant:", err);
+                alertBox.classList.remove('hidden', 'bg-green-50', 'text-green-600');
+                alertBox.classList.add('bg-red-50', 'text-red-600');
+                alertBox.textContent = "Network error. Please try again.";
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Delete Merchant';
             });
         });
     }

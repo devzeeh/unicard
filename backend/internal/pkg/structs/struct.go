@@ -25,13 +25,18 @@ type Merchant struct {
 
 // AdminDashboardData struct represents the data to be displayed on the admin dashboard
 type AdminDashboardData struct {
-	GrossRevenue    float64    `json:"grossRevenue"`
-	NetRevenue      float64    `json:"netRevenue"`
-	TotalUsers      int        `json:"totalUsers"`
-	TotalCards      int        `json:"totalCards"`
-	ActiveMerchants int        `json:"activeMerchants"`
-	ActiveTerminals int        `json:"activeTerminals"`
-	Merchants       []Merchant `json:"merchants"`
+	GrossRevenue       float64    `json:"grossRevenue"`
+	NetRevenue         float64    `json:"netRevenue"`
+	TotalUsers         int        `json:"totalUsers"`
+	TotalCards         int        `json:"totalCards"`
+	TotalMerchants     int        `json:"totalMerchants"`
+	PendingMerchants   int        `json:"pendingMerchants"`
+	SuspendedMerchants int        `json:"suspendedMerchants"`
+	RejectedMerchants  int        `json:"rejectedMerchants"`
+	TotalTerminals     int        `json:"totalTerminals"`
+	ActiveTerminals    int        `json:"activeTerminals"`
+	InactiveTerminals  int        `json:"inactiveTerminals"`
+	Merchants          []Merchant `json:"merchants"`
 }
 
 // Terminal represents a hardware device in the terminal registry
