@@ -1,3 +1,8 @@
 #ignoring the enviroment
 .env
 .unknown
+
+storage/*
+!storage/.gitkeep
+storage/**/*
+!storage/**/.gitkeep
