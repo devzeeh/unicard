@@ -31,96 +31,8 @@
             </svg>
         </button>
 
-        <!-- Fixed logo -->
-        <a href="/dashboard" class="flex items-center fixed top-4 left-20 z-40"> <!-- Adjusted top-4 -->
-            <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H7a3 3 0 00-3 3v8a3 3 0 003 3z">
-                </path>
-            </svg>
-            <span class="ml-2 text-lg font-bold text-gray-900 hidden sm:block">PayCard</span>
-        </a>
-
         <!-- Sidebar -->
-        <aside id="sidebar"
-            class="fixed inset-y-0 left-0 z-30 flex-shrink-0 w-64 px-8 py-4 bg-white border-r border-gray-200 transform -translate-x-full transition-transform duration-200 ease-in-out">
-            <header class="flex items-center h-16">
-                 <!-- This is now a spacer for the fixed logo above -->
-            </header>
-
-            <!-- Navigation Links -->
-            <nav class="mt-8">
-                <ul class="space-y-2">
-                    <!-- Dashboard -->
-                    <li>
-                        <a href="/dashboard"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-white bg-blue-600 rounded-lg">
-                            <i
-                                class="fas fa-home w-6 h-6 text-center"></i>
-                            <span
-                                class="ml-3">Dashboard</span>
-                        </a>
-                    </li>
-                    <!-- Transactions -->
-                    <li>
-                        <a href="/transaction"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <i
-                                class="fas fa-exchange-alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
-                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Transactions</span>
-                        </a>
-                    </li>
-                    <!-- My Card -->
-                    <li>
-                        <a href="/card"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <i
-                                class="fas fa-credit-card w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
-                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">My
-                                Card</span>
-                        </a>
-                    </li>
-                    <!-- Profile -->
-                    <li>
-                        <a href="/profile"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <i
-                                class="fas fa-user w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
-                            <span
-                                class="ml-3 group-hove r:text-blue-500 transition duration-300 cursor-pointer">Profile</span>
-                        </a>
-                    </li>
-                    <!-- Top Up -->
-                    <li>
-                        <a href="/topup"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <i class="fas fa-wallet w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
-                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Top Up</span>
-                        </a>
-                    </li>
-                    <div class="w-full  border-t border-gray-200"></div>
-                    <!-- Settings -->
-                    <li>
-                        <a href="/settings"
-                            class="group flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <i class="fas fa-gear -alt w-6 h-6 text-center text-gray-400 group-hover:text-blue-500 transition duration-300 cursor-pointer"></i>
-                            <span class="ml-3 group-hover:text-blue-500 transition duration-300 cursor-pointer">Settings</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <!-- Logout -->
-            <footer class="absolute bottom-0 left-0 w-full p-4 border-t border-gray-200">
-                <button id="logout-button"
-                    class="group w-full flex items-center px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-lg">
-                    <i
-                        class="fas fa-sign-out-alt w-6 h-6 text-center text-gray-400 group-hover:text-red-500 transition duration-300 cursor-pointer"></i>
-                    <span class="ml-3 group-hover:text-red-500 transition duration-300 cursor-pointer">Logout</span>
-                </button>
-            </footer>
-        </aside>
+        {{template "customer_sidebar" .}}
 
         <!-- Main Content Area -->
         <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-200 ease-in-out">
@@ -218,19 +130,19 @@
                                 </a>
                             </div>
                             <div class="overflow-x-auto border border-gray-100 rounded-xl">
-                                <table class="min-w-full divide-y divide-gray-100">
+                                <table class="min-w-full table-fixed divide-y divide-gray-100">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" class="w-1/4 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Date
                                             </th>
-                                            <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" class="w-1/3 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Description
                                             </th>
-                                            <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" class="w-1/6 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Type
                                             </th>
-                                            <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" class="w-1/4 px-6 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Amount
                                             </th>
                                         </tr>
@@ -256,7 +168,7 @@
 
     <!-- Logout Confirmation Modal -->
     <div id="logout-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
-        <div id="logout-modal-content" class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
+        <div id="../..logout-modal-content" class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
             <div class="flex items-center space-x-3 text-red-600">
                 <i class="fas fa-sign-out-alt text-2xl"></i>
                 <h3 class="text-lg font-bold text-gray-900">Confirm Logout</h3>
@@ -280,7 +192,7 @@
     </div>
 
     <!-- Script Import -->
-    <script src="/assets/js/dashboard.js"></script>
+    <script src="../../assets/js/dashboard.js"></script>
 
 </body>
 

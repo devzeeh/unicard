@@ -38,9 +38,14 @@ type DashboardUser struct {
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard view is running...")
 
-	// Check if session cookie is present (Removed)
+	username := r.PathValue("username")
+	data := struct {
+		Username string
+	}{
+		Username: username,
+	}
 
-	h.Tpl.ExecuteTemplate(w, "dashboard.html", nil)
+	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
 }
 
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {

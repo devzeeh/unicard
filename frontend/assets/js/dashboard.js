@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- Sidebar Logic ---
     if (sidebar && sidebarOverlay && toggleButton && openIcon && closeIcon && mainContent) {
-        
+
         function toggleSidebar() {
             sidebar.classList.toggle('-translate-x-full');
-            mainContent.classList.toggle('md:pl-64');
+            mainContent.classList.toggle('md:pl-72');
             openIcon.classList.toggle('hidden');
             closeIcon.classList.toggle('hidden');
             if (window.innerWidth < 768) {
@@ -33,12 +33,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        toggleButton.addEventListener('click', function(e) {
+        toggleButton.addEventListener('click', function (e) {
             e.stopPropagation();
             toggleSidebar();
         });
 
-        sidebarOverlay.addEventListener('click', function() {
+        sidebarOverlay.addEventListener('click', function () {
             toggleSidebar();
         });
 
@@ -47,28 +47,27 @@ document.addEventListener("DOMContentLoaded", function () {
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
                 if (window.innerWidth < 768 && !closeIcon.classList.contains('hidden')) {
-                    toggleSidebar(); 
+                    toggleSidebar();
                 }
             });
         });
-        
+
     } else {
         console.error("Sidebar elements not found. Make sure all IDs are correct.");
     }
 
     // --- Profile Dropdown Logic ---
     if (profileButton && profileMenu) {
-        
-        profileButton.addEventListener('click', function(event) {
+
+        profileButton.addEventListener('click', function (event) {
             event.stopPropagation();
             profileMenu.classList.toggle('hidden');
         });
 
-        document.addEventListener('click', function(event) {
-            if (!profileMenu.classList.contains('hidden') && 
-                !profileButton.contains(event.target) && 
-                !profileMenu.contains(event.target)) 
-            {
+        document.addEventListener('click', function (event) {
+            if (!profileMenu.classList.contains('hidden') &&
+                !profileButton.contains(event.target) &&
+                !profileMenu.contains(event.target)) {
                 profileMenu.classList.add('hidden');
             }
         });
@@ -80,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // --- Logout Modal Logic ---
     // Check for all required modal elements
     const modalElementsExist = logoutModal && logoutModalContent && closeModalButton && cancelModalButton && confirmLogoutButton;
-    
+
     if (modalElementsExist) {
 
         // Function to open the modal
@@ -98,14 +97,14 @@ document.addEventListener("DOMContentLoaded", function () {
             logoutModalContent.classList.add('scale-95', 'opacity-0');
             logoutModalContent.classList.remove('scale-100', 'opacity-100');
             logoutModal.classList.remove('opacity-100');
-            
+
             setTimeout(() => {
                 logoutModal.classList.add('hidden');
             }, 300);
         }
 
         // --- UPDATED: Attach to all logout buttons ---
-        
+
         // 1. Sidebar Logout Button
         if (logoutButton) {
             logoutButton.addEventListener('click', (e) => {
@@ -113,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 openLogoutModal();
             });
         }
-        
+
         // 2. Profile Dropdown Logout Button
         if (profileLogoutButton) {
             profileLogoutButton.addEventListener('click', (e) => {
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Close modal buttons
         closeModalButton.addEventListener('click', closeLogoutModal);
         cancelModalButton.addEventListener('click', closeLogoutModal);
-        
+
         // Also close if clicking on the background overlay
         logoutModal.addEventListener('click', (e) => {
             if (e.target === logoutModal) {
@@ -208,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (profileViewEmail) profileViewEmail.innerText = data.email || "";
                 if (profileViewPhone) profileViewPhone.innerText = data.phone || "";
                 if (profileViewUsername) profileViewUsername.innerText = data.username || "";
-                
+
                 if (profileEditName) profileEditName.value = data.name || "";
                 if (profileEditEmail) profileEditEmail.value = data.email || "";
                 if (profileEditPhone) profileEditPhone.value = data.phone || "";
