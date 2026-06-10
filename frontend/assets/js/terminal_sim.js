@@ -35,8 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             simMessage.classList.remove('hidden');
             if(data.success) {
-                simMessage.className = 'text-sm rounded-lg p-3 text-center bg-green-50 text-green-700 border border-green-200 mt-4';
-                simMessage.textContent = `Success: Deducted ₱${amount.toFixed(2)} (Fee: ₱${(data.service_fee || 0).toFixed(2)})`;
+                if(type === 'Refund') {
+                    simMessage.className = 'text-sm rounded-lg p-3 text-center bg-amber-50 text-amber-700 border border-amber-200 mt-4';
+                    simMessage.textContent = `Success: Refunded ₱${amount.toFixed(2)} (Reversed Fee: ₱${(data.service_fee || 0).toFixed(2)})`;
+                } else {
+                    simMessage.className = 'text-sm rounded-lg p-3 text-center bg-green-50 text-green-700 border border-green-200 mt-4';
+                    simMessage.textContent = `Success: Deducted ₱${amount.toFixed(2)} (Fee: ₱${(data.service_fee || 0).toFixed(2)})`;
+                }
                 
                 // Add to table
                 addTxToTable(type, amount, data.service_fee || 0, 'Success');
@@ -76,9 +81,14 @@ document.addEventListener('DOMContentLoaded', () => {
             statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">${status}</span>`;
         }
 
-        let typeIcon = type === 'Fare' 
-            ? `<span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>` 
-            : `<span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>`;
+        let typeIcon = '';
+        if (type === 'Fare') {
+            typeIcon = `<span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>`;
+        } else if (type === 'Refund') {
+            typeIcon = `<span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>`;
+        } else {
+            typeIcon = `<span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>`;
+        }
 
         row.innerHTML = `
             <td class="px-6 py-4 text-slate-500">${timeStr}</td>

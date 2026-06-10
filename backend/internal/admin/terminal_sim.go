@@ -111,8 +111,8 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 	}
 
 	// 2. Check balance
-	if balance < req.Amount {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+	if req.Type != "Refund" && balance < req.Amount {
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 			Success: false,
 			Message: fmt.Sprintf("Insufficient balance. Current balance: %.2f", balance),
 		})
@@ -139,8 +139,12 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Deduct balance and add loyalty points
-	_, err = tx.Exec(`UPDATE cards SET balance = balance - ?, loyalty_points = loyalty_points + ? WHERE card_number = ?`, req.Amount, loyaltyPoints, req.CardNumber)
+	// Deduct or add balance and adjust loyalty points based on type
+	if req.Type == "Refund" {
+		_, err = tx.Exec(`UPDATE cards SET balance = balance + ?, loyalty_points = loyalty_points - ? WHERE card_number = ?`, req.Amount, loyaltyPoints, req.CardNumber)
+	} else {
+		_, err = tx.Exec(`UPDATE cards SET balance = balance - ?, loyalty_points = loyalty_points + ? WHERE card_number = ?`, req.Amount, loyaltyPoints, req.CardNumber)
+	}
 	if err != nil {
 		tx.Rollback()
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -167,10 +171,16 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		processedBy = "USR-SIM-001" // Fallback if no users exist
 	}
 
+	// Determine transaction type
+	dbTransactionType := "payment"
+	if req.Type == "Refund" {
+		dbTransactionType = "refund"
+	}
+
 	_, err = tx.Exec(`
 		INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by) 
-		VALUES (?, ?, ?, ?, 'payment', ?, ?, ?)
-	`, transactionID, req.CardNumber, req.MerchantID, terminalID, req.Amount, serviceFee, processedBy)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, transactionID, req.CardNumber, req.MerchantID, terminalID, dbTransactionType, req.Amount, serviceFee, processedBy)
 
 	if err != nil {
 		// If `merchant_id` is not nullable and causes error or id doesn't auto-increment

@@ -33,10 +33,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (txs && txs.length > 0) {
                     txs.forEach(tx => {
                         const tr = document.createElement("tr");
-                        const isPayment = tx.type === "Payment";
+                        const isPayment = tx.type && tx.type.toLowerCase() === "payment";
                         const colorClass = isPayment ? "text-red-600" : "text-green-600";
                         const sign = isPayment ? "-" : "+";
                         const amount = Number(tx.amount).toFixed(2);
+                        const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
                         let txDate = "N/A";
                         let txTime = "";
                         if (tx.date) {
@@ -66,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 ${tx.description}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${tx.type}
+                                ${displayType}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
                                 ${sign}₱${amount}
