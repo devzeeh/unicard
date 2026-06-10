@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"unicard-go/backend/internal/admin"
 	authentication "unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/user"
@@ -89,12 +90,7 @@ func main() {
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /{username}", userHandler.DashboardView)
 	mux.HandleFunc("GET /v1/user/{username}", userHandler.DashboardHandler)
-	//mux.HandleFunc("GET /transaction", userHandler.TransactionView)
-	//mux.HandleFunc("GET /topup", userHandler.TopupView)
-	//mux.HandleFunc("GET /profile", userHandler.ProfileView)
-	//mux.HandleFunc("GET /settings", userHandler.SettingsView)
-	//mux.HandleFunc("GET /card", userHandler.CardView)
-	//mux.HandleFunc("GET /v1/user/transactions", userHandler.TransactionsJSONHandler)
+	mux.HandleFunc("GET /v1/user/{username}/transactions", userHandler.TransactionsJSONHandler)
 	//mux.HandleFunc("GET /logout",)
 
 	// super admin endpoints
@@ -123,14 +119,24 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/deactivatecardauth", adminHanlder.DeactivateCardHanlder)
 	mux.HandleFunc("POST /v1/admin/{username}/deletecardauth", adminHanlder.DeleteCardHandler)
 	mux.HandleFunc("GET /admin/{username}/delete-cards", adminHanlder.DeleteCardView)
-	
-	
+
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
+
+		// Handle GET /{username}/transaction(s) manually to avoid ServeMux conflict with /assets/
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) == 3 && (parts[2] == "transaction" || parts[2] == "transactions") && r.Method == http.MethodGet {
+			if parts[1] != "assets" && parts[1] != "storage" && parts[1] != "v1" && parts[1] != "admin" {
+				r.SetPathValue("username", parts[1])
+				userHandler.TransactionView(w, r)
+				return
+			}
+		}
+
 		mux.ServeHTTP(w, r)
 	})
 

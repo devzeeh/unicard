@@ -2,7 +2,18 @@ document.addEventListener("DOMContentLoaded", function () {
     const transactionsBody = document.getElementById("transactions-table-body");
 
     function loadTransactions() {
-        fetch("/v1/user/transactions")
+        const pathSegments = window.location.pathname.split('/');
+        let userId = null;
+        if (pathSegments.length >= 2 && pathSegments[1] !== '') {
+            userId = pathSegments[1];
+        }
+
+        let endpoint = "/v1/user/transactions";
+        if (userId) {
+            endpoint = "/v1/user/" + encodeURIComponent(userId) + "/transactions";
+        }
+
+        fetch(endpoint)
             .then(response => {
                 if (response.status === 401) {
                     window.location.href = "/login";
@@ -26,24 +37,44 @@ document.addEventListener("DOMContentLoaded", function () {
                         const colorClass = isPayment ? "text-red-600" : "text-green-600";
                         const sign = isPayment ? "-" : "+";
                         const amount = Number(tx.amount).toFixed(2);
-                        
-                        // We do not have a running balance per transaction from the DB currently, 
-                        // so we will just show a dash or N/A in the balance column for now.
+                        let txDate = "N/A";
+                        let txTime = "";
+                        if (tx.date) {
+                            const d = new Date(tx.date);
+                            if (!isNaN(d.getTime())) {
+                                txDate = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                                txTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                            } else {
+                                txDate = tx.date;
+                            }
+                        }
+                        const status = tx.status || "Completed";
+
+                        let statusColor = "bg-green-100 text-green-800";
+                        if (status.toLowerCase() === "pending") {
+                            statusColor = "bg-yellow-100 text-yellow-800";
+                        } else if (status.toLowerCase() === "failed") {
+                            statusColor = "bg-red-100 text-red-800";
+                        }
+
                         tr.innerHTML = `
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${tx.date}
+                                <div>\${txDate}</div>
+                                <div class="text-xs text-gray-400 mt-1">\${txTime}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                ${tx.description}
+                                \${tx.description}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${tx.type}
+                                \${tx.type}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
-                                ${sign}₱${amount}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm \${colorClass} text-right font-medium">
+                                \${sign}₱\${amount}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                                -
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${statusColor}">
+                                    \${status}
+                                </span>
                             </td>
                         `;
                         transactionsBody.appendChild(tr);
