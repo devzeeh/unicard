@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- Sidebar Logic ---
     if (sidebar && sidebarOverlay && toggleButton && openIcon && closeIcon && mainContent) {
-        
+
         function toggleSidebar() {
             sidebar.classList.toggle('-translate-x-full');
-            mainContent.classList.toggle('md:pl-64');
+            mainContent.classList.toggle('md:pl-72');
             openIcon.classList.toggle('hidden');
             closeIcon.classList.toggle('hidden');
             if (window.innerWidth < 768) {
@@ -33,12 +33,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        toggleButton.addEventListener('click', function(e) {
+        toggleButton.addEventListener('click', function (e) {
             e.stopPropagation();
             toggleSidebar();
         });
 
-        sidebarOverlay.addEventListener('click', function() {
+        sidebarOverlay.addEventListener('click', function () {
             toggleSidebar();
         });
 
@@ -47,28 +47,27 @@ document.addEventListener("DOMContentLoaded", function () {
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
                 if (window.innerWidth < 768 && !closeIcon.classList.contains('hidden')) {
-                    toggleSidebar(); 
+                    toggleSidebar();
                 }
             });
         });
-        
+
     } else {
         console.error("Sidebar elements not found. Make sure all IDs are correct.");
     }
 
     // --- Profile Dropdown Logic ---
     if (profileButton && profileMenu) {
-        
-        profileButton.addEventListener('click', function(event) {
+
+        profileButton.addEventListener('click', function (event) {
             event.stopPropagation();
             profileMenu.classList.toggle('hidden');
         });
 
-        document.addEventListener('click', function(event) {
-            if (!profileMenu.classList.contains('hidden') && 
-                !profileButton.contains(event.target) && 
-                !profileMenu.contains(event.target)) 
-            {
+        document.addEventListener('click', function (event) {
+            if (!profileMenu.classList.contains('hidden') &&
+                !profileButton.contains(event.target) &&
+                !profileMenu.contains(event.target)) {
                 profileMenu.classList.add('hidden');
             }
         });
@@ -80,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // --- Logout Modal Logic ---
     // Check for all required modal elements
     const modalElementsExist = logoutModal && logoutModalContent && closeModalButton && cancelModalButton && confirmLogoutButton;
-    
+
     if (modalElementsExist) {
 
         // Function to open the modal
@@ -98,14 +97,14 @@ document.addEventListener("DOMContentLoaded", function () {
             logoutModalContent.classList.add('scale-95', 'opacity-0');
             logoutModalContent.classList.remove('scale-100', 'opacity-100');
             logoutModal.classList.remove('opacity-100');
-            
+
             setTimeout(() => {
                 logoutModal.classList.add('hidden');
             }, 300);
         }
 
         // --- UPDATED: Attach to all logout buttons ---
-        
+
         // 1. Sidebar Logout Button
         if (logoutButton) {
             logoutButton.addEventListener('click', (e) => {
@@ -113,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 openLogoutModal();
             });
         }
-        
+
         // 2. Profile Dropdown Logout Button
         if (profileLogoutButton) {
             profileLogoutButton.addEventListener('click', (e) => {
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Close modal buttons
         closeModalButton.addEventListener('click', closeLogoutModal);
         cancelModalButton.addEventListener('click', closeLogoutModal);
-        
+
         // Also close if clicking on the background overlay
         logoutModal.addEventListener('click', (e) => {
             if (e.target === logoutModal) {
@@ -208,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (profileViewEmail) profileViewEmail.innerText = data.email || "";
                 if (profileViewPhone) profileViewPhone.innerText = data.phone || "";
                 if (profileViewUsername) profileViewUsername.innerText = data.username || "";
-                
+
                 if (profileEditName) profileEditName.value = data.name || "";
                 if (profileEditEmail) profileEditEmail.value = data.email || "";
                 if (profileEditPhone) profileEditPhone.value = data.phone || "";
@@ -244,23 +243,31 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.recent_transactions && data.recent_transactions.length > 0) {
                         data.recent_transactions.forEach(tx => {
                             const tr = document.createElement("tr");
-                            const isPayment = tx.type === "Payment";
+                            const isPayment = tx.type && tx.type.toLowerCase() === "payment";
                             const colorClass = isPayment ? "text-red-600" : "text-green-600";
                             const sign = isPayment ? "-" : "+";
                             const amount = Number(tx.amount).toFixed(2);
+                            const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
+
+                            tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
+                            tr.onclick = function() {
+                                openTxnModal(tx);
+                            };
 
                             tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-medium text-gray-900">${tx.date}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">${tx.time}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-medium text-gray-900">${tx.description}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">ID: ${tx.transaction_id || 'N/A'}</div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    \${tx.date}
+                                    ${displayType}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    \${tx.description}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    \${tx.type}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm \${colorClass} text-right font-medium">
-                                    \${sign}₱\${amount}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
+                                    ${sign}₱${amount}
                                 </td>
                             `;
                             transactionsBody.appendChild(tr);
@@ -294,4 +301,50 @@ document.addEventListener("DOMContentLoaded", function () {
     // Call fetch on load
     fetchDashboardData();
 
+    // --- Modal Logic ---
+    const txnModal = document.getElementById("txnModal");
+    const txnModalContent = document.getElementById("txnModalContent");
+    const closeTxnModalBtn = document.getElementById("closeTxnModalBtn");
+    const closeTxnModalBottomBtn = document.getElementById("closeTxnModalBottomBtn");
+
+    if (txnModal && closeTxnModalBtn) {
+        closeTxnModalBtn.onclick = closeTxnModal;
+        closeTxnModalBottomBtn.onclick = closeTxnModal;
+        txnModal.onclick = function(e) {
+            if (e.target === txnModal) closeTxnModal();
+        };
+    }
+
+    function openTxnModal(tx) {
+        if (!txnModal) return;
+        
+        document.getElementById("modalTxnId").textContent = tx.transaction_id || 'N/A';
+        document.getElementById("modalTxnMerchant").textContent = tx.description || 'N/A';
+        document.getElementById("modalTxnTerminal").textContent = tx.terminal_id || 'N/A';
+        document.getElementById("modalTxnDate").textContent = `${tx.date} at ${tx.time}`;
+        document.getElementById("modalTxnType").textContent = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "N/A";
+        
+        const isPayment = tx.type && tx.type.toLowerCase() === "payment";
+        const sign = isPayment ? "-" : "+";
+        const colorClass = isPayment ? "text-red-600" : "text-green-600";
+        const amtEl = document.getElementById("modalTxnAmount");
+        amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
+        amtEl.className = `font-bold text-lg ${colorClass}`;
+
+        txnModal.classList.remove('hidden');
+        setTimeout(() => {
+            txnModal.classList.add('opacity-100');
+            txnModalContent.classList.add('scale-100', 'opacity-100');
+            txnModalContent.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+    }
+
+    function closeTxnModal() {
+        txnModalContent.classList.add('scale-95', 'opacity-0');
+        txnModalContent.classList.remove('scale-100', 'opacity-100');
+        txnModal.classList.remove('opacity-100');
+        setTimeout(() => {
+            txnModal.classList.add('hidden');
+        }, 300);
+    }
 });

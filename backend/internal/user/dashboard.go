@@ -9,12 +9,14 @@ import (
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
-// Transaction struct represents a user's transaction for the dashboard view
 type Transaction struct {
-	Date        string  `json:"date" db:"date"`
-	Description string  `json:"description" db:"description"`
-	Type        string  `json:"type" db:"transaction_type"`
-	Amount      float64 `json:"amount" db:"transaction_amount"`
+	TransactionID string  `json:"transaction_id"`
+	TerminalID    string  `json:"terminal_id"`
+	Date          string  `json:"date" db:"date"`
+	Time          string  `json:"time"`
+	Description   string  `json:"description" db:"description"`
+	Type          string  `json:"type" db:"transaction_type"`
+	Amount        float64 `json:"amount" db:"transaction_amount"`
 }
 
 // DashboardUser info struct for the user dashboard view
@@ -38,9 +40,14 @@ type DashboardUser struct {
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard view is running...")
 
-	// Check if session cookie is present (Removed)
+	username := r.PathValue("username")
+	data := struct {
+		Username string
+	}{
+		Username: username,
+	}
 
-	h.Tpl.ExecuteTemplate(w, "dashboard.html", nil)
+	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
 }
 
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
@@ -128,11 +135,12 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-		SELECT t.created_at, m.business_name, t.transaction_type, t.amount 
+		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
-		JOIN merchants m ON t.merchant_id = m.id 
-		WHERE c.user_id = ? 
+		JOIN users u ON c.user_id = u.user_id
+		LEFT JOIN merchants m ON t.merchant_id = m.user_id 
+		WHERE u.username = ? 
 		ORDER BY t.created_at DESC LIMIT 5
 	`
 	rows, err := h.DB.Query(txnQuery, userID)
@@ -142,8 +150,15 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var t Transaction
 			var createdAt string
-			if err := rows.Scan(&createdAt, &t.Description, &t.Type, &t.Amount); err == nil {
+			var businessName sql.NullString
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID); err == nil {
 				t.Date = formatDate(createdAt)
+				t.Time = formatTime(createdAt)
+				if businessName.Valid {
+					t.Description = businessName.String
+				} else {
+					t.Description = "Terminal Simulation"
+				}
 				transactions = append(transactions, t)
 			}
 		}
@@ -184,4 +199,19 @@ func formatDate(dbTime string) string {
 		return dbTime[:10]
 	}
 	return dbTime
+}
+
+func formatTime(dbTime string) string {
+	t, err := time.Parse("2006-01-02 15:04:05", dbTime)
+	if err == nil {
+		return t.Format("03:04 PM")
+	}
+	t2, err := time.Parse(time.RFC3339, dbTime)
+	if err == nil {
+		return t2.Format("03:04 PM")
+	}
+	if len(dbTime) > 10 {
+		return dbTime[11:16]
+	}
+	return ""
 }

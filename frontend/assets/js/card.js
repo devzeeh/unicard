@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // --- Logic Update ---
         // Disable the "Report" button, but leave "Request Replacement" active.
         reportButton.disabled = true;
-        reportButton.innerHTML = '<i class="fas fa-check mr-2"></i> Card Blocked';
+        reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
         reportButton.classList.add('opacity-50', 'cursor-not-allowed');
         
         // Update the status badge
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // --- Logic Update ---
         // Disable BOTH buttons since a replacement has been requested.
         reportButton.disabled = true;
-        reportButton.innerHTML = '<i class="fas fa-check mr-2"></i> Card Blocked';
+        reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
         reportButton.classList.add('opacity-50', 'cursor-not-allowed');
         
         replacementButton.disabled = true;
@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Also, update the button states based on the fetched status
         if (currentDemoStatus === "Blocked" || currentDemoStatus === "Replaced" || currentDemoStatus === "Inactive") {
              reportButton.disabled = true;
-             reportButton.innerHTML = '<i class="fas fa-check mr-2"></i> Card Blocked';
+             reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
              reportButton.classList.add('opacity-50', 'cursor-not-allowed');
         }
         if (currentDemoStatus === "Replaced") {
