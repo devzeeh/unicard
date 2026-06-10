@@ -249,12 +249,19 @@ document.addEventListener("DOMContentLoaded", function () {
                             const amount = Number(tx.amount).toFixed(2);
                             const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
 
+                            tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
+                            tr.onclick = function() {
+                                openTxnModal(tx);
+                            };
+
                             tr.innerHTML = `
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ${tx.date}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-medium text-gray-900">${tx.date}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">${tx.time}</div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    ${tx.description}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="font-medium text-gray-900">${tx.description}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">ID: ${tx.transaction_id || 'N/A'}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     ${displayType}
@@ -294,4 +301,50 @@ document.addEventListener("DOMContentLoaded", function () {
     // Call fetch on load
     fetchDashboardData();
 
+    // --- Modal Logic ---
+    const txnModal = document.getElementById("txnModal");
+    const txnModalContent = document.getElementById("txnModalContent");
+    const closeTxnModalBtn = document.getElementById("closeTxnModalBtn");
+    const closeTxnModalBottomBtn = document.getElementById("closeTxnModalBottomBtn");
+
+    if (txnModal && closeTxnModalBtn) {
+        closeTxnModalBtn.onclick = closeTxnModal;
+        closeTxnModalBottomBtn.onclick = closeTxnModal;
+        txnModal.onclick = function(e) {
+            if (e.target === txnModal) closeTxnModal();
+        };
+    }
+
+    function openTxnModal(tx) {
+        if (!txnModal) return;
+        
+        document.getElementById("modalTxnId").textContent = tx.transaction_id || 'N/A';
+        document.getElementById("modalTxnMerchant").textContent = tx.description || 'N/A';
+        document.getElementById("modalTxnTerminal").textContent = tx.terminal_id || 'N/A';
+        document.getElementById("modalTxnDate").textContent = `${tx.date} at ${tx.time}`;
+        document.getElementById("modalTxnType").textContent = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "N/A";
+        
+        const isPayment = tx.type && tx.type.toLowerCase() === "payment";
+        const sign = isPayment ? "-" : "+";
+        const colorClass = isPayment ? "text-red-600" : "text-green-600";
+        const amtEl = document.getElementById("modalTxnAmount");
+        amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
+        amtEl.className = `font-bold text-lg ${colorClass}`;
+
+        txnModal.classList.remove('hidden');
+        setTimeout(() => {
+            txnModal.classList.add('opacity-100');
+            txnModalContent.classList.add('scale-100', 'opacity-100');
+            txnModalContent.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+    }
+
+    function closeTxnModal() {
+        txnModalContent.classList.add('scale-95', 'opacity-0');
+        txnModalContent.classList.remove('scale-100', 'opacity-100');
+        txnModal.classList.remove('opacity-100');
+        setTimeout(() => {
+            txnModal.classList.add('hidden');
+        }, 300);
+    }
 });
