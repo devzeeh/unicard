@@ -59,21 +59,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         tr.innerHTML = `
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div>\${txDate}</div>
-                                <div class="text-xs text-gray-400 mt-1">\${txTime}</div>
+                                <div>${txDate}</div>
+                                <div class="text-xs text-gray-400 mt-1">${txTime}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                \${tx.description}
+                                ${tx.description}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                \${tx.type}
+                                ${tx.type}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm \${colorClass} text-right font-medium">
-                                \${sign}₱\${amount}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
+                                ${sign}₱${amount}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${statusColor}">
-                                    \${status}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">
+                                    ${status}
                                 </span>
                             </td>
                         `;

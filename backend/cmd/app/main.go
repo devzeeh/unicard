@@ -120,6 +120,10 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/deletecardauth", adminHanlder.DeleteCardHandler)
 	mux.HandleFunc("GET /admin/{username}/delete-cards", adminHanlder.DeleteCardView)
 
+	// terminal simulation endpoints
+	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView)
+	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
+
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

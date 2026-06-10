@@ -250,16 +250,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             tr.innerHTML = `
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    \${tx.date}
+                                    ${tx.date}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    \${tx.description}
+                                    ${tx.description}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    \${tx.type}
+                                    ${tx.type}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm \${colorClass} text-right font-medium">
-                                    \${sign}₱\${amount}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
+                                    ${sign}₱${amount}
                                 </td>
                             `;
                             transactionsBody.appendChild(tr);

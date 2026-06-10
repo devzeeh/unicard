@@ -136,8 +136,9 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		SELECT t.created_at, m.business_name, t.transaction_type, t.amount 
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
-		JOIN merchants m ON t.merchant_id = m.id 
-		WHERE c.user_id = ? 
+		JOIN users u ON c.user_id = u.user_id
+		LEFT JOIN merchants m ON t.merchant_id = m.user_id 
+		WHERE u.username = ? 
 		ORDER BY t.created_at DESC LIMIT 5
 	`
 	rows, err := h.DB.Query(txnQuery, userID)
@@ -147,8 +148,14 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var t Transaction
 			var createdAt string
-			if err := rows.Scan(&createdAt, &t.Description, &t.Type, &t.Amount); err == nil {
+			var businessName sql.NullString
+			if err := rows.Scan(&createdAt, &businessName, &t.Type, &t.Amount); err == nil {
 				t.Date = formatDate(createdAt)
+				if businessName.Valid {
+					t.Description = businessName.String
+				} else {
+					t.Description = "Terminal Simulation"
+				}
 				transactions = append(transactions, t)
 			}
 		}

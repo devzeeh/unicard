@@ -36,11 +36,11 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 
 	// Fetch transactions
 	txnQuery := `
-		SELECT t.created_at, m.business_name, t.transaction_type, t.amount, COALESCE(t.status, 'Completed')
+		SELECT t.created_at, m.business_name, t.transaction_type, t.amount
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
-		LEFT JOIN merchants m ON t.merchant_id = m.id 
+		LEFT JOIN merchants m ON t.merchant_id = m.user_id 
 		WHERE u.username = ? 
 		ORDER BY t.created_at DESC
 	`
@@ -61,7 +61,8 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var t TxnResponse
 			var createdAt string
 			var businessName sql.NullString
-			if err := rows.Scan(&createdAt, &businessName, &t.Type, &t.Amount, &t.Status); err == nil {
+			if err := rows.Scan(&createdAt, &businessName, &t.Type, &t.Amount); err == nil {
+				t.Status = "Completed"
 				t.Date = formatDate(createdAt) // Uses formatDate from dashboard.go
 				if businessName.Valid {
 					t.Description = businessName.String
