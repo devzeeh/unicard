@@ -36,7 +36,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 
 	// Fetch transactions
 	txnQuery := `
-		SELECT t.created_at, m.business_name, t.transaction_type, t.amount
+		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
@@ -47,11 +47,14 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 	rows, err := h.DB.Query(txnQuery, username)
 
 	type TxnResponse struct {
-		Date        string  `json:"date"`
-		Description string  `json:"description"`
-		Type        string  `json:"type"`
-		Amount      float64 `json:"amount"`
-		Status      string  `json:"status"`
+		TransactionID string  `json:"transaction_id"`
+		TerminalID    string  `json:"terminal_id"`
+		Date          string  `json:"date"`
+		Time          string  `json:"time"`
+		Description   string  `json:"description"`
+		Type          string  `json:"type"`
+		Amount        float64 `json:"amount"`
+		Status        string  `json:"status"`
 	}
 
 	var transactions []TxnResponse
@@ -61,9 +64,10 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var t TxnResponse
 			var createdAt string
 			var businessName sql.NullString
-			if err := rows.Scan(&createdAt, &businessName, &t.Type, &t.Amount); err == nil {
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID); err == nil {
 				t.Status = "Completed"
 				t.Date = formatDate(createdAt) // Uses formatDate from dashboard.go
+				t.Time = formatTime(createdAt) // Uses formatTime from dashboard.go
 				if businessName.Valid {
 					t.Description = businessName.String
 				} else {

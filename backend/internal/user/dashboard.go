@@ -9,12 +9,14 @@ import (
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
-// Transaction struct represents a user's transaction for the dashboard view
 type Transaction struct {
-	Date        string  `json:"date" db:"date"`
-	Description string  `json:"description" db:"description"`
-	Type        string  `json:"type" db:"transaction_type"`
-	Amount      float64 `json:"amount" db:"transaction_amount"`
+	TransactionID string  `json:"transaction_id"`
+	TerminalID    string  `json:"terminal_id"`
+	Date          string  `json:"date" db:"date"`
+	Time          string  `json:"time"`
+	Description   string  `json:"description" db:"description"`
+	Type          string  `json:"type" db:"transaction_type"`
+	Amount        float64 `json:"amount" db:"transaction_amount"`
 }
 
 // DashboardUser info struct for the user dashboard view
@@ -133,7 +135,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-		SELECT t.created_at, m.business_name, t.transaction_type, t.amount 
+		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
@@ -149,8 +151,9 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			var t Transaction
 			var createdAt string
 			var businessName sql.NullString
-			if err := rows.Scan(&createdAt, &businessName, &t.Type, &t.Amount); err == nil {
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID); err == nil {
 				t.Date = formatDate(createdAt)
+				t.Time = formatTime(createdAt)
 				if businessName.Valid {
 					t.Description = businessName.String
 				} else {
@@ -196,4 +199,19 @@ func formatDate(dbTime string) string {
 		return dbTime[:10]
 	}
 	return dbTime
+}
+
+func formatTime(dbTime string) string {
+	t, err := time.Parse("2006-01-02 15:04:05", dbTime)
+	if err == nil {
+		return t.Format("03:04 PM")
+	}
+	t2, err := time.Parse(time.RFC3339, dbTime)
+	if err == nil {
+		return t2.Format("03:04 PM")
+	}
+	if len(dbTime) > 10 {
+		return dbTime[11:16]
+	}
+	return ""
 }
