@@ -131,12 +131,16 @@ func main() {
 			return
 		}
 
-		// Handle GET /{username}/transaction(s) manually to avoid ServeMux conflict with /assets/
+		// Handle GET /{username}/transaction(s) and /card manually to avoid ServeMux conflict with /assets/
 		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) == 3 && (parts[2] == "transaction" || parts[2] == "transactions") && r.Method == http.MethodGet {
+		if len(parts) == 3 && (parts[2] == "transaction" || parts[2] == "transactions" || parts[2] == "card") && r.Method == http.MethodGet {
 			if parts[1] != "assets" && parts[1] != "storage" && parts[1] != "v1" && parts[1] != "admin" {
 				r.SetPathValue("username", parts[1])
-				userHandler.TransactionView(w, r)
+				if parts[2] == "card" {
+					userHandler.CardView(w, r)
+				} else {
+					userHandler.TransactionView(w, r)
+				}
 				return
 			}
 		}

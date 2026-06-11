@@ -41,7 +41,55 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Stop the script if critical elements are missing
     if (!reportElementsExist || !replacementElementsExist || !cardStatusBadge) {
-        return;
+        // We still want to run the toggle lock logic, so don't return here entirely if we're just ignoring old missing elements
+        console.warn("Some card management elements are missing, but we'll continue for lock toggle.");
+    }
+
+    // --- Lock Card Toggle Logic ---
+    const toggle = document.getElementById("lock-card-toggle");
+    const knob = document.getElementById("lock-card-knob");
+    const overlay = document.getElementById("card-lock-overlay");
+    let isLocked = false;
+
+    if (toggle) {
+        toggle.addEventListener("click", () => {
+            isLocked = !isLocked;
+            if (isLocked) {
+                // Switch on
+                toggle.classList.remove("bg-gray-200");
+                toggle.classList.add("bg-blue-600");
+                if (knob) {
+                    knob.classList.remove("translate-x-1");
+                    knob.classList.add("translate-x-6");
+                }
+                
+                // Show overlay
+                if (overlay) {
+                    overlay.classList.remove("hidden");
+                    setTimeout(() => {
+                        overlay.classList.remove("opacity-0");
+                        overlay.classList.add("opacity-100");
+                    }, 10);
+                }
+            } else {
+                // Switch off
+                toggle.classList.remove("bg-blue-600");
+                toggle.classList.add("bg-gray-200");
+                if (knob) {
+                    knob.classList.remove("translate-x-6");
+                    knob.classList.add("translate-x-1");
+                }
+                
+                // Hide overlay
+                if (overlay) {
+                    overlay.classList.remove("opacity-100");
+                    overlay.classList.add("opacity-0");
+                    setTimeout(() => {
+                        overlay.classList.add("hidden");
+                    }, 300);
+                }
+            }
+        });
     }
 
     // --- Generic Modal Logic ---

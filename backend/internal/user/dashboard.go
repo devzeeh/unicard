@@ -50,6 +50,7 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
 }
 
+
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
 	
