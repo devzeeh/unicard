@@ -91,6 +91,8 @@ func main() {
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
 	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
+	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateStripeCheckoutSession)// 
+	mux.HandleFunc("GET /v1/user/{username}/topup/success", userHandler.TopUpSuccessHandler)
 	mux.HandleFunc("GET /u/{username}/transaction", userHandler.TransactionView)
 	mux.HandleFunc("GET /u/{username}/transactions", userHandler.TransactionView)
 
