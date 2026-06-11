@@ -106,7 +106,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Determine redirect based on role
-	redirectURL := "/" + userName // Default for customer
+	redirectURL := "/u/" + userName + "/dashboard" // Default for customer
 	switch role {
 	case "super_admin":
 		redirectURL = "/admin/" + userName // Super admin dashboard
