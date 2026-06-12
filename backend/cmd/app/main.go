@@ -91,13 +91,13 @@ func main() {
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
 	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
-	// Your frontend calls this to get the Stripe URL
-	mux.HandleFunc("POST /api/topup/create-session/{username}", userHandler.CreateStripeCheckoutSession)
+	// Your frontend calls this to get the Xendit URL
+	mux.HandleFunc("POST /api/topup/create-session/{username}", userHandler.CreateXenditInvoice)
 
 	// Payment gateway endpoints
-	// STRIPE'S servers call this behind the scenes when the payment is done
-	mux.HandleFunc("POST /api/webhooks/stripe", userHandler.StripeWebhook)
-	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateStripeCheckoutSession) //
+	// Xendit's servers call this behind the scenes when the payment is done
+	mux.HandleFunc("POST /api/webhooks/xendit", userHandler.XenditWebhook)
+	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateXenditInvoice) //
 	//mux.HandleFunc("GET /v1/user/{username}/topup/success", userHandler.TopUpSuccessHandler)
 	mux.HandleFunc("GET /u/{username}/transaction", userHandler.TransactionView)
 	mux.HandleFunc("GET /u/{username}/transactions", userHandler.TransactionView)

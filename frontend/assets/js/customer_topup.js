@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const amount = parseFloat(amountText);
             const method = document.querySelector('input[name="payment_method"]:checked');
 
-            if (!method || method.value !== 'stripe' || isNaN(amount) || amount < 50) {
+            if (!method || method.value !== 'xendit' || isNaN(amount) || amount < 50) {
                 return;
             }
 

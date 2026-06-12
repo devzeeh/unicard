@@ -17,6 +17,7 @@ type Transaction struct {
 	Description   string  `json:"description" db:"description"`
 	Type          string  `json:"type" db:"transaction_type"`
 	Amount        float64 `json:"amount" db:"transaction_amount"`
+	Status        string  `json:"status" db:"status"`
 }
 
 // DashboardUser info struct for the user dashboard view
@@ -50,10 +51,9 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
 }
 
-
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
-	
+
 	// Get user ID from path param (No cookies for now)
 	userID := r.PathValue("username")
 	if userID == "" {
@@ -136,39 +136,43 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id, t.processed_by
-		FROM transactions t 
-		JOIN cards c ON t.card_number = c.card_number 
-		JOIN users u ON c.user_id = u.user_id
-		LEFT JOIN merchants m ON t.merchant_id = m.user_id 
-		WHERE u.username = ? 
-		ORDER BY t.created_at DESC LIMIT 5
-	`
-	rows, err := h.DB.Query(txnQuery, userID)
-	var transactions []Transaction
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var t Transaction
-			var createdAt string
-			var businessName sql.NullString
-			var processedBy sql.NullString
-			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID, &processedBy); err == nil {
-				t.Date = formatDate(createdAt)
-				t.Time = formatTime(createdAt)
-				if businessName.Valid {
-					t.Description = businessName.String
-				} else if processedBy.Valid && processedBy.String == "stripe" {
-					t.Description = "Stripe Top-Up"
-				} else {
-					t.Description = "Terminal Simulation"
-				}
-				transactions = append(transactions, t)
-			}
-		}
-	} else {
-		fmt.Printf("Error fetching transactions: %v\n", err)
-	}
+    SELECT t.transaction_id, t.description, t.created_at, t.transaction_type, t.amount, t.terminal_id, t.status
+    FROM transactions t 
+    JOIN cards c ON t.card_number = c.card_number 
+    JOIN users u ON c.user_id = u.user_id
+    WHERE u.username = ? 
+    ORDER BY t.created_at DESC LIMIT 5
+`
+rows, err := h.DB.Query(txnQuery, userID)
+var transactions []Transaction
+if err != nil {
+    fmt.Printf("Error fetching transactions: %v\n", err)
+} else {
+    defer rows.Close()
+    for rows.Next() {
+        var t Transaction
+        var createdAt string
+        var description sql.NullString
+        if err := rows.Scan(
+            &t.TransactionID,
+            &description,
+            &createdAt,
+            &t.Type,
+            &t.Amount,
+            &t.TerminalID,
+            &t.Status,
+        ); err != nil {
+            fmt.Printf("Error scanning transaction row: %v\n", err)
+            continue
+        }
+        t.Date = formatDate(createdAt)
+        t.Time = formatTime(createdAt)
+        if description.Valid {
+            t.Description = description.String
+        }
+        transactions = append(transactions, t)
+    }
+}
 
 	dashboardUser := DashboardUser{
 		ID:                 id,
