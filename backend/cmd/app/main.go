@@ -91,8 +91,14 @@ func main() {
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
 	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
-	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateStripeCheckoutSession)// 
-	mux.HandleFunc("GET /v1/user/{username}/topup/success", userHandler.TopUpSuccessHandler)
+	// Your frontend calls this to get the Stripe URL
+	mux.HandleFunc("POST /api/topup/create-session/{username}", userHandler.CreateStripeCheckoutSession)
+
+	// Payment gateway endpoints
+	// STRIPE'S servers call this behind the scenes when the payment is done
+	mux.HandleFunc("POST /api/webhooks/stripe", userHandler.StripeWebhook)
+	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateStripeCheckoutSession) //
+	//mux.HandleFunc("GET /v1/user/{username}/topup/success", userHandler.TopUpSuccessHandler)
 	mux.HandleFunc("GET /u/{username}/transaction", userHandler.TransactionView)
 	mux.HandleFunc("GET /u/{username}/transactions", userHandler.TransactionView)
 
@@ -127,7 +133,7 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/deletecardauth", adminHanlder.DeleteCardHandler)
 	mux.HandleFunc("GET /admin/{username}/delete-cards", adminHanlder.DeleteCardView)
 
-	// terminal simulation endpoints
+	// terminal endpoints for Fare and Retails.
 	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView)
 	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
 

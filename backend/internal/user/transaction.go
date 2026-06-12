@@ -40,7 +40,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
-		LEFT JOIN merchants m ON t.merchant_id = m.user_id 
+		LEFT JOIN merchants m ON t.merchant_id = m.merchant_id 
 		WHERE u.username = ? 
 		ORDER BY t.created_at DESC
 	`
@@ -64,16 +64,28 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var t TxnResponse
 			var createdAt string
 			var businessName sql.NullString
-			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID); err == nil {
+			var terminalId sql.NullString
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &terminalId); err == nil {
 				t.Status = "Completed"
 				t.Date = formatDate(createdAt) // Uses formatDate from dashboard.go
 				t.Time = formatTime(createdAt) // Uses formatTime from dashboard.go
+				
+				if terminalId.Valid {
+					t.TerminalID = terminalId.String
+				} else {
+					t.TerminalID = "N/A"
+				}
+
 				if businessName.Valid {
 					t.Description = businessName.String
+				} else if t.Type == "topup" {
+					t.Description = "Stripe Top-Up"
 				} else {
 					t.Description = "Transaction"
 				}
 				transactions = append(transactions, t)
+			} else {
+			    fmt.Printf("Scan error: %v\n", err)
 			}
 		}
 	} else {

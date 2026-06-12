@@ -158,7 +158,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 				t.Time = formatTime(createdAt)
 				if businessName.Valid {
 					t.Description = businessName.String
-				} else if t.Type == "payment" {
+				} else if processedBy.Valid && processedBy.String == "stripe" {
 					t.Description = "Stripe Top-Up"
 				} else {
 					t.Description = "Terminal Simulation"
