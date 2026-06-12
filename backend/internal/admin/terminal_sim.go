@@ -20,7 +20,7 @@ func (h *Handler) TerminalSimView(w http.ResponseWriter, r *http.Request) {
 	}
 	var merchants []Merchant
 
-	rows, err := h.DB.Query("SELECT user_id, business_name FROM merchants")
+	rows, err := h.DB.Query("SELECT merchant_id, business_name FROM merchants")
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -121,7 +121,7 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 
 	// 2.5 Get merchant commission rate
 	var commissionRate float64
-	err = h.DB.QueryRow("SELECT commission_rate FROM merchants WHERE user_id = ?", req.MerchantID).Scan(&commissionRate)
+	err = h.DB.QueryRow("SELECT commission_rate FROM merchants WHERE merchant_id = ?", req.MerchantID).Scan(&commissionRate)
 	if err != nil {
 		commissionRate = 2.00 // default fallback
 	}
@@ -203,8 +203,8 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"success": true,
-		"message": "Transaction successful",
+		"success":     true,
+		"message":     "Transaction successful",
 		"service_fee": serviceFee,
 	})
 }
