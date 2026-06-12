@@ -148,7 +148,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function fetchDashboardData() {
         const pathSegments = window.location.pathname.split('/');
         let userId = null;
-        if (pathSegments.length >= 2 && pathSegments[1] !== '') {
+        if (pathSegments.length >= 3 && pathSegments[1] === 'u') {
+            userId = pathSegments[2];
+        } else if (pathSegments.length >= 2 && pathSegments[1] !== '') {
             userId = pathSegments[1];
         } else {
             // fallback if it's still somehow in query string

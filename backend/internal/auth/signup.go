@@ -268,7 +268,7 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		Phone:      req.ContactNumber,
 		CreatedAt:  createdAt,
 		Balance:    balance,
-		Role:       "Customer",
+		Role:       "customer", // Lowercase to perfectly match ENUM('customer') in unicardv3.sql
 		Status:     "active",
 	}
 

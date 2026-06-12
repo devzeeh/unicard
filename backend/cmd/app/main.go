@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"unicard-go/backend/internal/admin"
 	authentication "unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/user"
@@ -88,7 +87,21 @@ func main() {
 	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
 	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
-	mux.HandleFunc("GET /{username}", userHandler.DashboardView)
+	mux.HandleFunc("GET /u/{username}", userHandler.ProfileView)
+	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
+	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
+	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
+	// Your frontend calls this to get the Stripe URL
+	mux.HandleFunc("POST /api/topup/create-session/{username}", userHandler.CreateStripeCheckoutSession)
+
+	// Payment gateway endpoints
+	// STRIPE'S servers call this behind the scenes when the payment is done
+	mux.HandleFunc("POST /api/webhooks/stripe", userHandler.StripeWebhook)
+	mux.HandleFunc("POST /v1/user/{username}/topup/checkout", userHandler.CreateStripeCheckoutSession) //
+	//mux.HandleFunc("GET /v1/user/{username}/topup/success", userHandler.TopUpSuccessHandler)
+	mux.HandleFunc("GET /u/{username}/transaction", userHandler.TransactionView)
+	mux.HandleFunc("GET /u/{username}/transactions", userHandler.TransactionView)
+
 	mux.HandleFunc("GET /v1/user/{username}", userHandler.DashboardHandler)
 	mux.HandleFunc("GET /v1/user/{username}/transactions", userHandler.TransactionsJSONHandler)
 	//mux.HandleFunc("GET /logout",)
@@ -120,7 +133,7 @@ func main() {
 	mux.HandleFunc("POST /v1/admin/{username}/deletecardauth", adminHanlder.DeleteCardHandler)
 	mux.HandleFunc("GET /admin/{username}/delete-cards", adminHanlder.DeleteCardView)
 
-	// terminal simulation endpoints
+	// terminal endpoints for Fare and Retails.
 	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView)
 	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
 
@@ -129,16 +142,6 @@ func main() {
 		if r.URL.Path == "/" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
-		}
-
-		// Handle GET /{username}/transaction(s) manually to avoid ServeMux conflict with /assets/
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) == 3 && (parts[2] == "transaction" || parts[2] == "transactions") && r.Method == http.MethodGet {
-			if parts[1] != "assets" && parts[1] != "storage" && parts[1] != "v1" && parts[1] != "admin" {
-				r.SetPathValue("username", parts[1])
-				userHandler.TransactionView(w, r)
-				return
-			}
 		}
 
 		mux.ServeHTTP(w, r)

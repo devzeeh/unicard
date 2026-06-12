@@ -1,3 +1,5 @@
+-- unicardv2 is deprecated. Use unicardv3.
+
 -- CREATE DATABASE IF NOT EXISTS unicardv1;
 --  USE unicardv2;
 
@@ -103,7 +105,7 @@ CREATE TABLE transactions (
     card_number VARCHAR(20) NOT NULL COMMENT 'Links target token balance deduction via cards.card_number',
     merchant_id varchar(50) NOT NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.id',
     terminal_id varchar(50) NOT NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.id',
-    transaction_type ENUM('payment', 'refund', 'reversal') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
+    transaction_type ENUM('payment', 'refund', 'reversal', 'topup') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
     amount DECIMAL(10, 2) NOT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
     service_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Platform revenue slice collected by UniCard ecosystem engine per tap processing action',
     net_merchant_payout DECIMAL(10, 2) GENERATED ALWAYS AS (amount - service_fee) STORED COMMENT 'Automatically calculated column tracking exactly how much money goes to the merchant after our platform cut',
@@ -124,7 +126,7 @@ CREATE TABLE top_ups (
     gateway_cost DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Actual fee incurred from external payment providers (GCash, Maya, Bank) per transaction',
     net_gateway_fee DECIMAL(10, 2) GENERATED ALWAYS AS (convenience_fee - gateway_cost) STORED COMMENT 'Automatically calculated net revenue kept by the platform after 3rd party costs',
     total_charged DECIMAL(10, 2) GENERATED ALWAYS AS (amount + convenience_fee) STORED COMMENT 'Automatically calculated column representing the absolute total cash value collected from the external channel source',
-    payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
+    payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter', 'stripe') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
     handled_by VARCHAR(50) NULL COMMENT 'Public user_id string identifier referencing the administrative staff member who manually accepted physical bills if OTC cash-loaded',
     status ENUM('pending', 'completed', 'failed') DEFAULT 'completed' COMMENT 'State pipeline tracker handling payment gateway processing exceptions or drops',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp mapping exactly when wallet balance credits were finalized',

@@ -159,11 +159,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const isLengthValid = password.length >= 8;
         const isMatchValid = password === confirmPassword && confirmPassword !== '';
 
-        const lengthCheck = document.getElementById('length-check').querySelector('.icon');
-        const matchCheck = document.getElementById('match-check').querySelector('.icon');
+        const lengthCheck = document.getElementById('length-check');
+        const matchCheck = document.getElementById('match-check');
 
-        lengthCheck.className = `icon fas ${isLengthValid ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'}`;
-        matchCheck.className = `icon fas ${isMatchValid ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'}`;
+        const successSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
+        const errorSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+
+        lengthCheck.querySelector('svg').outerHTML = isLengthValid ? successSvg : errorSvg;
+        matchCheck.querySelector('svg').outerHTML = isMatchValid ? successSvg : errorSvg;
+
+        lengthCheck.className = `flex items-center space-x-2 text-sm ${isLengthValid ? 'text-green-600' : 'text-gray-600'}`;
+        matchCheck.className = `flex items-center space-x-2 text-sm ${isMatchValid ? 'text-green-600' : 'text-gray-600'}`;
 
         return isLengthValid && isMatchValid;
     }

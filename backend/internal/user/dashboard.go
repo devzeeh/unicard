@@ -50,6 +50,7 @@ func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
 }
 
+
 func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard JSON handler is running...")
 	
@@ -135,7 +136,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id
+		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id, t.processed_by
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
@@ -151,11 +152,14 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			var t Transaction
 			var createdAt string
 			var businessName sql.NullString
-			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID); err == nil {
+			var processedBy sql.NullString
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &t.TerminalID, &processedBy); err == nil {
 				t.Date = formatDate(createdAt)
 				t.Time = formatTime(createdAt)
 				if businessName.Valid {
 					t.Description = businessName.String
+				} else if processedBy.Valid && processedBy.String == "stripe" {
+					t.Description = "Stripe Top-Up"
 				} else {
 					t.Description = "Terminal Simulation"
 				}

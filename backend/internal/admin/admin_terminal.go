@@ -45,7 +45,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	offset := (page - 1) * limit
 
 	// Build query
-	baseQuery := `FROM terminals t LEFT JOIN merchants m ON t.merchant_id = m.user_id`
+	baseQuery := `FROM terminals t LEFT JOIN merchants m ON t.merchant_id = m.merchant_id`
 	var args []interface{}
 	var conditions []string
 

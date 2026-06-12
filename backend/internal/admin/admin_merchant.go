@@ -139,7 +139,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		termQuery := fmt.Sprintf(`
 			SELECT m.merchant_id, t.terminal_id, t.terminal_sn, t.device_name, t.status 
 			FROM terminals t 
-			JOIN merchants m ON t.merchant_id = m.user_id 
+			JOIN merchants m ON t.merchant_id = m.merchant_id 
 			WHERE m.merchant_id IN (%s)`, strings.Join(placeholders, ","))
 
 		termRows, err := h.DB.Query(termQuery, termArgs...)
@@ -262,7 +262,7 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	var businessAddress string
 	_ = tx.QueryRow("SELECT business_address FROM merchants WHERE merchant_id = ?", merchantID).Scan(&businessAddress)
 
-	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantUserID, businessAddress, req.TerminalSn)
+	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, device_name = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantID, req.DeviceName, businessAddress, req.TerminalSn)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to assign terminal"})
 		return
@@ -489,7 +489,7 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Update terminals assigned to this merchant
-	_, err = tx.Exec("UPDATE terminals SET merchant_id = NULL, location_details = '', status = 'inactive' WHERE merchant_id = ?", merchantUserID)
+	_, err = tx.Exec("UPDATE terminals SET merchant_id = NULL, location_details = '', status = 'inactive' WHERE merchant_id = ?", merchantID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to reset terminals"})
 		return
