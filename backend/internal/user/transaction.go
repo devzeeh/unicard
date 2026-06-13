@@ -36,7 +36,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 
 	// Fetch transactions
 	txnQuery := `
-		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id
+		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id, t.description, t.status
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
@@ -65,8 +65,16 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var createdAt string
 			var businessName sql.NullString
 			var terminalId sql.NullString
-			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &terminalId); err == nil {
-				t.Status = "Completed"
+			var dbDescription sql.NullString
+			var dbStatus sql.NullString
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &terminalId, &dbDescription, &dbStatus); err == nil {
+				
+				if dbStatus.Valid && dbStatus.String != "" {
+					t.Status = dbStatus.String
+				} else {
+					t.Status = "Completed"
+				}
+
 				t.Date = formatDate(createdAt) // Uses formatDate from dashboard.go
 				t.Time = formatTime(createdAt) // Uses formatTime from dashboard.go
 				
@@ -76,7 +84,9 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 					t.TerminalID = "N/A"
 				}
 
-				if businessName.Valid {
+				if dbDescription.Valid && dbDescription.String != "" {
+					t.Description = dbDescription.String
+				} else if businessName.Valid {
 					t.Description = businessName.String
 				} else if t.Type == "topup" {
 					t.Description = "Stripe Top-Up"

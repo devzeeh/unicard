@@ -14,11 +14,16 @@ import (
 	"github.com/xendit/xendit-go/invoice"
 )
 
+// struct for topup request only, for api call not for saving in db
 type TopUpRequest struct {
 	CardNumber string  `json:"card_number"`
 	Amount     float64 `json:"amount"`
 }
 
+// struct for topup record, for saving in db and for webhook callback processing
+// note the fields that match the db schema
+// the external_id is encoded in the external_id field of the xendit invoice
+// this is necessary because xendit v1 doesn't have a metadata field
 type TopUpRecord struct {
 	TopupID        string  `json:"topup_id" db:"topup_id"`
 	CardNumber     string  `json:"card_number" db:"card_number"`
@@ -28,9 +33,11 @@ type TopUpRecord struct {
 	PaymentMethod  string  `json:"payment_method" db:"payment_method"`
 }
 
+// TopUpView displays the top-up page for a user
 func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TopUp view is running...")
 
+	// get username from url parameter
 	username := r.PathValue("username")
 	data := struct {
 		Username string
@@ -41,9 +48,13 @@ func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "customer_topup.html", data)
 }
 
+// create xendit invoice - Payment Methods Options
+// CREDIT_CARD, QR_CODE, EWALLET
 func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
+	// get username from url parameter
 	username := r.PathValue("username")
 
+	// get request body
 	var req TopUpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
@@ -52,6 +63,8 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	// check if amount is at least 50 pesos
 	if req.Amount < 50 {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
@@ -70,6 +83,8 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	`, username).Scan(&cardNumber, &email)
 
 	if err != nil {
+		// print error and return
+		log.Println("Failed to find card for user:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to find card for user",
@@ -77,30 +92,35 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set fee amount and total amount
 	topupAmount := req.Amount
 	feeAmount := 15.00
 	totalAmount := topupAmount + feeAmount
 
+	// set domain
 	domain := "http://" + os.Getenv("SERVER_PORT") + os.Getenv("PORT")
 	// Fallback if domain is malformed
 	if domain == "http://" {
 		domain = "http://127.0.0.1:3000"
 	}
-	
+
+	// set xendit secret key
 	xendit.Opt.SecretKey = os.Getenv("XENDIT_SECRET_KEY")
 
 	// Encode metadata into ExternalID since Xendit v1 doesn't have metadata field on CreateParams
-	// Format: TOPUP-{CardNumber}-{TopupAmount}-{FeeAmount}-{Timestamp}
-	externalID := fmt.Sprintf("TOPUP-%s-%.2f-%.2f-%d", cardNumber, topupAmount, feeAmount, time.Now().UnixNano())
+	// Format: TOPUP{CardNumber}{TopupAmount}{FeeAmount}{Timestamp}
+	externalID := fmt.Sprintf("TOPUP%s%.2f%.2f%d", cardNumber, topupAmount, feeAmount, time.Now().UnixNano())
 
+	// create xendit invoice struct with parameters
 	data := invoice.CreateParams{
-		ExternalID:  externalID,
-		Amount:      totalAmount,
-		PayerEmail:  email,
-		Description: fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber),
+		ExternalID:         externalID,
+		Amount:             totalAmount,
+		PayerEmail:         email,
+		Description:        fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber),
 		SuccessRedirectURL: domain + "/u/" + username + "/dashboard",
 		FailureRedirectURL: domain + "/u/" + username + "/topup",
-		PaymentMethods: []string{"CREDIT_CARD", "GCASH", "PAYMAYA"},
+		PaymentMethods:     []string{"CREDIT_CARD", "EWALLET", "QR_CODE"},
+		Currency:           "PHP",
 	}
 
 	// creating the checkout session
@@ -117,12 +137,14 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle success case
+	// return the checkout session url to the frontend
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Checkout session created successfully",
 		Data:    map[string]string{"url": resp.InvoiceURL},
 	})
 
+	// log the checkout session url
 	log.Println("Checkout session created successfully:", resp.InvoiceURL)
 }
 

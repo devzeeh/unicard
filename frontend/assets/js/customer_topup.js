@@ -105,8 +105,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 const data = await response.json();
-                if (data.url) {
-                    window.location.href = data.url;
+                if (data.data && data.data.url) {
+                    window.location.href = data.data.url;
                 } else {
                     throw new Error('No checkout URL returned');
                 }
