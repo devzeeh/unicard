@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const balanceEl = document.getElementById("user-balance");
                 const loyaltyPointsEl = document.getElementById("user-loyalty-points");
                 const accountTypeEl = document.getElementById("user-account-type");
-                const transactionsBody = document.getElementById("transactions-table-body");
+                const transactionsBody = document.getElementById("recent-transactions-table-body");
 
                 const cardNoEl = document.getElementById("user-card-number");
                 const cardHolderEl = document.getElementById("user-card-holder");
@@ -287,7 +287,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
                 console.error("Error loading dashboard data:", error);
-                const transactionsBody = document.getElementById("transactions-table-body");
+                const transactionsBody = document.getElementById("recent-transactions-table-body");
                 if (transactionsBody) {
                     transactionsBody.innerHTML = `
                         <tr>

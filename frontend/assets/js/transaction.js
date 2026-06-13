@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 let txDate = "N/A";
                 let txTime = "";
                 if (tx.date) {
-                    const d = new Date(tx.date);
+                    const d = new Date(tx.date + " " + (tx.time || ""));
                     if (!isNaN(d.getTime())) {
                         txDate = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
                         txTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
