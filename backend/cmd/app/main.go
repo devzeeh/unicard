@@ -89,9 +89,11 @@ func main() {
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /u/{username}", userHandler.ProfileView)
 	mux.HandleFunc("PATCH /u/{username}/profile/edit", userHandler.ProfileEdit)
+	mux.HandleFunc("POST /v1/user/{username}/profile/verify-password", userHandler.ProfileVerifyPassword)
 	mux.HandleFunc("PUT /u/{username}/profile/password", userHandler.ProfileChangePassword)
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
+	mux.HandleFunc("GET /u/{username}/settings", userHandler.SettingsView)
 	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
 	// Your frontend calls this to get the Xendit URL
 	mux.HandleFunc("POST /api/topup/create-session/{username}", userHandler.CreateXenditInvoice)

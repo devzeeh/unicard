@@ -116,40 +116,85 @@ document.addEventListener("DOMContentLoaded", function () {
         const password = newPasswordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
-        if (password.length > 0 || confirmPassword.length > 0) {
-            checklist.classList.remove('hidden');
-        } else {
-            checklist.classList.add('hidden');
-        }
-
-        const isLengthValid = password.length >= 8;
-        const isCaseValid = hasLower.test(password) && hasUpper.test(password);
-        const isNumValid = hasNumber.test(password);
         const passwordsMatch = password === confirmPassword && password.length > 0;
-
-        updateChecklistItem(lengthCheck, isLengthValid);
-        updateChecklistItem(caseCheck, isCaseValid);
-        updateChecklistItem(numCheck, isNumValid);
-        updateChecklistItem(matchCheck, passwordsMatch);
-
-        const allValid = isLengthValid && isCaseValid && isNumValid && passwordsMatch;
-        passwordSubmitBtn.disabled = !allValid;
+        
+        passwordSubmitBtn.disabled = !passwordsMatch;
     }
 
     if (passwordForm) {
+        const verifyCurrentPasswordBtn = document.getElementById('verify-current-password-btn');
+        const currentPasswordInput = document.getElementById('current_password');
+        const newPasswordSection = document.getElementById('new-password-section');
+        let currentPasswordVerified = false;
+
+        if (verifyCurrentPasswordBtn) {
+            verifyCurrentPasswordBtn.addEventListener('click', async () => {
+                const currentPassword = currentPasswordInput.value;
+                if (!currentPassword) {
+                    passwordErrorMsg.textContent = 'Please enter your current password.';
+                    passwordErrorMsg.classList.remove('hidden');
+                    return;
+                }
+
+                passwordErrorMsg.classList.add('hidden');
+                verifyCurrentPasswordBtn.disabled = true;
+                verifyCurrentPasswordBtn.textContent = 'Verifying...';
+
+                try {
+                    const response = await fetch(`/v1/user/${username}/profile/verify-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ current_password: currentPassword })
+                    });
+
+                    const result = await response.json();
+
+                    if (!result.success) {
+                        passwordErrorMsg.textContent = result.message || 'Current password verification failed.';
+                        passwordErrorMsg.classList.remove('hidden');
+                        verifyCurrentPasswordBtn.disabled = false;
+                        verifyCurrentPasswordBtn.textContent = 'Verify';
+                        return;
+                    }
+
+                    // Verification successful
+                    currentPasswordVerified = true;
+                    currentPasswordInput.disabled = true; // prevent changing it
+                    verifyCurrentPasswordBtn.classList.add('hidden');
+                    newPasswordSection.classList.remove('hidden');
+                    
+                    // Trigger validation to check if new inputs are valid (which they won't be yet, so button stays disabled)
+                    validatePasswordForm();
+
+                } catch (err) {
+                    console.error('Password verification error:', err);
+                    passwordErrorMsg.textContent = 'Network error, please try again.';
+                    passwordErrorMsg.classList.remove('hidden');
+                    verifyCurrentPasswordBtn.disabled = false;
+                    verifyCurrentPasswordBtn.textContent = 'Verify';
+                }
+            });
+        }
+
         newPasswordInput.addEventListener('input', validatePasswordForm);
         confirmPasswordInput.addEventListener('input', validatePasswordForm);
 
         passwordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (passwordSubmitBtn.disabled) {
-                passwordErrorMsg.textContent = 'Please fix the errors in the password checklist.';
+            if (!currentPasswordVerified) {
+                passwordErrorMsg.textContent = 'Please verify your current password first.';
                 passwordErrorMsg.classList.remove('hidden');
                 return;
             }
 
-            const currentPassword = document.getElementById('current_password').value;
+            if (passwordSubmitBtn.disabled) {
+                passwordErrorMsg.textContent = 'Passwords do not match.';
+                passwordErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            const currentPassword = currentPasswordInput.value;
             const newPassword = newPasswordInput.value;
             const confirmPassword = confirmPasswordInput.value;
 
@@ -174,9 +219,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 passwordErrorMsg.classList.add('hidden');
                 alert('Password changed successfully!');
+                
+                // Reset form state
                 passwordForm.reset();
-                checklist.classList.add('hidden');
+                if (checklist) checklist.classList.add('hidden');
                 passwordSubmitBtn.disabled = true;
+                currentPasswordVerified = false;
+                currentPasswordInput.disabled = false;
+                if (verifyCurrentPasswordBtn) {
+                    verifyCurrentPasswordBtn.classList.remove('hidden');
+                    verifyCurrentPasswordBtn.disabled = false;
+                    verifyCurrentPasswordBtn.textContent = 'Verify';
+                }
+                newPasswordSection.classList.add('hidden');
 
             } catch (err) {
                 console.error('Password change error:', err);

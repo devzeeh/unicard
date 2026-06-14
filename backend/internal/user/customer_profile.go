@@ -1,7 +1,9 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +12,12 @@ import (
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
 	"golang.org/x/crypto/bcrypt"
+)
+
+// Sentinel errors for password verification
+var (
+	ErrPasswordLookupFailed = errors.New("Failed to look up password hash")
+	ErrIncorrectPassword    = errors.New("Incorrect password")
 )
 
 // ProfileUpdateRequest represents the expected payload for updating user profile information
@@ -21,6 +29,23 @@ type ProfileUpdateRequest struct {
 	CurrentPassword string `json:"current_password,omitempty"`
 	NewPassword     string `json:"new_password,omitempty"`
 	ConfirmPassword string `json:"confirm_password,omitempty"`
+}
+
+// verifyCurrentPassword checks the given password against the stored hash for username.
+// On success, it returns the stored hash so callers can run further checks
+// (e.g. preventing the new password from being the same as the current one).
+func (h *Handler) verifyCurrentPassword(ctx context.Context, username, password string) (string, error) {
+	var currentHash string
+	err := h.DB.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE username = ?", username).Scan(&currentHash)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrPasswordLookupFailed, err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(password)); err != nil {
+		return "", ErrIncorrectPassword
+	}
+
+	return currentHash, nil
 }
 
 // ProfileView handles the display of the user's profile page
@@ -101,9 +126,55 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// current password verification is not implemented yet, so this endpoint just updates the password without checking the old one
-// password hashing is also not implemented yet, so the password is stored in plaintext (this will be fixed in the future). (FIXED: password hashing is now implemented using bcrypt in the account package)
-// lowercase the password field names in the struct to avoid accidentally exposing them in JSON responses. FIXED in the struct definition above.
+// ProfileVerifyPassword checks if the provided current password is correct
+func (h *Handler) ProfileVerifyPassword(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("username")
+	ctx := r.Context()
+
+	var req struct {
+		CurrentPassword string `json:"current_password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid request payload",
+		})
+		return
+	}
+
+	if req.CurrentPassword == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Current password is required",
+		})
+		return
+	}
+
+	_, err := h.verifyCurrentPassword(ctx, username, req.CurrentPassword)
+	switch {
+	case errors.Is(err, ErrPasswordLookupFailed):
+		log.Printf("ProfileVerifyPassword lookup error: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to verify current password",
+		})
+		return
+	case errors.Is(err, ErrIncorrectPassword):
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Current password is incorrect",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Password verified",
+	})
+}
+
+// ProfileChangePassword handles changing the user's password
 func (h *Handler) ProfileChangePassword(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
 
@@ -136,21 +207,18 @@ func (h *Handler) ProfileChangePassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Fetch current password hash
+	// Verify current password
 	log.Printf("Verifying current password for user: %s", username)
-	var currentHash string
-	err := h.DB.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE username = ?", username).Scan(&currentHash)
-	if err != nil {
+	currentHash, err := h.verifyCurrentPassword(ctx, username, req.CurrentPassword)
+	switch {
+	case errors.Is(err, ErrPasswordLookupFailed):
 		log.Printf("Error fetching current password hash: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to verify current password",
 		})
 		return
-	}
-
-	// Verify current password is correct
-	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(req.CurrentPassword)); err != nil {
+	case errors.Is(err, ErrIncorrectPassword):
 		log.Printf("Current password verification failed for user: %s", username)
 		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
 			Success: false,
@@ -179,7 +247,6 @@ func (h *Handler) ProfileChangePassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Here you would hash the password and update it in the database
 	// Save new password hash
 	query := "UPDATE users SET password_hash = ? WHERE username = ?"
 	_, err = h.DB.ExecContext(ctx, query, hashedPassword, username)
