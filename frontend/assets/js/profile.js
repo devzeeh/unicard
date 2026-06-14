@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Profile page script loaded.");
 
+    const username = document.body.dataset.username;
+
     // --- Profile Edit Elements ---
     const editProfileBtn = document.getElementById('edit-profile-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -11,6 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (editProfileBtn && cancelEditBtn && profileActions && profileView && profileEditForm && saveProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
+            // Pre-fill edit form with current values
+            document.getElementById('full_name').value = document.getElementById('profile-view-name').innerText.trim();
+            document.getElementById('email').value = document.getElementById('profile-view-email').innerText.trim();
+            document.getElementById('phone').value = document.getElementById('profile-view-phone').innerText.trim();
+
             profileView.classList.add('hidden');
             profileEditForm.classList.remove('hidden');
             editProfileBtn.classList.add('hidden');
@@ -25,27 +32,48 @@ document.addEventListener("DOMContentLoaded", function () {
             editProfileBtn.classList.remove('hidden');
         });
 
-        saveProfileBtn.addEventListener('click', (e) => {
+        saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            
-            // In a real app, send fetch() request here
+
             const newName = document.getElementById('full_name').value;
             const newEmail = document.getElementById('email').value;
             const newPhone = document.getElementById('phone').value;
 
-            // Since dashboard.js manages the span values via ID, we just update the text content of the spans
-            const nameSpan = document.getElementById('profile-view-name');
-            const emailSpan = document.getElementById('profile-view-email');
-            const phoneSpan = document.getElementById('profile-view-phone');
-            
-            if (nameSpan) nameSpan.innerText = newName;
-            if (emailSpan) emailSpan.innerText = newEmail;
-            if (phoneSpan) phoneSpan.innerText = newPhone;
+            try {
+                const response = await fetch(`/u/${username}/profile/edit`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: newName,
+                        email: newEmail,
+                        phone_number: newPhone
+                    })
+                });
 
-            profileEditForm.classList.add('hidden');
-            profileView.classList.remove('hidden');
-            profileActions.classList.add('hidden');
-            editProfileBtn.classList.remove('hidden');
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.message || 'Failed to update profile');
+                    return;
+                }
+
+                const nameSpan = document.getElementById('profile-view-name');
+                const emailSpan = document.getElementById('profile-view-email');
+                const phoneSpan = document.getElementById('profile-view-phone');
+
+                if (nameSpan) nameSpan.innerText = newName;
+                if (emailSpan) emailSpan.innerText = newEmail;
+                if (phoneSpan) phoneSpan.innerText = newPhone;
+
+                profileEditForm.classList.add('hidden');
+                profileView.classList.remove('hidden');
+                profileActions.classList.add('hidden');
+                editProfileBtn.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('Profile update error:', err);
+                alert('Network error, please try again.');
+            }
         });
     }
 
@@ -55,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const confirmPasswordInput = document.getElementById('confirm_password');
     const passwordSubmitBtn = document.getElementById('change-password-btn');
     const passwordErrorMsg = document.getElementById('password-error-message');
-    
+
     // Checklist elements
     const checklist = document.getElementById('password-checklist');
     const lengthCheck = document.getElementById('length-check');
@@ -112,20 +140,48 @@ document.addEventListener("DOMContentLoaded", function () {
         newPasswordInput.addEventListener('input', validatePasswordForm);
         confirmPasswordInput.addEventListener('input', validatePasswordForm);
 
-        passwordForm.addEventListener('submit', (e) => {
+        passwordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
             if (passwordSubmitBtn.disabled) {
                 passwordErrorMsg.textContent = 'Please fix the errors in the password checklist.';
                 passwordErrorMsg.classList.remove('hidden');
-            } else {
-                // --- FRONTEND-ONLY DEMO ---
-                // In a real app, you'd send a fetch() request to your backend
-                // to verify the *current* password and set the new one.
+                return;
+            }
+
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            try {
+                const response = await fetch(`/u/${username}/profile/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    passwordErrorMsg.textContent = result.message || 'Failed to change password';
+                    passwordErrorMsg.classList.remove('hidden');
+                    return;
+                }
+
                 passwordErrorMsg.classList.add('hidden');
                 alert('Password changed successfully!');
                 passwordForm.reset();
                 checklist.classList.add('hidden');
                 passwordSubmitBtn.disabled = true;
+
+            } catch (err) {
+                console.error('Password change error:', err);
+                passwordErrorMsg.textContent = 'Network error, please try again.';
+                passwordErrorMsg.classList.remove('hidden');
             }
         });
     }
@@ -140,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const deleteConfirmText = document.getElementById('delete-confirm-text');
 
     if (deleteAccountBtn && deleteModal && deleteModalContent && deleteModalCloseBtn && deleteModalCancelBtn && deleteModalConfirmBtn && deleteConfirmText) {
-        
+
         function openDeleteModal() {
             deleteModal.classList.remove('hidden');
             setTimeout(() => {
@@ -152,21 +208,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         function closeDeleteModal() {
             deleteModalContent.classList.add('scale-95', 'opacity-0');
-            deleteModalContent.classList.remove('scale-100', 'opacity-1ci00');
+            deleteModalContent.classList.remove('scale-100', 'opacity-100');
             deleteModal.classList.add('hidden', 'opacity-0');
-            
-            // Reset the form in the modal
+
             deleteConfirmText.value = '';
             deleteModalConfirmBtn.disabled = true;
             deleteModalConfirmBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             deleteModalConfirmBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            
+
             setTimeout(() => {
                 deleteModal.classList.add('hidden');
             }, 300);
         }
 
-        // Check if user has typed "DELETE"
         deleteConfirmText.addEventListener('input', () => {
             if (deleteConfirmText.value === 'DELETE') {
                 deleteModalConfirmBtn.disabled = false;
@@ -182,7 +236,7 @@ document.addEventListener("DOMContentLoaded", function () {
         deleteAccountBtn.addEventListener('click', openDeleteModal);
         deleteModalCloseBtn.addEventListener('click', closeDeleteModal);
         deleteModalCancelBtn.addEventListener('click', closeDeleteModal);
-        
+
         deleteModal.addEventListener('click', (e) => {
             if (e.target === deleteModal) {
                 closeDeleteModal();
@@ -191,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         deleteModalConfirmBtn.addEventListener('click', () => {
             // --- FRONTEND-ONLY DEMO ---
-            // In a real app, send fetch() request to delete the user
+            // Not yet wired to backend
             alert('Account deleted. Redirecting...');
             window.location.href = "paycard_login.html";
         });

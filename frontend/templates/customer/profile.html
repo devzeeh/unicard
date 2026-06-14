@@ -12,7 +12,7 @@
     <script src="/assets/style/tailwind.js"></script>
 </head>
 
-<body class="font-sans antialiased text-gray-900 bg-gray-100">
+<body class="font-sans antialiased text-gray-900 bg-gray-100" data-username="{{.Username}}">
 
     <div class="flex h-screen bg-gray-100 overflow-hidden">
         <!-- Sidebar -->
@@ -166,7 +166,7 @@
                                     <!-- Error Area -->
                                     <div id="password-error-message" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100"></div>
 
-                                    <button id="change-password-btn" type="submit" class="w-full px-4 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-50" disabled>
+                                    <button id="change-password-btn" type="submit" class="w-full px-4 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-50">
                                         Change Password
                                     </button>
                                 </form>
@@ -190,7 +190,7 @@
         </div>
     </div>
 
-    <script src="/assets/js/dashboard.js?v=2" defer></script>
-    <script src="/assets/js/profile.js?v=2" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
+    <script src="../../assets/js/profile.js" defer></script>
 </body>
 </html>
