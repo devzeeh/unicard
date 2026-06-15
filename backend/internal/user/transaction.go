@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strings"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
@@ -34,9 +35,8 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Fetch transactions
 	txnQuery := `
-		SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id, t.description, t.status
+	SELECT t.transaction_id, t.created_at, m.business_name, t.transaction_type, t.amount, t.terminal_id, t.description, t.status, c.card_number, m.merchant_id
 		FROM transactions t 
 		JOIN cards c ON t.card_number = c.card_number 
 		JOIN users u ON c.user_id = u.user_id
@@ -55,6 +55,12 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 		Type          string  `json:"type"`
 		Amount        float64 `json:"amount"`
 		Status        string  `json:"status"`
+		MerchantName  string  `json:"merchant_name"`
+		MerchantID    string  `json:"merchant_id"`
+		ServiceFee    float64 `json:"service_fee"`
+		PointsEarned  int     `json:"points_earned"`
+		Sender        string  `json:"sender"`
+		Receiver      string  `json:"receiver"`
 	}
 
 	var transactions []TxnResponse
@@ -67,8 +73,10 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var terminalId sql.NullString
 			var dbDescription sql.NullString
 			var dbStatus sql.NullString
-			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &terminalId, &dbDescription, &dbStatus); err == nil {
-				
+			var cardNumber string
+			var merchantId sql.NullString
+			if err := rows.Scan(&t.TransactionID, &createdAt, &businessName, &t.Type, &t.Amount, &terminalId, &dbDescription, &dbStatus, &cardNumber, &merchantId); err == nil {
+
 				if dbStatus.Valid && dbStatus.String != "" {
 					t.Status = dbStatus.String
 				} else {
@@ -77,7 +85,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 
 				t.Date = formatDate(createdAt) // Uses formatDate from dashboard.go
 				t.Time = formatTime(createdAt) // Uses formatTime from dashboard.go
-				
+
 				if terminalId.Valid {
 					t.TerminalID = terminalId.String
 				} else {
@@ -93,9 +101,52 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 				} else {
 					t.Description = "Transaction"
 				}
+
+				if businessName.Valid {
+					t.MerchantName = businessName.String
+				} else {
+					t.MerchantName = t.Description
+				}
+
+				if merchantId.Valid {
+					t.MerchantID = merchantId.String
+				} else {
+					t.MerchantID = "N/A"
+				}
+
+				t.ServiceFee = 0.00
+				if strings.ToLower(t.Type) == "payment" && t.Amount >= 100 {
+					t.PointsEarned = int(t.Amount / 100)
+				} else {
+					t.PointsEarned = 0
+				}
+
+				// Calculate Sender, Receiver, ServiceFee, PointsEarned
+				isPayment := strings.ToLower(t.Type) == "payment"
+				merchantStr := t.Description
+				if t.TerminalID != "" && t.TerminalID != "N/A" {
+					merchantStr += " (Terminal: " + t.TerminalID + ")"
+				}
+				cardStr := "My UniCard"
+				if len(cardNumber) >= 4 {
+					cardStr += " (**** " + cardNumber[len(cardNumber)-4:] + ")"
+				}
+
+				if isPayment {
+					t.Sender = cardStr
+					t.Receiver = merchantStr
+					if t.Amount >= 100 {
+						t.PointsEarned = int(t.Amount / 100)
+					}
+				} else {
+					t.Sender = merchantStr
+					t.Receiver = cardStr
+				}
+				t.ServiceFee = 0.00
+
 				transactions = append(transactions, t)
 			} else {
-			    fmt.Printf("Scan error: %v\n", err)
+				fmt.Printf("Scan error: %v\n", err)
 			}
 		}
 	} else {

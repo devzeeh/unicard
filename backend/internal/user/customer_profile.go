@@ -80,7 +80,7 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// PATCH — at least one field required
-	if req.FullName == "" && req.Email == "" && req.Phone == "" {
+	if req.FullName == "" && req.Email == "" && req.Phone == "" && req.Username == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "At least one field is required",
@@ -103,6 +103,10 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	if req.Phone != "" {
 		fields = append(fields, "phone_number = ?")
 		args = append(args, req.Phone)
+	}
+	if req.Username != "" {
+		fields = append(fields, "username = ?")
+		args = append(args, req.Username)
 	}
 
 	// Append username as last arg for WHERE clause
