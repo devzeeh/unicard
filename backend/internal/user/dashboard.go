@@ -31,6 +31,7 @@ type DashboardUser struct {
 	Username           string        `json:"username" db:"username"`
 	Name               string        `json:"name" db:"name"`
 	Email              string        `json:"email" db:"email"`
+	PendingEmail       string        `json:"pending_email"`
 	Phone              string        `json:"phone" db:"phone"`
 	Initials           string        `json:"initials"`
 	Balance            float64       `json:"balance" db:"balance"`
@@ -74,6 +75,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		username      string
 		fullName      string
 		email         string
+		pendingEmail  string
 		phone         string
 		userType      string
 		balance       float64
@@ -88,6 +90,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			u.username,
 			u.name,
 			u.email,
+			COALESCE(u.pending_email, ''),
 			COALESCE(u.phone_number, ''),
 			u.role,
 			COALESCE(c.balance, 0),
@@ -100,7 +103,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			ON u.user_id = c.user_id
 		WHERE u.username = ?
 	`
-	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
+	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
@@ -211,6 +214,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		Username:           username,
 		Name:               fullName,
 		Email:              email,
+		PendingEmail:       pendingEmail,
 		Phone:              phone,
 		Initials:           initials,
 		Balance:            balance,

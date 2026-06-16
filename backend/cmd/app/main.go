@@ -89,6 +89,7 @@ func main() {
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /u/{username}", userHandler.ProfileView)
 	mux.HandleFunc("PATCH /u/{username}/profile/edit", userHandler.ProfileEdit)
+	mux.HandleFunc("GET /v1/verify-email", userHandler.VerifyEmail)
 	mux.HandleFunc("POST /v1/user/{username}/profile/verify-password", userHandler.ProfileVerifyPassword)
 	mux.HandleFunc("PUT /u/{username}/profile/password", userHandler.ProfileChangePassword)
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)

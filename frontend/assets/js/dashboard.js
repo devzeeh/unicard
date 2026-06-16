@@ -189,6 +189,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Profile Page Specific Elements
                 const profileViewName = document.getElementById("profile-view-name");
                 const profileViewEmail = document.getElementById("profile-view-email");
+                const profileViewPendingEmail = document.getElementById("profile-view-pending-email");
+                const pendingEmailContainer = document.getElementById("pending-email-container");
                 const profileViewPhone = document.getElementById("profile-view-phone");
                 const profileViewUsername = document.getElementById("profile-view-username");
                 const profileEditName = document.getElementById("full_name");
@@ -207,6 +209,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (profileViewName) profileViewName.innerText = data.name || "";
                 if (profileViewEmail) profileViewEmail.innerText = data.email || "";
+                
+                if (pendingEmailContainer && profileViewPendingEmail) {
+                    if (data.pending_email) {
+                        pendingEmailContainer.classList.remove('hidden');
+                        profileViewPendingEmail.innerText = data.pending_email;
+                    } else {
+                        pendingEmailContainer.classList.add('hidden');
+                        profileViewPendingEmail.innerText = "";
+                    }
+                }
+
                 if (profileViewPhone) profileViewPhone.innerText = data.phone || "";
                 if (profileViewUsername) profileViewUsername.innerText = data.username || "";
 
