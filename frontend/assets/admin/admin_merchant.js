@@ -119,7 +119,7 @@ function renderTable() {
         const highlightedOwnerName = highlightText(merchant.owner_name, queryTerms);
         const highlightedEmail = highlightText(merchant.business_email, queryTerms);
 
-        tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+        tr.className = 'hover:bg-blue-50 cursor-pointer transition duration-150';
         tr.onclick = (e) => {
             if (e.target.closest('button')) return; // Ignore button clicks
             const adminUsername = window.location.pathname.split('/')[2];

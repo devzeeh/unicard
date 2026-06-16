@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const iconBg = statusText === 'Online' || statusText === 'Active' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600';
 
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+            row.className = 'hover:bg-blue-50 cursor-pointer transition duration-150';
             row.onclick = (e) => {
                 if (e.target.closest('button')) return; // Ignore button clicks
                 document.getElementById('modalDeviceName').textContent = terminal.device_name;
