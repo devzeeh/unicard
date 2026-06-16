@@ -6,41 +6,43 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
 type Transaction struct {
-	TransactionID string  `json:"transaction_id"`
-	TerminalID    string  `json:"terminal_id"`
-	Date          string  `json:"date" db:"date"`
-	Time          string  `json:"time"`
-	Description   string  `json:"description" db:"description"`
-	Type          string  `json:"type" db:"transaction_type"`
-	Amount        float64 `json:"amount" db:"transaction_amount"`
-	Status        string  `json:"status" db:"status"`
-	MerchantName  string  `json:"merchant_name"`
-	MerchantID    string  `json:"merchant_id"`
-	ServiceFee    float64 `json:"service_fee"`
-	PointsEarned  int     `json:"points_earned"`
+	TransactionID string          `json:"transaction_id"`
+	TerminalID    string          `json:"terminal_id"`
+	Date          string          `json:"date" db:"date"`
+	Time          string          `json:"time"`
+	Description   string          `json:"description" db:"description"`
+	Type          string          `json:"type" db:"transaction_type"`
+	Amount        float64         `json:"amount" db:"transaction_amount"`
+	Status        string          `json:"status" db:"status"`
+	MerchantName  string          `json:"merchant_name"`
+	MerchantID    string          `json:"merchant_id"`
+	ServiceFee    float64         `json:"service_fee"`
+	PointsEarned  decimal.Decimal `json:"points_earned"`
 }
 
 // DashboardUser info struct for the user dashboard view
 type DashboardUser struct {
-	ID                 int           `json:"id,omitempty" db:"id"`
-	UserID             string        `json:"user_id,omitempty" db:"user_id"`
-	Username           string        `json:"username" db:"username"`
-	Name               string        `json:"name" db:"name"`
-	Email              string        `json:"email" db:"email"`
-	PendingEmail       string        `json:"pending_email"`
-	Phone              string        `json:"phone" db:"phone"`
-	Initials           string        `json:"initials"`
-	Balance            float64       `json:"balance" db:"balance"`
-	LoyaltyPoints      float64       `json:"loyalty_points" db:"loyalty_points"`
-	AccountType        string        `db:"account_type" json:"account_type"`
-	CardNumber         string        `json:"card_number"`
-	CardExpiry         string        `json:"card_expiry"`
-	CardStatus         string        `json:"card_status"`
-	RecentTransactions []Transaction `json:"recent_transactions"` // Add recent transactions to the dashboard response
+	ID                 int             `json:"id,omitempty" db:"id"`
+	UserID             string          `json:"user_id,omitempty" db:"user_id"`
+	Username           string          `json:"username" db:"username"`
+	Name               string          `json:"name" db:"name"`
+	Email              string          `json:"email" db:"email"`
+	PendingEmail       string          `json:"pending_email"`
+	Phone              string          `json:"phone" db:"phone"`
+	Initials           string          `json:"initials"`
+	Balance            float64         `json:"balance" db:"balance"`
+	LoyaltyPoints      decimal.Decimal `json:"loyalty_points" db:"loyalty_points"`
+	AccountType        string          `db:"account_type" json:"account_type"`
+	CardNumber         string          `json:"card_number"`
+	CardExpiry         string          `json:"card_expiry"`
+	CardStatus         string          `json:"card_status"`
+	RecentTransactions []Transaction   `json:"recent_transactions"` // Add recent transactions to the dashboard response
 }
 
 func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +81,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		phone         string
 		userType      string
 		balance       float64
-		loyaltyPoints float64
+		loyaltyPoints decimal.Decimal
 		cardNumber    string
 		expiryDate    string
 		cardStatus    string
@@ -143,7 +145,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-    SELECT t.transaction_id, t.description, t.created_at, t.transaction_type, t.amount, t.terminal_id, t.status, m.business_name, m.merchant_id
+    SELECT t.transaction_id, t.description, t.created_at, COALESCE(t.transaction_type, ''), t.amount, COALESCE(t.terminal_id, ''), COALESCE(t.status, ''), m.business_name, m.merchant_id, COALESCE(t.points_earned, 0)
     FROM transactions t 
     JOIN cards c ON t.card_number = c.card_number 
     JOIN users u ON c.user_id = u.user_id
@@ -163,6 +165,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			var description sql.NullString
 			var businessName sql.NullString
 			var merchantId sql.NullString
+			var pointsEarned decimal.Decimal
 			if err := rows.Scan(
 				&t.TransactionID,
 				&description,
@@ -173,6 +176,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 				&t.Status,
 				&businessName,
 				&merchantId,
+				&pointsEarned,
 			); err != nil {
 				fmt.Printf("Error scanning transaction row: %v\n", err)
 				continue
@@ -181,14 +185,14 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			t.Time = formatTime(createdAt)
 			if description.Valid {
 				t.Description = description.String
+			} else {
+				t.Description = ""
 			}
 			
-			if businessName.Valid {
+			if businessName.Valid && businessName.String != "" {
 				t.MerchantName = businessName.String
-			} else if description.Valid {
-				t.MerchantName = description.String
 			} else {
-				t.MerchantName = "System"
+				t.MerchantName = t.Description
 			}
 			
 			if merchantId.Valid {
@@ -198,11 +202,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			t.ServiceFee = 0.00
-			if strings.ToLower(t.Type) == "payment" && t.Amount >= 100 {
-				t.PointsEarned = int(t.Amount / 100)
-			} else {
-				t.PointsEarned = 0
-			}
+			t.PointsEarned = pointsEarned
 
 			transactions = append(transactions, t)
 		}

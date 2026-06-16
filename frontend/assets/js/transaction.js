@@ -134,13 +134,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         txTime = tx.time || "";
                     }
                 }
-                const status = tx.status || "Completed";
-
-                let statusColor = "bg-green-100 text-green-800";
-                if (status.toLowerCase() === "pending") {
-                    statusColor = "bg-yellow-100 text-yellow-800";
-                } else if (status.toLowerCase() === "failed") {
-                    statusColor = "bg-red-100 text-red-800";
+                let statusHtml = "";
+                if (tx.status) {
+                    const statusVal = tx.status.toLowerCase();
+                    const statusColor = statusVal === "completed" ? "bg-green-100 text-green-800" :
+                        statusVal === "pending" ? "bg-yellow-100 text-yellow-800" :
+                        "bg-red-100 text-red-800";
+                    statusHtml = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">${tx.status}</span>`;
                 }
 
                 tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
@@ -164,9 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         ${sign}₱${amount}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">
-                            ${status}
-                        </span>
+                        ${statusHtml}
                     </td>
                 `;
                 transactionsBody.appendChild(tr);
