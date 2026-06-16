@@ -12,7 +12,7 @@
     <script src="/assets/style/tailwind.js"></script>
 </head>
 
-<body class="font-sans antialiased text-gray-900 bg-gray-100">
+<body class="font-sans antialiased text-gray-900 bg-gray-100" data-username="{{.Username}}">
 
     <div class="flex h-screen bg-gray-100 overflow-hidden">
         <!-- Sidebar -->
@@ -21,20 +21,23 @@
         <!-- Main Content Area -->
         <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-200 ease-in-out">
             <!-- Header -->
-            <header class="flex items-center justify-between md:justify-end h-16 px-5 sm:px-6 py-4 bg-white border-b border-gray-200 z-20 shrink-0">
+            <header
+                class="flex items-center justify-between md:justify-end h-16 px-5 sm:px-6 py-4 bg-white border-b border-gray-200 z-20 shrink-0">
                 <!-- Mobile Menu Button (Left) -->
                 <div class="flex items-center md:hidden">
                     <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 focus:outline-none">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
-                    <span class="ml-3 text-lg font-bold tracking-tight text-slate-900">Uni<span class="text-violet-600">Card</span></span>
+                    <span class="ml-3 text-lg font-bold tracking-tight text-slate-900">Uni<span
+                            class="text-violet-600">Card</span></span>
                 </div>
 
                 <!-- Profile Dropdown (Right) -->
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">...</span></span>
+                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name" class="ml-1"><span class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
@@ -47,19 +50,33 @@
                         <div id="profile-dropdown-menu"
                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                             <div class="py-1">
-                                <a href="/u/{{.Username}}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
-                                    <span class="ml-3 align-middle">Profile</span>
+                                <a href="/u/{{.Username}}"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    <span class="ml-3">Profile</span>
                                 </a>
-                                <a href="/u/{{.Username}}/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                                    <span class="ml-3 align-middle">Settings</span>
+                                <a href="/u/{{.Username}}/settings"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                                    </svg>
+                                    <span class="ml-3">Settings</span>
                                 </a>
                                 <div class="border-t border-gray-100"></div>
                                 <button id="profile-logout-button"
-                                    class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
-                                    <span class="ml-3 align-middle">Sign Out</span>
+                                    class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                                    </svg>
+                                    <span class="ml-3">Sign Out</span>
                                 </button>
                             </div>
                         </div>
@@ -69,29 +86,40 @@
 
             <!-- Main Page Content -->
             <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                <div class="max-w-7xl mx-auto">
+                <div class="max-w-4xl mx-auto">
                     <!-- Page Title -->
                     <h1 class="text-3xl font-bold text-gray-900 mb-6">My Profile</h1>
 
                     <!-- Profile Content Grid -->
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        
+                    <div>
+
                         <!-- Column 1: Personal Information -->
-                        <section class="xl:col-span-2 space-y-6">
+                        <section class="space-y-6">
                             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
                                 <header class="flex justify-between items-center mb-6">
                                     <h2 class="text-2xl font-bold text-gray-900">Personal Information</h2>
-                                    <button id="edit-profile-btn" class="text-sm font-medium text-blue-600 hover:text-blue-700 transition flex items-center bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                                    <button id="edit-profile-btn"
+                                        class="text-sm font-medium text-blue-600 hover:text-blue-700 transition flex items-center bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                                        </svg>
                                         Edit
                                     </button>
-                                    
+
                                     <div id="profile-edit-actions" class="hidden space-x-2">
-                                        <button id="cancel-edit-btn" class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                                        <button id="cancel-edit-btn"
+                                            class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
                                             Cancel
                                         </button>
-                                        <button id="save-profile-btn" class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-sm transition flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                        <button id="save-profile-btn"
+                                            class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-sm transition flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
                                             Save Changes
                                         </button>
                                     </div>
@@ -101,96 +129,156 @@
                                 <dl class="space-y-5" id="profile-details-view">
                                     <div class="flex flex-col sm:flex-row py-3 border-b border-gray-100">
                                         <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Full Name</dt>
-                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900" id="profile-view-name">
+                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900"
+                                            id="profile-view-name">
                                             <div class="h-5 bg-gray-200 rounded w-48 animate-pulse"></div>
-                                        </dd>
-                                    </div>
-                                    <div class="flex flex-col sm:flex-row py-3 border-b border-gray-100">
-                                        <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Email Address</dt>
-                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900" id="profile-view-email">
-                                            <div class="h-5 bg-gray-200 rounded w-48 animate-pulse"></div>
-                                        </dd>
-                                    </div>
-                                    <div class="flex flex-col sm:flex-row py-3 border-b border-gray-100">
-                                        <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Phone Number</dt>
-                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900" id="profile-view-phone">
-                                            <div class="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
                                         </dd>
                                     </div>
                                     <div class="flex flex-col sm:flex-row py-3">
                                         <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Username</dt>
-                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900" id="profile-view-username">
+                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900"
+                                            id="profile-view-username">
                                             <div class="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
                                         </dd>
                                     </div>
                                 </dl>
-                                
+
                                 <!-- Edit Mode -->
-                                <form id="profile-details-edit" class="hidden space-y-5" onsubmit="event.preventDefault();">
+                                <form id="profile-details-edit" class="hidden space-y-5"
+                                    onsubmit="event.preventDefault();">
                                     <div>
-                                        <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" name="full_name" id="full_name" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
+                                        <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">Full
+                                            Name</label>
+                                        <input type="text" name="full_name" id="full_name"
+                                            class="w-full px-4 py-2.5 bg-gray-100 text-gray-500 border border-gray-300 rounded-lg cursor-not-allowed focus:outline-none"
+                                            readonly>
                                     </div>
                                     <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" name="email" id="email" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
-                                    </div>
-                                    <div>
-                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                        <input type="tel" name="phone" id="phone" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                        <input type="text" name="username" id="username"
+                                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            required>
                                     </div>
                                 </form>
                             </div>
                         </section>
 
-                        <!-- Column 2: Security & Danger Zone -->
-                        <section class="xl:col-span-1 space-y-6">
-                            
-                            <!-- Security -->
+                        <!-- Column 2: Contact Information -->
+                        <section class="space-y-6 mt-6">
                             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-                                <h2 class="text-2xl font-bold text-gray-900 mb-6">Security</h2>
-                                <form id="change-password-form" class="space-y-5" novalidate>
-                                    <div>
-                                        <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                                        <input type="password" name="current_password" id="current_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
-                                    </div>
-                                    <div>
-                                        <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                                        <input type="password" name="new_password" id="new_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
-                                    </div>
-                                    <div>
-                                        <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                                        <input type="password" name="confirm_password" id="confirm_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
-                                    </div>
-                                    
-                                    <!-- Error Area -->
-                                    <div id="password-error-message" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100"></div>
-
-                                    <button id="change-password-btn" type="submit" class="w-full px-4 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-50" disabled>
-                                        Change Password
+                                <header class="flex justify-between items-center mb-6">
+                                    <h2 class="text-2xl font-bold text-gray-900">Contact Information</h2>
+                                    <button id="edit-contact-btn"
+                                        class="text-sm font-medium text-blue-600 hover:text-blue-700 transition flex items-center bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                                        </svg>
+                                        Edit
                                     </button>
+
+                                    <div id="contact-edit-actions" class="hidden space-x-2">
+                                        <button id="cancel-contact-edit-btn"
+                                            class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+                                            Cancel
+                                        </button>
+                                        <button id="save-contact-btn"
+                                            class="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-sm transition flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </header>
+
+                                <!-- View Mode -->
+                                <dl class="space-y-5" id="contact-details-view">
+                                    <div class="flex flex-col sm:flex-row py-3 border-b border-gray-100">
+                                        <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Email Address</dt>
+                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900">
+                                            <span id="profile-view-email"><div class="h-5 bg-gray-200 rounded w-48 animate-pulse"></div></span>
+                                            <div id="pending-email-container" class="hidden mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                                                <p class="text-xs text-yellow-800 font-semibold mb-1">Pending Verification</p>
+                                                <p class="text-sm text-yellow-900" id="profile-view-pending-email"></p>
+                                            </div>
+                                        </dd>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row py-3">
+                                        <dt class="w-full sm:w-1/3 text-sm font-medium text-gray-500">Phone Number</dt>
+                                        <dd class="w-full sm:w-2/3 mt-1 sm:mt-0 text-base font-medium text-gray-900"
+                                            id="profile-view-phone">
+                                            <div class="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                <!-- Edit Mode -->
+                                <form id="contact-details-edit" class="hidden space-y-5"
+                                    onsubmit="event.preventDefault();">
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email
+                                            Address</label>
+                                        <input type="email" name="email" id="email"
+                                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            required>
+                                    </div>
+                                    <div>
+                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone
+                                            Number</label>
+                                        <input type="tel" name="phone" id="phone"
+                                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                    </div>
                                 </form>
                             </div>
-
-                            <!-- Danger Zone -->
-                            <div class="bg-red-50 p-6 md:p-8 rounded-2xl border border-red-100">
-                                <h2 class="text-xl font-bold text-red-700">Danger Zone</h2>
-                                <p class="text-sm text-red-600 mt-2">
-                                    Deleting your account is permanent. All your data, balance, and transaction history will be removed instantly.
-                                </p>
-                                <button id="delete-account-btn" class="mt-5 w-full px-4 py-3 bg-white border border-red-200 text-red-600 font-medium rounded-lg hover:bg-red-50 hover:border-red-300 transition">
-                                    Delete My Account
-                                </button>
-                            </div>
                         </section>
-
-                    </div> 
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <script src="/assets/js/dashboard.js?v=2" defer></script>
-    <script src="/assets/js/profile.js?v=2" defer></script>
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+            id="logout-modal-content">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
+                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <p class="text-base text-gray-600">
+                    Are you sure you want to log out of your PayCard account?
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="modal-cancel-button"
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="modal-confirm-logout-button"
+                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/dashboard.js" defer></script>
+    <script src="../../assets/js/profile.js" defer></script>
 </body>
+
 </html>

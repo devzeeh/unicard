@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
     const step3 = document.getElementById('step-3');
+    const step4 = document.getElementById('step-4');
     const stepSubtitle = document.getElementById('step-subtitle');
     const stepProgress = document.getElementById('step-progress');
 
@@ -11,6 +12,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnBack2 = document.getElementById('btn-back-2');
     const btnStep2 = document.getElementById('btn-step-2');
     const btnBack3 = document.getElementById('btn-back-3');
+    const btnStep3 = document.getElementById('btn-step-3');
+    const btnBack4 = document.getElementById('btn-back-4');
     const createAccountBtn = document.getElementById('create-account-btn');
     const signupForm = document.getElementById('signup-form');
 
@@ -19,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const lastNameInput = document.getElementById('last_name');
     const emailInput = document.getElementById('email');
     const contactNumberInput = document.getElementById('contact_number');
+    const otpCodeInput = document.getElementById('otp_code');
     const cardNumberInput = document.getElementById('card_number');
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirm_password');
@@ -43,20 +47,24 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // HELPER FUNCTIONS 
     function showStep(stepNumber) {
-        [step1, step2, step3].forEach(s => s?.classList.add('hidden'));
+        [step1, step2, step3, step4].forEach(s => s?.classList.add('hidden'));
         errorMessage.classList.add('hidden'); 
 
         if (stepNumber === 1) {
             step1.classList.remove('hidden');
-            stepSubtitle.textContent = 'Step 1 of 3: Your Details';
-            if (stepProgress) stepProgress.style.width = '33.33%';
+            stepSubtitle.textContent = 'Step 1 of 4: Your Details';
+            if (stepProgress) stepProgress.style.width = '25%';
         } else if (stepNumber === 2) {
             step2.classList.remove('hidden');
-            stepSubtitle.textContent = 'Step 2 of 3: Card Verification';
-            if (stepProgress) stepProgress.style.width = '66.66%';
+            stepSubtitle.textContent = 'Step 2 of 4: Verification';
+            if (stepProgress) stepProgress.style.width = '50%';
         } else if (stepNumber === 3) {
             step3.classList.remove('hidden');
-            stepSubtitle.textContent = 'Step 3 of 3: Create Password';
+            stepSubtitle.textContent = 'Step 3 of 4: Card Verification';
+            if (stepProgress) stepProgress.style.width = '75%';
+        } else if (stepNumber === 4) {
+            step4.classList.remove('hidden');
+            stepSubtitle.textContent = 'Step 4 of 4: Create Password';
             if (stepProgress) stepProgress.style.width = '100%';
         }
     }
@@ -77,12 +85,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!isValid) return false;
 
-        // Backend check for Email/Phone availability
+        // Backend check for Email/Phone availability and send OTP
          try {
             btnStep1.disabled = true;
-            btnStep1.textContent = 'Checking...';
+            btnStep1.textContent = 'Sending...';
             
-            const response = await fetch('/v1/signup/check-details', {
+            const response = await fetch('/v1/signup/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -121,11 +129,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function validateStep2() {
-        if (!validateInput(cardNumberInput)) return false;
+        if (!validateInput(otpCodeInput)) return false;
 
         try {
             btnStep2.disabled = true;
             btnStep2.textContent = 'Verifying...';
+            
+            const response = await fetch('/v1/signup/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: emailInput.value.trim(),
+                    otp: otpCodeInput.value.trim() 
+                })
+            });
+            
+            const data = await response.json();
+            if (!data.success) {
+                showError(data.message);
+                otpCodeInput.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                otpCodeInput.classList.remove('border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-500');
+                return false;
+            }
+
+            return true;
+        } catch (err) {
+            showError('Network error. Please try again.');
+            return false;
+        } finally {
+            btnStep2.disabled = false;
+            btnStep2.textContent = 'Verify';
+        }
+    }
+
+    async function validateStep3() {
+        if (!validateInput(cardNumberInput)) return false;
+
+        try {
+            btnStep3.disabled = true;
+            btnStep3.textContent = 'Verifying...';
             
             const response = await fetch('/v1/signup/check-card', {
                 method: 'POST',
@@ -147,8 +189,8 @@ document.addEventListener("DOMContentLoaded", function () {
             showError('Network error. Please try again.');
             return false;
         } finally {
-            btnStep2.disabled = false;
-            btnStep2.textContent = 'Next';
+            btnStep3.disabled = false;
+            btnStep3.textContent = 'Next';
         }
     }
 
@@ -177,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
     passwordInput.addEventListener('input', updatePasswordChecklist);
     confirmPasswordInput.addEventListener('input', updatePasswordChecklist);
 
-    function validateStep3() {
+    function validateStep4() {
         const inputs = [passwordInput, confirmPasswordInput];
         let isValid = true;
         inputs.forEach(input => {
@@ -202,11 +244,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     btnBack3.addEventListener('click', () => showStep(2));
+    btnStep3.addEventListener('click', async () => {
+        if (await validateStep3()) showStep(4);
+    });
+
+    btnBack4.addEventListener('click', () => showStep(3));
 
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        if (!validateStep3()) return;
+        if (!validateStep4()) return;
 
         try {
             createAccountBtn.disabled = true;

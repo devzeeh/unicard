@@ -126,11 +126,10 @@ CREATE TABLE top_ups (
     gateway_cost DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Actual fee incurred from external payment providers (GCash, Maya, Bank) per transaction',
     net_gateway_fee DECIMAL(10, 2) GENERATED ALWAYS AS (convenience_fee - gateway_cost) STORED COMMENT 'Automatically calculated net revenue kept by the platform after 3rd party costs',
     total_charged DECIMAL(10, 2) GENERATED ALWAYS AS (amount + convenience_fee) STORED COMMENT 'Automatically calculated column representing the absolute total cash value collected from the external channel source',
-    payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter', 'stripe') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
+    payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter', 'xendit') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
     handled_by VARCHAR(50) NULL COMMENT 'Public user_id string identifier referencing the administrative staff member who manually accepted physical bills if OTC cash-loaded',
     status ENUM('pending', 'completed', 'failed') DEFAULT 'completed' COMMENT 'State pipeline tracker handling payment gateway processing exceptions or drops',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp mapping exactly when wallet balance credits were finalized',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tracks chronological life cycle changes, such as a top-up shifting from pending to completed',
-    FOREIGN KEY (card_number) REFERENCES cards(card_number),
-    FOREIGN KEY (handled_by) REFERENCES users(user_id)
+    FOREIGN KEY (card_number) REFERENCES cards(card_number)
 ) COMMENT='High-growth balance loader ledger maintaining immutable compliance auditing for all incoming ecosystem liquidity channels';

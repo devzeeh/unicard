@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const amount = parseFloat(amountText);
             const method = document.querySelector('input[name="payment_method"]:checked');
 
-            if (!method || method.value !== 'stripe' || isNaN(amount) || amount < 50) {
+            if (!method || method.value !== 'xendit' || isNaN(amount) || amount < 50) {
                 return;
             }
 
@@ -105,8 +105,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 const data = await response.json();
-                if (data.url) {
-                    window.location.href = data.url;
+                if (data.data && data.data.url) {
+                    window.location.href = data.data.url;
                 } else {
                     throw new Error('No checkout URL returned');
                 }

@@ -45,6 +45,83 @@ document.addEventListener("DOMContentLoaded", function () {
         console.warn("Some card management elements are missing, but we'll continue for lock toggle.");
     }
 
+    // --- Helper to get User ID ---
+    const pathSegments = window.location.pathname.split('/');
+    let userId = null;
+    if (pathSegments.length >= 3 && pathSegments[1] === 'u') {
+        userId = pathSegments[2];
+    } else {
+        const params = new URLSearchParams(window.location.search);
+        userId = params.get('username');
+    }
+
+    function updateCardStatusAPI(newStatus, onSuccess) {
+        if (!userId) return;
+        fetch(`/v1/user/${encodeURIComponent(userId)}/card/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(res => {
+            if (res.ok) onSuccess();
+            else alert("Failed to update card status. Please try again.");
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error updating card status.");
+        });
+    }
+
+    // --- Card Toggle & Copy Logic ---
+    const toggleCardBtn = document.getElementById("toggle-card-btn");
+    const copyCardBtn = document.getElementById("copy-card-btn");
+    const userCardSpan = document.getElementById("user-card-number");
+    const eyeOpen = document.getElementById("eye-icon-open");
+    const eyeClosed = document.getElementById("eye-icon-closed");
+    
+    if (toggleCardBtn && userCardSpan) {
+        toggleCardBtn.addEventListener('click', () => {
+            const isHidden = userCardSpan.getAttribute("data-hidden") === "true";
+            const fullNum = userCardSpan.getAttribute("data-full");
+            const maskedNum = userCardSpan.getAttribute("data-masked");
+
+            if (isHidden) {
+                // Show full card number
+                userCardSpan.innerText = fullNum;
+                userCardSpan.setAttribute("data-hidden", "false");
+                eyeOpen.classList.remove("hidden");
+                eyeClosed.classList.add("hidden");
+            } else {
+                // Hide card number
+                userCardSpan.innerText = maskedNum;
+                userCardSpan.setAttribute("data-hidden", "true");
+                eyeOpen.classList.add("hidden");
+                eyeClosed.classList.remove("hidden");
+            }
+        });
+    }
+
+    if (copyCardBtn && userCardSpan) {
+        copyCardBtn.addEventListener('click', () => {
+            const fullNum = userCardSpan.getAttribute("data-full");
+            if (fullNum && fullNum !== "•••• •••• •••• ••••") {
+                // Copy strictly numbers, without spaces if preferred, or copy formatted.
+                // Let's copy formatted as usually expected by users for cards.
+                navigator.clipboard.writeText(fullNum.replace(/\s+/g, '')).then(() => {
+                    const originalHTML = copyCardBtn.innerHTML;
+                    // Show a checkmark temporarily
+                    copyCardBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
+                    setTimeout(() => {
+                        copyCardBtn.innerHTML = originalHTML;
+                    }, 2000);
+                }).catch(err => {
+                    console.error("Failed to copy: ", err);
+                    alert("Failed to copy card number");
+                });
+            }
+        });
+    }
+
     // --- Lock Card Toggle Logic ---
     const toggle = document.getElementById("lock-card-toggle");
     const knob = document.getElementById("lock-card-knob");
@@ -53,197 +130,196 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (toggle) {
         toggle.addEventListener("click", () => {
-            isLocked = !isLocked;
-            if (isLocked) {
-                // Switch on
-                toggle.classList.remove("bg-gray-200");
-                toggle.classList.add("bg-blue-600");
-                if (knob) {
-                    knob.classList.remove("translate-x-1");
-                    knob.classList.add("translate-x-6");
+            const newStatus = !isLocked ? 'blocked' : 'active';
+            
+            updateCardStatusAPI(newStatus, () => {
+                isLocked = !isLocked;
+                if (isLocked) {
+                    // Switch on
+                    toggle.classList.remove("bg-gray-200");
+                    toggle.classList.add("bg-blue-600");
+                    if (knob) {
+                        knob.classList.remove("translate-x-1");
+                        knob.classList.add("translate-x-6");
+                    }
+                    
+                    // Show overlay
+                    if (overlay) {
+                        overlay.classList.remove("hidden");
+                        setTimeout(() => {
+                            overlay.classList.remove("opacity-0");
+                            overlay.classList.add("opacity-100");
+                        }, 10);
+                    }
+                    setCardStatus("Blocked");
+                } else {
+                    // Switch off
+                    toggle.classList.remove("bg-blue-600");
+                    toggle.classList.add("bg-gray-200");
+                    if (knob) {
+                        knob.classList.remove("translate-x-6");
+                        knob.classList.add("translate-x-1");
+                    }
+                    
+                    // Hide overlay
+                    if (overlay) {
+                        overlay.classList.remove("opacity-100");
+                        overlay.classList.add("opacity-0");
+                        setTimeout(() => {
+                            overlay.classList.add("hidden");
+                        }, 300);
+                    }
+                    setCardStatus("Active");
                 }
-                
-                // Show overlay
-                if (overlay) {
-                    overlay.classList.remove("hidden");
-                    setTimeout(() => {
-                        overlay.classList.remove("opacity-0");
-                        overlay.classList.add("opacity-100");
-                    }, 10);
-                }
-            } else {
-                // Switch off
-                toggle.classList.remove("bg-blue-600");
-                toggle.classList.add("bg-gray-200");
-                if (knob) {
-                    knob.classList.remove("translate-x-6");
-                    knob.classList.add("translate-x-1");
-                }
-                
-                // Hide overlay
-                if (overlay) {
-                    overlay.classList.remove("opacity-100");
-                    overlay.classList.add("opacity-0");
-                    setTimeout(() => {
-                        overlay.classList.add("hidden");
-                    }, 300);
-                }
-            }
+            });
         });
     }
 
     // --- Generic Modal Logic ---
-    // Function to open a modal
     function openModal(modal, modalContent) {
         modal.classList.remove('hidden');
-        // Animate in
         setTimeout(() => {
             modal.classList.add('opacity-100');
             modalContent.classList.add('scale-100', 'opacity-100');
             modalContent.classList.remove('scale-95', 'opacity-0');
-        }, 10); // 10ms delay to allow CSS to catch up
+        }, 10);
     }
 
-    // Function to close a modal
     function closeModal(modal, modalContent) {
-        // Animate out
         modalContent.classList.add('scale-95', 'opacity-0');
         modalContent.classList.remove('scale-100', 'opacity-100');
         modal.classList.remove('opacity-100');
-        
-        // Hide after animation (300ms)
         setTimeout(() => {
             modal.classList.add('hidden');
         }, 300);
     }
-
     
     // --- Attach Listeners for Report Modal ---
-    reportButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        openModal(reportModal, reportModalContent);
-    });
-
-    closeReportModalButton.addEventListener('click', () => closeModal(reportModal, reportModalContent));
-    cancelReportModalButton.addEventListener('click', () => closeModal(reportModal, reportModalContent));
+    if (reportButton) {
+        reportButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!reportButton.disabled) openModal(reportModal, reportModalContent);
+        });
+    }
+    if (closeReportModalButton) closeReportModalButton.addEventListener('click', () => closeModal(reportModal, reportModalContent));
+    if (cancelReportModalButton) cancelReportModalButton.addEventListener('click', () => closeModal(reportModal, reportModalContent));
     
-    reportModal.addEventListener('click', (e) => {
-        if (e.target === reportModal) {
-            closeModal(reportModal, reportModalContent);
-        }
-    });
+    if (reportModal) {
+        reportModal.addEventListener('click', (e) => {
+            if (e.target === reportModal) closeModal(reportModal, reportModalContent);
+        });
+    }
 
-    confirmReportButton.addEventListener('click', () => {
-        console.log('Reporting card as lost/stolen...');
-        
-        // --- THIS IS A FRONT-END-ONLY DEMO ---
-        // In a real app, you would send a fetch() request to your Go backend here
-        // to update the card_blocks table and the user's status.
-        
-        // --- Logic Update ---
-        // Disable the "Report" button, but leave "Request Replacement" active.
-        reportButton.disabled = true;
-        reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
-        reportButton.classList.add('opacity-50', 'cursor-not-allowed');
-        
-        // Update the status badge
-        setCardStatus("Blocked");
-        
-        closeModal(reportModal, reportModalContent);
-    });
+    if (confirmReportButton) {
+        confirmReportButton.addEventListener('click', () => {
+            updateCardStatusAPI('lost', () => {
+                reportButton.disabled = true;
+                reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
+                reportButton.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                setCardStatus("Lost");
+                closeModal(reportModal, reportModalContent);
+            });
+        });
+    }
 
-    
     // --- Attach Listeners for Replacement Modal ---
-    replacementButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        openModal(replacementModal, replacementModalContent);
-    });
+    if (replacementButton) {
+        replacementButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!replacementButton.disabled) openModal(replacementModal, replacementModalContent);
+        });
+    }
 
-    closeReplacementModalButton.addEventListener('click', () => closeModal(replacementModal, replacementModalContent));
-    cancelReplacementModalButton.addEventListener('click', () => closeModal(replacementModal, replacementModalContent));
+    if (closeReplacementModalButton) closeReplacementModalButton.addEventListener('click', () => closeModal(replacementModal, replacementModalContent));
+    if (cancelReplacementModalButton) cancelReplacementModalButton.addEventListener('click', () => closeModal(replacementModal, replacementModalContent));
     
-    replacementModal.addEventListener('click', (e) => {
-        if (e.target === replacementModal) {
-            closeModal(replacementModal, replacementModalContent);
-        }
-    });
+    if (replacementModal) {
+        replacementModal.addEventListener('click', (e) => {
+            if (e.target === replacementModal) closeModal(replacementModal, replacementModalContent);
+        });
+    }
 
-    confirmReplacementButton.addEventListener('click', () => {
-        console.log('Requesting new card...');
-        
-        // --- THIS IS A FRONT-END-ONLY DEMO ---
-        // In a real app, you would send a fetch() request to your Go backend here
-        // to deduct the fee and log the replacement.
-        
-        // --- Logic Update ---
-        // Disable BOTH buttons since a replacement has been requested.
-        reportButton.disabled = true;
-        reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
-        reportButton.classList.add('opacity-50', 'cursor-not-allowed');
-        
-        replacementButton.disabled = true;
-        replacementButton.textContent = 'Replacement Requested';
-        replacementButton.classList.add('opacity-50', 'cursor-not-allowed');
-        
-        // Update the status badge
-        setCardStatus("Replaced");
-        
-        closeModal(replacementModal, replacementModalContent);
-    });
-
+    if (confirmReplacementButton) {
+        confirmReplacementButton.addEventListener('click', () => {
+            // "Request Replacement will turn the card into status 'lost'"
+            updateCardStatusAPI('lost', () => {
+                reportButton.disabled = true;
+                reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
+                reportButton.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                replacementButton.disabled = true;
+                replacementButton.textContent = 'Replacement Requested';
+                replacementButton.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                setCardStatus("Lost");
+                closeModal(replacementModal, replacementModalContent);
+            });
+        });
+    }
 
     // --- Card Status Badge Logic ---
     function setCardStatus(status) {
-        // Clear all existing color classes
-        cardStatusBadge.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800', 'bg-gray-100', 'text-gray-800');
+        if (!cardStatusBadge) return;
+        cardStatusBadge.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800', 'bg-gray-100', 'text-gray-800', 'bg-green-500', 'bg-red-500', 'bg-yellow-500', 'text-white');
+        cardStatusBadge.className = "px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm";
 
-        switch (status) {
-            case 'Active':
-                cardStatusBadge.classList.add('bg-green-100', 'text-green-800');
-                cardStatusBadge.textContent = 'Active';
-                break;
-            case 'Blocked':
-            case 'Stolen':
-            case 'Lost':
-                cardStatusBadge.classList.add('bg-red-100', 'text-red-800');
-                cardStatusBadge.textContent = 'Blocked';
-                break;
-            case 'Replaced':
-            case 'Inactive':
-                cardStatusBadge.classList.add('bg-yellow-100', 'text-yellow-800');
-                cardStatusBadge.textContent = 'Inactive';
-                break;
-            default:
-                cardStatusBadge.classList.add('bg-gray-100', 'text-gray-800');
-                cardStatusBadge.textContent = 'Unknown';
+        const lowerStatus = status.toLowerCase();
+        if (lowerStatus === 'active') {
+            cardStatusBadge.classList.add('bg-green-500', 'text-white');
+            cardStatusBadge.textContent = 'Active';
+        } else if (lowerStatus === 'blocked' || lowerStatus === 'lost' || lowerStatus === 'stolen') {
+            cardStatusBadge.classList.add('bg-red-500', 'text-white');
+            cardStatusBadge.textContent = status; // Keep original casing
+        } else {
+            cardStatusBadge.classList.add('bg-yellow-500', 'text-white');
+            cardStatusBadge.textContent = status;
         }
     }
 
-    // --- This function simulates fetching the user's card status from the backend ---
+    // --- Initial fetch to set the toggle state properly ---
     function fetchCardStatus() {
-        // --- FRONTEND-ONLY DEMO ---
-        // In a real app, you would make a fetch() call to your Go backend here,
-        // get the user's real card status from the 'users' table,
-        // and then call setCardStatus() with the result.
-        
-        // For this demo, we'll just set it to "Active".
-        const currentDemoStatus = "Active"; // You can change this to "Blocked" to test
-        setCardStatus(currentDemoStatus);
+        if (!userId) return;
+        fetch(`/v1/user/${encodeURIComponent(userId)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data) return;
+                const status = data.card_status || "Active";
+                
+                // If it's already blocked, sync the lock toggle visually
+                if (status.toLowerCase() === "blocked") {
+                    isLocked = true;
+                    if (toggle) {
+                        toggle.classList.remove("bg-gray-200");
+                        toggle.classList.add("bg-blue-600");
+                        if (knob) {
+                            knob.classList.remove("translate-x-1");
+                            knob.classList.add("translate-x-6");
+                        }
+                    }
+                    if (overlay) {
+                        overlay.classList.remove("hidden", "opacity-0");
+                        overlay.classList.add("opacity-100");
+                    }
+                }
 
-        // Also, update the button states based on the fetched status
-        if (currentDemoStatus === "Blocked" || currentDemoStatus === "Replaced" || currentDemoStatus === "Inactive") {
-             reportButton.disabled = true;
-             reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
-             reportButton.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-        if (currentDemoStatus === "Replaced") {
-            replacementButton.disabled = true;
-            replacementButton.textContent = 'Replacement Requested';
-            replacementButton.classList.add('opacity-50', 'cursor-not-allowed');
-        }
+                // If it's lost, disable buttons
+                if (status.toLowerCase() === "lost") {
+                    if (reportButton) {
+                        reportButton.disabled = true;
+                        reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
+                        reportButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    if (replacementButton) {
+                        replacementButton.disabled = true;
+                        replacementButton.textContent = 'Replacement Requested';
+                        replacementButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching initial status", err));
     }
 
-    // --- Run the functions on page load ---
     fetchCardStatus();
 
 });

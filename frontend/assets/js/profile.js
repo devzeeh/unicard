@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Profile page script loaded.");
 
-    // --- Profile Edit Elements ---
+    const username = document.body.dataset.username;
+
+    // --- Profile Edit Elements (Personal Info) ---
     const editProfileBtn = document.getElementById('edit-profile-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const saveProfileBtn = document.getElementById('save-profile-btn');
@@ -11,6 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (editProfileBtn && cancelEditBtn && profileActions && profileView && profileEditForm && saveProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
+            document.getElementById('full_name').value = document.getElementById('profile-view-name').innerText.trim();
+            document.getElementById('username').value = document.getElementById('profile-view-username').innerText.trim();
+
             profileView.classList.add('hidden');
             profileEditForm.classList.remove('hidden');
             editProfileBtn.classList.add('hidden');
@@ -25,176 +30,116 @@ document.addEventListener("DOMContentLoaded", function () {
             editProfileBtn.classList.remove('hidden');
         });
 
-        saveProfileBtn.addEventListener('click', (e) => {
+        saveProfileBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            
-            // In a real app, send fetch() request here
             const newName = document.getElementById('full_name').value;
+            const newUsername = document.getElementById('username').value;
+
+            try {
+                const response = await fetch(`/u/${username}/profile/edit`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: newName,
+                        username: newUsername
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.message || 'Failed to update profile');
+                    return;
+                }
+
+                if (newUsername && newUsername !== username) {
+                    window.location.href = `/u/${encodeURIComponent(newUsername)}`;
+                    return;
+                }
+
+                document.getElementById('profile-view-name').innerText = newName;
+                document.getElementById('profile-view-username').innerText = newUsername;
+
+                profileEditForm.classList.add('hidden');
+                profileView.classList.remove('hidden');
+                profileActions.classList.add('hidden');
+                editProfileBtn.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('Profile update error:', err);
+                alert('Network error, please try again.');
+            }
+        });
+    }
+
+    // --- Contact Edit Elements (Contact Info) ---
+    const editContactBtn = document.getElementById('edit-contact-btn');
+    const cancelContactBtn = document.getElementById('cancel-contact-edit-btn');
+    const saveContactBtn = document.getElementById('save-contact-btn');
+    const contactActions = document.getElementById('contact-edit-actions');
+    const contactView = document.getElementById('contact-details-view');
+    const contactEditForm = document.getElementById('contact-details-edit');
+
+    if (editContactBtn && cancelContactBtn && contactActions && contactView && contactEditForm && saveContactBtn) {
+        editContactBtn.addEventListener('click', () => {
+            document.getElementById('email').value = document.getElementById('profile-view-email').innerText.trim();
+            document.getElementById('phone').value = document.getElementById('profile-view-phone').innerText.trim();
+
+            contactView.classList.add('hidden');
+            contactEditForm.classList.remove('hidden');
+            editContactBtn.classList.add('hidden');
+            contactActions.classList.remove('hidden');
+        });
+
+        cancelContactBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            contactEditForm.classList.add('hidden');
+            contactView.classList.remove('hidden');
+            contactActions.classList.add('hidden');
+            editContactBtn.classList.remove('hidden');
+        });
+
+        saveContactBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
             const newEmail = document.getElementById('email').value;
             const newPhone = document.getElementById('phone').value;
 
-            // Since dashboard.js manages the span values via ID, we just update the text content of the spans
-            const nameSpan = document.getElementById('profile-view-name');
-            const emailSpan = document.getElementById('profile-view-email');
-            const phoneSpan = document.getElementById('profile-view-phone');
-            
-            if (nameSpan) nameSpan.innerText = newName;
-            if (emailSpan) emailSpan.innerText = newEmail;
-            if (phoneSpan) phoneSpan.innerText = newPhone;
+            try {
+                const response = await fetch(`/u/${username}/profile/edit`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: newEmail,
+                        phone_number: newPhone
+                    })
+                });
 
-            profileEditForm.classList.add('hidden');
-            profileView.classList.remove('hidden');
-            profileActions.classList.add('hidden');
-            editProfileBtn.classList.remove('hidden');
-        });
-    }
+                const result = await response.json();
 
-    // --- Change Password Elements ---
-    const passwordForm = document.getElementById('change-password-form');
-    const newPasswordInput = document.getElementById('new_password');
-    const confirmPasswordInput = document.getElementById('confirm_password');
-    const passwordSubmitBtn = document.getElementById('change-password-btn');
-    const passwordErrorMsg = document.getElementById('password-error-message');
-    
-    // Checklist elements
-    const checklist = document.getElementById('password-checklist');
-    const lengthCheck = document.getElementById('length-check');
-    const caseCheck = document.getElementById('case-check');
-    const numCheck = document.getElementById('num-check');
-    const matchCheck = document.getElementById('match-check');
+                if (!result.success) {
+                    alert(result.message || 'Failed to update contact info');
+                    return;
+                }
+                
+                alert(result.message); // Will show success or "check email to verify"
 
-    // Regex for validation
-    const hasLower = new RegExp(/[a-z]/);
-    const hasUpper = new RegExp(/[A-Z]/);
-    const hasNumber = new RegExp(/[0-9]/);
+                if (newEmail !== document.getElementById('profile-view-email').innerText.trim()) {
+                    // Force refresh to fetch dashboard data and show pending email
+                    window.location.reload();
+                    return;
+                }
 
-    // Helper to update checklist items
-    function updateChecklistItem(checkElement, isValid) {
-        if (!checkElement) return;
-        const icon = checkElement.querySelector('i');
-        if (isValid) {
-            checkElement.classList.add('valid');
-            icon.classList.remove('fa-times-circle', 'text-red-500');
-            icon.classList.add('fa-check-circle', 'text-green-600');
-        } else {
-            checkElement.classList.remove('valid');
-            icon.classList.remove('fa-check-circle', 'text-green-600');
-            icon.classList.add('fa-times-circle', 'text-red-500');
-        }
-    }
+                document.getElementById('profile-view-phone').innerText = newPhone;
 
-    // Main validation function
-    function validatePasswordForm() {
-        const password = newPasswordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
+                contactEditForm.classList.add('hidden');
+                contactView.classList.remove('hidden');
+                contactActions.classList.add('hidden');
+                editContactBtn.classList.remove('hidden');
 
-        if (password.length > 0 || confirmPassword.length > 0) {
-            checklist.classList.remove('hidden');
-        } else {
-            checklist.classList.add('hidden');
-        }
-
-        const isLengthValid = password.length >= 8;
-        const isCaseValid = hasLower.test(password) && hasUpper.test(password);
-        const isNumValid = hasNumber.test(password);
-        const passwordsMatch = password === confirmPassword && password.length > 0;
-
-        updateChecklistItem(lengthCheck, isLengthValid);
-        updateChecklistItem(caseCheck, isCaseValid);
-        updateChecklistItem(numCheck, isNumValid);
-        updateChecklistItem(matchCheck, passwordsMatch);
-
-        const allValid = isLengthValid && isCaseValid && isNumValid && passwordsMatch;
-        passwordSubmitBtn.disabled = !allValid;
-    }
-
-    if (passwordForm) {
-        newPasswordInput.addEventListener('input', validatePasswordForm);
-        confirmPasswordInput.addEventListener('input', validatePasswordForm);
-
-        passwordForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (passwordSubmitBtn.disabled) {
-                passwordErrorMsg.textContent = 'Please fix the errors in the password checklist.';
-                passwordErrorMsg.classList.remove('hidden');
-            } else {
-                // --- FRONTEND-ONLY DEMO ---
-                // In a real app, you'd send a fetch() request to your backend
-                // to verify the *current* password and set the new one.
-                passwordErrorMsg.classList.add('hidden');
-                alert('Password changed successfully!');
-                passwordForm.reset();
-                checklist.classList.add('hidden');
-                passwordSubmitBtn.disabled = true;
+            } catch (err) {
+                console.error('Contact info update error:', err);
+                alert('Network error, please try again.');
             }
         });
     }
-
-    // --- Delete Account Modal Elements ---
-    const deleteAccountBtn = document.getElementById('delete-account-btn');
-    const deleteModal = document.getElementById('delete-account-modal');
-    const deleteModalContent = document.getElementById('delete-modal-content');
-    const deleteModalCloseBtn = document.getElementById('delete-modal-close-button');
-    const deleteModalCancelBtn = document.getElementById('delete-modal-cancel-button');
-    const deleteModalConfirmBtn = document.getElementById('delete-modal-confirm-button');
-    const deleteConfirmText = document.getElementById('delete-confirm-text');
-
-    if (deleteAccountBtn && deleteModal && deleteModalContent && deleteModalCloseBtn && deleteModalCancelBtn && deleteModalConfirmBtn && deleteConfirmText) {
-        
-        function openDeleteModal() {
-            deleteModal.classList.remove('hidden');
-            setTimeout(() => {
-                deleteModal.classList.add('opacity-100');
-                deleteModalContent.classList.add('scale-100', 'opacity-100');
-                deleteModalContent.classList.remove('scale-95', 'opacity-0');
-            }, 10);
-        }
-
-        function closeDeleteModal() {
-            deleteModalContent.classList.add('scale-95', 'opacity-0');
-            deleteModalContent.classList.remove('scale-100', 'opacity-1ci00');
-            deleteModal.classList.add('hidden', 'opacity-0');
-            
-            // Reset the form in the modal
-            deleteConfirmText.value = '';
-            deleteModalConfirmBtn.disabled = true;
-            deleteModalConfirmBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-            deleteModalConfirmBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            
-            setTimeout(() => {
-                deleteModal.classList.add('hidden');
-            }, 300);
-        }
-
-        // Check if user has typed "DELETE"
-        deleteConfirmText.addEventListener('input', () => {
-            if (deleteConfirmText.value === 'DELETE') {
-                deleteModalConfirmBtn.disabled = false;
-                deleteModalConfirmBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                deleteModalConfirmBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-            } else {
-                deleteModalConfirmBtn.disabled = true;
-                deleteModalConfirmBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                deleteModalConfirmBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            }
-        });
-
-        deleteAccountBtn.addEventListener('click', openDeleteModal);
-        deleteModalCloseBtn.addEventListener('click', closeDeleteModal);
-        deleteModalCancelBtn.addEventListener('click', closeDeleteModal);
-        
-        deleteModal.addEventListener('click', (e) => {
-            if (e.target === deleteModal) {
-                closeDeleteModal();
-            }
-        });
-
-        deleteModalConfirmBtn.addEventListener('click', () => {
-            // --- FRONTEND-ONLY DEMO ---
-            // In a real app, send fetch() request to delete the user
-            alert('Account deleted. Redirecting...');
-            window.location.href = "paycard_login.html";
-        });
-    }
-
 });

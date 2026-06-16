@@ -1,5 +1,7 @@
 package structure
 
+import "github.com/shopspring/decimal"
+
 // CardData struct represents the data required to create a new card
 type CardData struct {
 	CardUID    string  `json:"card_uid" db:"card_uid" validate:"required"`
@@ -63,8 +65,8 @@ type DashboardUser struct {
 	UserID             string        `db:"user_id" json:"user_id,omitempty"`
 	Username           string        `db:"username" json:"username"`
 	Name               string        `db:"name" json:"name"`
-	Balance            float64       `db:"balance" json:"balance"`
-	LoyaltyPoints      int           `db:"loyalty_points" json:"loyalty_points"`
-	AccountType        string        `db:"account_type" json:"account_type"`
+	Balance            float64         `db:"balance" json:"balance"`
+	LoyaltyPoints      decimal.Decimal `db:"loyalty_points" json:"loyalty_points"`
+	AccountType        string          `db:"account_type" json:"account_type"`
 	RecentTransactions []Transaction `json:"transactions"` // Add recent transactions to the dashboard response
 }

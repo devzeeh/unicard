@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shopspring/decimal"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
@@ -127,7 +128,9 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 	}
 
 	serviceFee := req.Amount * (commissionRate / 100.0)
-	loyaltyPoints := req.Amount * 0.002 // 0.2% reward points
+
+	amountDec := decimal.NewFromFloat(req.Amount)
+	loyaltyPoints := amountDec.Mul(decimal.NewFromFloat(0.002))
 
 	// 3. Process Transaction (Start TX)
 	tx, err := h.DB.Begin()
@@ -178,9 +181,9 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 	}
 
 	_, err = tx.Exec(`
-		INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, transactionID, req.CardNumber, req.MerchantID, terminalID, dbTransactionType, req.Amount, serviceFee, processedBy)
+		INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, points_earned) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, transactionID, req.CardNumber, req.MerchantID, terminalID, dbTransactionType, req.Amount, serviceFee, processedBy, loyaltyPoints)
 
 	if err != nil {
 		// If `merchant_id` is not nullable and causes error or id doesn't auto-increment

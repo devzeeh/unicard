@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <script src="/frontend/assets/style/tailwind.js"></script>
+    <script src="/assets/style/tailwind.js"></script>
 </head>
 
 <body class="font-sans antialiased text-gray-900 bg-gray-100">
@@ -22,9 +22,11 @@
         <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
             <!-- Header -->
             <header class="flex items-center justify-end h-16 px-6 py-4 bg-white border-b border-gray-200">
-                
+
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">...</span></span>
+                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
+                            class="ml-1"><span
+                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
@@ -37,18 +39,32 @@
                         <div id="profile-dropdown-menu"
                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                             <div class="py-1">
-                                <a href="/u/{{.Username}}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                                <a href="/u/{{.Username}}"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
                                     <span class="ml-3">Profile</span>
                                 </a>
-                                <a href="/u/{{.Username}}/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.99l1.004.828c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                <a href="/u/{{.Username}}/settings"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                                    </svg>
                                     <span class="ml-3">Settings</span>
                                 </a>
                                 <div class="border-t border-gray-100"></div>
                                 <button id="profile-logout-button"
-                                    class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+                                    class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                                    </svg>
                                     <span class="ml-3">Sign Out</span>
                                 </button>
                             </div>
@@ -67,24 +83,40 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
 
                         <!-- Card 1: Current Balance -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
+                        <div
+                            class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
                             <p class="text-sm font-medium text-gray-500 mb-2">Available Balance</p>
-                            <p class="text-3xl font-bold text-gray-900 tracking-tight">₱<span id="user-balance">0.00</span></p>
+                            <p class="text-3xl font-bold text-gray-900 tracking-tight flex items-center h-9">₱<span
+                                    id="user-balance" class="ml-1"><span
+                                        class="inline-block h-8 w-24 bg-gray-200 animate-pulse rounded"></span></span>
+                            </p>
                         </div>
 
                         <!-- Card 2: Loyalty Points -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
+                        <div
+                            class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
                             <div class="flex items-center justify-between mb-2">
                                 <p class="text-sm font-medium text-gray-500">Loyalty Points</p>
-                                <span class="text-[10px] font-semibold tracking-wider uppercase bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Cashback</span>
+                                <span
+                                    class="text-[10px] font-semibold tracking-wider uppercase bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Cashback</span>
                             </div>
-                            <p class="text-3xl font-bold text-emerald-600 tracking-tight">₱<span id="user-loyalty-points">0.00</span></p>
+                            <p class="text-3xl font-bold text-emerald-600 tracking-tight flex items-center h-9">₱<span
+                                    id="user-loyalty-points" class="ml-1"><span
+                                        class="inline-block h-8 w-24 bg-emerald-100 animate-pulse rounded"></span></span>
+                            </p>
                         </div>
 
                         <!-- Card 3: Account Type -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
-                            <p class="text-sm font-medium text-gray-500 mb-2">Account Type</p>
-                            <p class="text-3xl font-bold text-blue-600 tracking-tight capitalize mt-1" id="user-account-type">Loading...</p>
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-sm font-medium text-gray-500">Account Type</p>
+                                <span id="card-status-badge" class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm bg-gray-100 text-gray-500">
+                                    <span class="inline-block h-2 w-10 bg-gray-200 animate-pulse rounded"></span>
+                                </span>
+                            </div>
+                            <p class="text-3xl font-bold text-blue-600 tracking-tight capitalize mt-1 h-9 flex items-center" id="user-account-type">
+                                <span class="inline-block h-8 w-32 bg-blue-100 animate-pulse rounded"></span>
+                            </p>
                         </div>
                     </div>
 
@@ -93,33 +125,83 @@
                         <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col">
                             <div class="flex justify-between items-center mb-4">
                                 <h2 class="text-xl font-bold text-gray-900">Recent Transactions</h2>
-                                <a href="/u/{{.Username}}/transaction" class="text-sm font-semibold text-blue-600 hover:text-blue-500 transition duration-150 flex items-center whitespace-nowrap">
+                                <a href="/u/{{.Username}}/transaction"
+                                    class="text-sm font-semibold text-blue-600 hover:text-blue-500 transition duration-150 flex items-center whitespace-nowrap">
                                     See all
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
                                 </a>
                             </div>
                             <div class="overflow-x-auto border border-gray-100 rounded-xl">
                                 <table class="min-w-full table-fixed divide-y divide-gray-100">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="w-1/4 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col"
+                                                class="w-1/4 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Date
                                             </th>
-                                            <th scope="col" class="w-1/3 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col"
+                                                class="w-1/3 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Description
                                             </th>
-                                            <th scope="col" class="w-1/6 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col"
+                                                class="w-1/6 px-6 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Type
                                             </th>
-                                            <th scope="col" class="w-1/4 px-6 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <th scope="col"
+                                                class="w-1/4 px-6 py-3.5 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Amount
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody id="transactions-table-body" class="divide-y divide-gray-150 bg-white">
+                                    <tbody id="recent-transactions-table-body"
+                                        class="divide-y divide-gray-150 bg-white">
+                                        <!-- Skeleton Row 1 -->
                                         <tr>
-                                            <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-500">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="mr-2 text-blue-500 animate-spin"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading transactions...
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                                            </td>
+                                        </tr>
+                                        <!-- Skeleton Row 2 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                                            </td>
+                                        </tr>
+                                        <!-- Skeleton Row 3 -->
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
+                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -136,37 +218,57 @@
     <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black bg-opacity-50 hidden md:hidden"></div>
 
     <!-- Logout Confirmation Modal -->
-    <div id="logout-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
-        <div id="../..logout-modal-content" class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
-            <div class="flex items-center space-x-3 text-red-600">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-2xl"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
-                <h3 class="text-lg font-bold text-gray-900">Confirm Logout</h3>
+    <div id="logout-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- Modal Content -->
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+            id="logout-modal-content">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between">
+                <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
+                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
             </div>
-            <p class="mt-4 text-sm text-gray-600">
-                Are you sure you want to log out of your UniCard account?
-            </p>
-            <div class="mt-6 flex justify-end space-x-3">
-                <button id="modal-cancel-button" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <!-- Modal Body -->
+            <div class="mt-4">
+                <p class="text-base text-gray-600">
+                    Are you sure you want to log out of your PayCard account?
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="modal-cancel-button"
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     Cancel
                 </button>
-                <button id="modal-confirm-logout-button" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <button id="modal-confirm-logout-button"
+                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
                     Logout
                 </button>
             </div>
-            <!-- X Close Button -->
-            <button id="modal-close-button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-            </button>
         </div>
     </div>
 
     <!-- Transaction Details Modal -->
-    <div id="txnModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
-        <div id="txnModalContent" class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
-            <div class="flex items-center justify-between border-b pb-4 mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Transaction Details</h3>
-                <button id="closeTxnModalBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-xl"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+    <div id="txnModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
+        <div id="txnModalContent"
+            class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
+            <div class="flex items-start justify-between border-b pb-4 mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Transaction Details</h3>
+                    <p id="modalTxnDesc" class="text-sm text-gray-500 mt-1"></p>
+                </div>
+                <button id="closeTxnModalBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="text-xl">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
                 </button>
             </div>
             <div class="space-y-4 text-sm text-gray-700">
@@ -174,13 +276,15 @@
                     <span class="font-medium text-gray-500">Transaction ID</span>
                     <span id="modalTxnId" class="font-semibold text-gray-900"></span>
                 </div>
-                <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Merchant Name</span>
-                    <span id="modalTxnMerchant" class="font-semibold text-gray-900"></span>
-                </div>
-                <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Terminal ID</span>
-                    <span id="modalTxnTerminal" class="font-semibold text-gray-900"></span>
+                <div id="modalTxnMerchantRow" class="flex justify-between border-b border-gray-100 pb-2">
+                    <div>
+                        <div class="font-medium text-gray-500">Merchant</div>
+                        <div id="modalTxnTerminalLabel" class="font-medium text-gray-500 text-xs mt-0.5">Terminal</div>
+                    </div>
+                    <div class="text-right">
+                        <div id="modalTxnMerchant" class="font-semibold text-gray-900"></div>
+                        <div id="modalTxnTerminalId" class="text-xs text-gray-500 mt-0.5"></div>
+                    </div>
                 </div>
                 <div class="flex justify-between border-b border-gray-100 pb-2">
                     <span class="font-medium text-gray-500">Date & Time</span>
@@ -191,12 +295,21 @@
                     <span id="modalTxnType" class="font-semibold text-gray-900"></span>
                 </div>
                 <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="font-medium text-gray-500">Amount</span>
-                    <span id="modalTxnAmount" class="font-bold text-gray-900 text-lg"></span>
+                    <span class="font-medium text-gray-500">Service Fee</span>
+                    <span id="modalTxnFee" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Points Earned</span>
+                    <span id="modalTxnPoints" class="font-semibold text-emerald-600"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Total Amount</span>
+                    <span id="modalTxnTotal" class="font-bold text-gray-900 text-lg"></span>
                 </div>
             </div>
             <div class="mt-6 flex justify-end">
-                <button id="closeTxnModalBottomBtn" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <button id="closeTxnModalBottomBtn"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Close
                 </button>
             </div>
