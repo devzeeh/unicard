@@ -10,15 +10,20 @@ import (
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
-	"github.com/stripe/stripe-go/v85"
-	"github.com/stripe/stripe-go/v85/checkout/session"
+	"github.com/xendit/xendit-go"
+	"github.com/xendit/xendit-go/invoice"
 )
 
+// struct for topup request only, for api call not for saving in db
 type TopUpRequest struct {
 	CardNumber string  `json:"card_number"`
 	Amount     float64 `json:"amount"`
 }
 
+// struct for topup record, for saving in db and for webhook callback processing
+// note the fields that match the db schema
+// the external_id is encoded in the external_id field of the xendit invoice
+// this is necessary because xendit v1 doesn't have a metadata field
 type TopUpRecord struct {
 	TopupID        string  `json:"topup_id" db:"topup_id"`
 	CardNumber     string  `json:"card_number" db:"card_number"`
@@ -28,9 +33,11 @@ type TopUpRecord struct {
 	PaymentMethod  string  `json:"payment_method" db:"payment_method"`
 }
 
+// TopUpView displays the top-up page for a user
 func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TopUp view is running...")
 
+	// get username from url parameter
 	username := r.PathValue("username")
 	data := struct {
 		Username string
@@ -41,9 +48,13 @@ func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	h.Tpl.ExecuteTemplate(w, "customer_topup.html", data)
 }
 
-func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Request) {
+// create xendit invoice - Payment Methods Options
+// CREDIT_CARD, QR_CODE, EWALLET
+func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
+	// get username from url parameter
 	username := r.PathValue("username")
 
+	// get request body
 	var req TopUpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
@@ -52,6 +63,8 @@ func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Req
 		})
 		return
 	}
+
+	// check if amount is at least 50 pesos
 	if req.Amount < 50 {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
@@ -70,6 +83,8 @@ func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Req
 	`, username).Scan(&cardNumber, &email)
 
 	if err != nil {
+		// print error and return
+		log.Println("Failed to find card for user:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to find card for user",
@@ -77,59 +92,43 @@ func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Stripe takes amount in cents/lowest denomination. For PHP, it's centavos.
-	topupCentavos := int64(req.Amount * 100) // ex: 100 -> 10000
-	feeCentavos := int64(15 * 100)           // 15 pesos for fee
+	// set fee amount and total amount
+	topupAmount := req.Amount
+	feeAmount := 15.00
+	totalAmount := topupAmount + feeAmount
+
+	// set domain
 	domain := "http://" + os.Getenv("SERVER_PORT") + os.Getenv("PORT")
 	// Fallback if domain is malformed
 	if domain == "http://" {
-		domain = "http://localhost:3000"
+		domain = "http://127.0.0.1:3000"
 	}
-	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
-	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{
-			"card",
-		}),
-		Metadata: map[string]string{
-			"card_number":     cardNumber, // Use securely fetched card number from DB!
-			"base_amount":     fmt.Sprintf("%.2f", req.Amount),
-			"convenience_fee": "15.00",
-		},
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("php"),
-					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name:        stripe.String("Unicard Top-Up"),
-						Description: stripe.String("Top up your unicard with stripe payment"),
-					},
-					UnitAmount: stripe.Int64(topupCentavos),
-				},
-				Quantity: stripe.Int64(1),
-			},
-			{
-				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("php"),
-					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name:        stripe.String("Convienence Fee"),
-						Description: stripe.String("15 peso convienence fee"),
-					},
-					UnitAmount: stripe.Int64(feeCentavos),
-				},
-				Quantity: stripe.Int64(1),
-			},
-		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(domain + "/u/" + username + "/dashboard"),
-		CancelURL:  stripe.String(domain + "/u/" + username + "/topup"),
+
+	// set xendit secret key
+	xendit.Opt.SecretKey = os.Getenv("XENDIT_SECRET_KEY")
+
+	// Encode metadata into ExternalID since Xendit v1 doesn't have metadata field on CreateParams
+	// Format: TOPUP{CardNumber}{TopupAmount}{FeeAmount}{Timestamp}
+	externalID := fmt.Sprintf("TOPUP%s%.2f%.2f%d", cardNumber, topupAmount, feeAmount, time.Now().UnixNano())
+
+	// create xendit invoice struct with parameters
+	data := invoice.CreateParams{
+		ExternalID:         externalID,
+		Amount:             totalAmount,
+		PayerEmail:         email,
+		Description:        fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber),
+		SuccessRedirectURL: domain + "/u/" + username + "/dashboard",
+		FailureRedirectURL: domain + "/u/" + username + "/topup",
+		PaymentMethods:     []string{"CREDIT_CARD", "EWALLET", "QR_CODE"},
+		Currency:           "PHP",
 	}
 
 	// creating the checkout session
-	s, err := session.New(params)
+	resp, xErr := invoice.Create(&data)
 
 	// Handle error if session creation fails
-	if err != nil {
-		log.Println("Failed to create checkout session:", err)
+	if xErr != nil {
+		log.Println("Failed to create checkout session:", xErr)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to create checkout session",
@@ -138,13 +137,15 @@ func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Req
 	}
 
 	// Handle success case
+	// return the checkout session url to the frontend
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Checkout session created successfully",
-		Data:    map[string]string{"url": s.URL},
+		Data:    map[string]string{"url": resp.InvoiceURL},
 	})
 
-	log.Println("Checkout session created successfully:", s.URL)
+	// log the checkout session url
+	log.Println("Checkout session created successfully:", resp.InvoiceURL)
 }
 
 // save topup tp database
@@ -202,7 +203,7 @@ func (h *Handler) SaveTopUpToDatabase(w http.ResponseWriter, r *http.Request) {
 	// Insert into Spending Ledger (transactions table)
 	// *Note: Adjust 'category' if your enum doesn't include 'top_up'
 	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	// "Stripe" as the merchant_id since this is an internal load, not a retail/Fare purchase
+	// "xendit" as the merchant_id since this is an internal load, not a retail/Fare purchase
 	if _, err := tx.Exec(queryTx, transactionID, req.CardNumber, sql.NullString{}, sql.NullString{}, "topup", req.Amount, req.ConvenienceFee, sql.NullString{}); err != nil {
 		log.Println("Failed to record global transaction:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

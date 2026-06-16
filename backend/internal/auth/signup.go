@@ -8,11 +8,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 	"unicard-go/backend/internal/pkg/account"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	smtp "unicard-go/backend/internal/pkg/smtpbody"
 
 	"github.com/go-playground/validator/v10"
+	"gopkg.in/gomail.v2"
 )
 
 const (
@@ -59,8 +63,58 @@ type CheckDetailsRequest struct {
 	CardNumber string `json:"card_number"`
 }*/
 
-// CheckDetailsHandler checks if email and phone are available
-func (h *Handler) CheckDetailsHandler(w http.ResponseWriter, r *http.Request) {
+func sendSignupEmailOTP(email, name, otp string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := 587
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpSender := os.Getenv("SMTP_SENDER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Verify Your Email Address")
+
+	htmlBody := fmt.Sprintf(smtp.SignupOTPCode(), name, otp)
+	m.SetBody("text/html", htmlBody)
+
+	d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+	return d.DialAndSend(m)
+}
+
+func sendWelcomeEmail(email, name string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := 587
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpSender := os.Getenv("SMTP_SENDER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Welcome to Unicard!")
+
+	// Assumes the server is running on localhost:8080 for testing, but ideally this should be an env var
+	appURL := "http://" + os.Getenv("SERVER_PORT") + os.Getenv("PORT")
+	if appURL == "" {
+		appURL = "http://localhost:3000"
+	}
+
+	htmlBody := fmt.Sprintf(smtp.WelcomeEmail(), name, appURL)
+	m.SetBody("text/html", htmlBody)
+
+	d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+	err := d.DialAndSend(m)
+	if err != nil {
+		log.Printf("Failed to send welcome email to %s: %v", email, err)
+	} else {
+		log.Printf("Welcome email sent to %s", email)
+	}
+	return err
+}
+
+// SignupSendOTP checks if email and phone are available, then sends an OTP
+func (h *Handler) SignupSendOTP(w http.ResponseWriter, r *http.Request) {
 	var req CheckDetailsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
@@ -100,15 +154,72 @@ func (h *Handler) CheckDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	if exists {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Invalid phone number",
+			Message: "Phone number already registered",
 			Field:   "phone",
+		})
+		return
+	}
+
+	// Details are valid, generate and send OTP
+	otp := generateOTP() // Reusing generateOTP from forgotPassword.go
+	otpStore[req.Email] = OTPData{
+		OTP:    otp,
+		Expiry: time.Now().Add(5 * time.Minute),
+	}
+
+	// Send the OTP
+	if err := sendSignupEmailOTP(req.Email, "User", otp); err != nil {
+		log.Println("Error sending signup OTP:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to send OTP email",
 		})
 		return
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
-		Message: "Details are valid",
+		Message: "OTP sent successfully to your email",
+	})
+}
+
+type SignupVerifyOTPRequest struct {
+	Email string `json:"email"`
+	OTP   string `json:"otp"`
+}
+
+// SignupVerifyOTP validates the provided OTP
+func (h *Handler) SignupVerifyOTP(w http.ResponseWriter, r *http.Request) {
+	var req SignupVerifyOTPRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid input",
+		})
+		return
+	}
+
+	data, ok := otpStore[req.Email]
+	if !ok || data.OTP != req.OTP {
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Invalid OTP",
+		})
+		return
+	}
+
+	if time.Now().After(data.Expiry) {
+		delete(otpStore, req.Email)
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "OTP expired",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Email successfully verified",
 	})
 }
 
@@ -335,6 +446,12 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Account successfully created! UserID: %s", user.UserID) // moved here
+
+	// Send Welcome Email asynchronously
+	go func() {
+		sendWelcomeEmail(user.Email, user.Name)
+	}()
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Account created successfully!",

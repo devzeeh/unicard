@@ -2,6 +2,10 @@
 .env
 .unknown
 
+# gitgore the compiled file
+*.exe
+
+# gitgore the storage directory
 storage/*
 !storage/.gitkeep
 storage/**/*
