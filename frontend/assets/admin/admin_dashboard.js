@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (merchantsToRender && merchantsToRender.length > 0) {
                         merchantsToRender.forEach(m => {
                             const tr = document.createElement('tr');
-                            tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+                            tr.className = 'hover:bg-blue-50 cursor-pointer transition duration-150';
 
                             tr.onclick = () => {
                                 window.location.href = `/admin/${adminUsername}/merchants/${m.merchant_id}`;
@@ -47,24 +47,24 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
 
                             tr.innerHTML = `
-                                <td class="p-3 whitespace-nowrap max-w-[250px]" title="${m.business_name}">
+                                <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${m.business_name}">
                                     <div class="truncate">
                                         <div class="text-sm font-medium text-gray-900 truncate">${m.business_name}</div>
                                         <div class="text-xs text-gray-500 truncate">ID: ${m.merchant_id}</div>
                                     </div>
                                 </td>
-                                <td class="p-3 capitalize text-sm text-gray-600 max-w-[150px] truncate" title="${m.business_type}">${m.business_type.replace(/_/g, ' ')}</td>
-                                <td class="p-3 whitespace-nowrap max-w-[250px]" title="${m.owner_name} / ${m.business_email}">
+                                <td class="px-6 py-4 capitalize text-sm text-gray-600 max-w-[150px] truncate" title="${m.business_type}">${m.business_type.replace(/_/g, ' ')}</td>
+                                <td class="px-6 py-4 whitespace-nowrap max-w-[250px]" title="${m.owner_name} / ${m.business_email}">
                                     <div class="text-sm text-gray-900 truncate">${m.owner_name}</div>
                                     <div class="text-xs text-gray-500 truncate">${m.business_email}</div>
                                 </td>
-                                <td class="p-3 text-sm text-gray-600">${m.business_phone}</td>
-                                <td class="p-3">
+                                <td class="px-6 py-4 text-sm text-gray-600">${m.business_phone}</td>
+                                <td class="px-6 py-4">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColor} capitalize">
                                         ${m.status.replace(/_/g, ' ')}
                                     </span>
                                 </td>
-                                <td class="p-3 text-gray-500 text-xs">${new Date(m.created_at).toLocaleDateString()}</td>
+                                <td class="px-6 py-4 text-gray-500 text-xs">${new Date(m.created_at).toLocaleDateString()}</td>
                             `;
                             tbody.appendChild(tr);
                         });

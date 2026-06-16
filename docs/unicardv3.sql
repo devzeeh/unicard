@@ -107,17 +107,14 @@ CREATE TABLE transactions (
     terminal_id VARCHAR(50) NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.terminal_id',
     transaction_type ENUM('payment', 'refund', 'reversal', 'topup') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
     amount DECIMAL(10, 2) NOT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
+    points_earned DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Total points earned from the transaction',
     service_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Platform revenue slice collected by UniCard ecosystem engine per tap processing action',
     net_merchant_payout DECIMAL(10, 2) GENERATED ALWAYS AS (amount - service_fee) STORED COMMENT 'Automatically calculated column tracking exactly how much money goes to the merchant after our platform cut',
     processed_by VARCHAR(50) NULL COMMENT 'Public string identifier users.user_id capturing the identity of the physical staff member operating the payment client terminal',
     status ENUM('pending', 'completed', 'failed') DEFAULT 'completed' COMMENT 'Lifecycle state of the transaction for tracking settlement',
     description VARCHAR(255) NULL COMMENT 'Optional human-readable note or system-generated label describing the transaction context',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Cryptographic server node timestamp securing exactly when transaction settlement clearing finalized',
-    FOREIGN KEY (card_number) REFERENCES cards(card_number),
-    -- Fixed: was merchants(user_id), now correctly points to merchants(merchant_id)
-    FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id),
-    FOREIGN KEY (terminal_id) REFERENCES terminals(terminal_id),
-    FOREIGN KEY (processed_by) REFERENCES users(user_id)
+    FOREIGN KEY (card_number) REFERENCES cards(card_number)
 ) COMMENT='High-growth financial master ledger capturing all terminal token taps, transaction classifications, and system fees';
 
 CREATE TABLE top_ups (

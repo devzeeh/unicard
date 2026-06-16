@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (cards.length > 0) {
             cards.forEach(c => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50 cursor-pointer transition duration-150';
+                tr.className = 'hover:bg-blue-50 cursor-pointer transition duration-150';
 
                 // Status badge styling
                 let statusColor = 'bg-gray-100 text-gray-800';
