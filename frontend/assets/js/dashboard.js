@@ -189,6 +189,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Profile Page Specific Elements
                 const profileViewName = document.getElementById("profile-view-name");
                 const profileViewEmail = document.getElementById("profile-view-email");
+                const profileViewPendingEmail = document.getElementById("profile-view-pending-email");
+                const pendingEmailContainer = document.getElementById("pending-email-container");
                 const profileViewPhone = document.getElementById("profile-view-phone");
                 const profileViewUsername = document.getElementById("profile-view-username");
                 const profileEditName = document.getElementById("full_name");
@@ -207,6 +209,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (profileViewName) profileViewName.innerText = data.name || "";
                 if (profileViewEmail) profileViewEmail.innerText = data.email || "";
+                
+                if (pendingEmailContainer && profileViewPendingEmail) {
+                    if (data.pending_email) {
+                        pendingEmailContainer.classList.remove('hidden');
+                        profileViewPendingEmail.innerText = data.pending_email;
+                    } else {
+                        pendingEmailContainer.classList.add('hidden');
+                        profileViewPendingEmail.innerText = "";
+                    }
+                }
+
                 if (profileViewPhone) profileViewPhone.innerText = data.phone || "";
                 if (profileViewUsername) profileViewUsername.innerText = data.username || "";
 
@@ -216,8 +229,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (cardNoEl || cardDetailNumber) {
                     const rawNum = data.card_number || "••••••••••••••••";
-                    const formattedNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
-                    if (cardNoEl) cardNoEl.innerText = formattedNum || "•••• •••• •••• ••••";
+                    let formattedNum;
+                    if (rawNum.length >= 16) {
+                        formattedNum = rawNum.substring(0, 4) + ' •••• •••• ' + rawNum.substring(rawNum.length - 4);
+                    } else {
+                        formattedNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
+                    }
+                    const fullNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
+
+                    if (cardNoEl) {
+                        cardNoEl.innerText = formattedNum;
+                        cardNoEl.setAttribute("data-masked", formattedNum);
+                        cardNoEl.setAttribute("data-full", fullNum);
+                        cardNoEl.setAttribute("data-hidden", "true");
+                    }
                     if (cardDetailNumber) cardDetailNumber.innerText = formattedNum || "•••• •••• •••• ••••";
                 }
                 if (cardHolderEl) {
@@ -229,11 +254,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (cardStatusEl) {
                     const status = data.card_status || "No Card";
-                    cardStatusEl.textContent = status;
+                    const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
+                    cardStatusEl.textContent = displayStatus;
                     cardStatusEl.className = "px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm";
-                    if (status === "Active") {
+                    const lowerStatus = status.toLowerCase();
+                    if (lowerStatus === "active") {
                         cardStatusEl.classList.add("bg-green-500", "text-white");
-                    } else if (status === "Blocked" || status === "Lost" || status === "Expired") {
+                    } else if (lowerStatus === "blocked" || lowerStatus === "lost" || lowerStatus === "expired") {
                         cardStatusEl.classList.add("bg-red-500", "text-white");
                     } else {
                         cardStatusEl.classList.add("bg-yellow-500", "text-white");
@@ -252,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
 
                             tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
-                            tr.onclick = function() {
+                            tr.onclick = function () {
                                 openTxnModal(tx);
                             };
 
@@ -312,24 +339,53 @@ document.addEventListener("DOMContentLoaded", function () {
     if (txnModal && closeTxnModalBtn) {
         closeTxnModalBtn.onclick = closeTxnModal;
         closeTxnModalBottomBtn.onclick = closeTxnModal;
-        txnModal.onclick = function(e) {
+        txnModal.onclick = function (e) {
             if (e.target === txnModal) closeTxnModal();
         };
     }
 
     function openTxnModal(tx) {
         if (!txnModal) return;
-        
+
         document.getElementById("modalTxnId").textContent = tx.transaction_id || 'N/A';
-        document.getElementById("modalTxnMerchant").textContent = tx.description || 'N/A';
-        document.getElementById("modalTxnTerminal").textContent = tx.terminal_id || 'N/A';
         document.getElementById("modalTxnDate").textContent = `${tx.date} at ${tx.time}`;
         document.getElementById("modalTxnType").textContent = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "N/A";
-        
+
+        document.getElementById("modalTxnMerchant").textContent = tx.merchant_name || 'N/A';
+        const terminalIdEl = document.getElementById("modalTxnTerminalId");
+        const terminalLabelEl = document.getElementById("modalTxnTerminalLabel");
+        if (tx.terminal_id && tx.terminal_id !== 'N/A' && tx.terminal_id.trim() !== '') {
+            terminalIdEl.textContent = tx.terminal_id;
+            if (terminalLabelEl) terminalLabelEl.classList.remove("hidden");
+        } else {
+            terminalIdEl.textContent = '';
+            if (terminalLabelEl) terminalLabelEl.classList.add("hidden");
+        }
+
+        document.getElementById("modalTxnFee").textContent = `₱${Number(tx.service_fee || 0).toFixed(2)}`;
+
+        if (tx.points_earned && tx.points_earned > 0) {
+            document.getElementById("modalTxnPoints").textContent = `+${tx.points_earned}`;
+        } else {
+            document.getElementById("modalTxnPoints").textContent = "0";
+        }
+
+        document.getElementById("modalTxnDesc").textContent = tx.description || 'N/A';
+
+        const merchantRow = document.getElementById("modalTxnMerchantRow");
+        if (tx.type && tx.type.toLowerCase() === "topup") {
+            merchantRow.classList.remove("flex");
+            merchantRow.classList.add("hidden");
+        } else {
+            merchantRow.classList.remove("hidden");
+            merchantRow.classList.add("flex");
+        }
+
         const isPayment = tx.type && tx.type.toLowerCase() === "payment";
         const sign = isPayment ? "-" : "+";
         const colorClass = isPayment ? "text-red-600" : "text-green-600";
-        const amtEl = document.getElementById("modalTxnAmount");
+
+        const amtEl = document.getElementById("modalTxnTotal");
         amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
         amtEl.className = `font-bold text-lg ${colorClass}`;
 

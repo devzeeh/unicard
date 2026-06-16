@@ -7,47 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    // --- Update Email ---
-    const updateEmailForm = document.getElementById('update-email-form');
-    const updateEmailBtn = document.getElementById('update-email-btn');
-    const emailErrorMsg = document.getElementById('settings-email-error');
-    const emailSuccessMsg = document.getElementById('settings-email-success');
-
-    if (updateEmailForm) {
-        updateEmailForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            emailErrorMsg.classList.add('hidden');
-            emailSuccessMsg.classList.add('hidden');
-            
-            const newEmail = document.getElementById('settings-email').value;
-
-            try {
-                const response = await fetch(`/u/${username}/profile/edit`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: newEmail })
-                });
-
-                const result = await response.json();
-
-                if (!result.success) {
-                    emailErrorMsg.textContent = result.message || 'Failed to update email.';
-                    emailErrorMsg.classList.remove('hidden');
-                    return;
-                }
-
-                emailSuccessMsg.textContent = 'Email updated successfully!';
-                emailSuccessMsg.classList.remove('hidden');
-                
-            } catch (err) {
-                console.error('Email update error:', err);
-                emailErrorMsg.textContent = 'Network error, please try again.';
-                emailErrorMsg.classList.remove('hidden');
-            }
-        });
-    }
-
     // --- Update Password ---
     const changePasswordForm = document.getElementById('settings-change-password-form');
     const passwordErrorMsg = document.getElementById('settings-password-error');
@@ -56,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             passwordErrorMsg.classList.add('hidden');
             passwordSuccessMsg.classList.add('hidden');
 
@@ -70,40 +29,74 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            const otpSent = await requestOtp();
+            if (otpSent) {
+                showOtpModal('password', {
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                });
+            }
+        });
+    }
+
+    // --- Handle OTP Submit ---
+    if (otpForm) {
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const otp = otpInput.value;
+            if (otp.length !== 6) {
+                otpErrorMsg.textContent = 'Please enter a valid 6-digit OTP.';
+                otpErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            otpSubmitBtn.disabled = true;
+            otpSubmitBtn.textContent = 'Verifying...';
+            otpErrorMsg.classList.add('hidden');
+
             try {
-                const response = await fetch(`/u/${username}/profile/password`, {
+                let endpoint = '';
+                let payload = { ...pendingData, otp: otp };
+
+                if (currentOtpAction === 'password') {
+                    endpoint = `/v1/user/${username}/settings/password`;
+                }
+
+                const response = await fetch(endpoint, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        current_password: currentPassword,
-                        new_password: newPassword,
-                        confirm_password: confirmPassword
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
 
                 if (!result.success) {
-                    passwordErrorMsg.textContent = result.message || 'Failed to change password.';
-                    passwordErrorMsg.classList.remove('hidden');
-                    return;
+                    otpErrorMsg.textContent = result.message || 'Verification failed.';
+                    otpErrorMsg.classList.remove('hidden');
+                } else {
+                    closeOtpModal();
+                    if (currentOtpAction === 'password') {
+                        passwordSuccessMsg.textContent = 'Password updated successfully!';
+                        passwordSuccessMsg.classList.remove('hidden');
+                        if (changePasswordForm) changePasswordForm.reset();
+                    }
                 }
-
-                passwordSuccessMsg.textContent = 'Password updated successfully!';
-                passwordSuccessMsg.classList.remove('hidden');
-                changePasswordForm.reset();
-                
             } catch (err) {
-                console.error('Password change error:', err);
-                passwordErrorMsg.textContent = 'Network error, please try again.';
-                passwordErrorMsg.classList.remove('hidden');
+                console.error('OTP Submit error:', err);
+                otpErrorMsg.textContent = 'Network error, please try again.';
+                otpErrorMsg.classList.remove('hidden');
+            } finally {
+                otpSubmitBtn.disabled = false;
+                otpSubmitBtn.textContent = 'Verify & Confirm';
             }
         });
     }
 
     // --- Mock Preferences Toggles ---
     const toggles = ['toggle-2fa', 'toggle-email-notif', 'toggle-sms-notif', 'toggle-dark-mode'];
-    
+
     toggles.forEach(toggleId => {
         const toggle = document.getElementById(toggleId);
         if (toggle) {

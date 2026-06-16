@@ -18,6 +18,10 @@ type Transaction struct {
 	Type          string  `json:"type" db:"transaction_type"`
 	Amount        float64 `json:"amount" db:"transaction_amount"`
 	Status        string  `json:"status" db:"status"`
+	MerchantName  string  `json:"merchant_name"`
+	MerchantID    string  `json:"merchant_id"`
+	ServiceFee    float64 `json:"service_fee"`
+	PointsEarned  int     `json:"points_earned"`
 }
 
 // DashboardUser info struct for the user dashboard view
@@ -27,6 +31,7 @@ type DashboardUser struct {
 	Username           string        `json:"username" db:"username"`
 	Name               string        `json:"name" db:"name"`
 	Email              string        `json:"email" db:"email"`
+	PendingEmail       string        `json:"pending_email"`
 	Phone              string        `json:"phone" db:"phone"`
 	Initials           string        `json:"initials"`
 	Balance            float64       `json:"balance" db:"balance"`
@@ -70,6 +75,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		username      string
 		fullName      string
 		email         string
+		pendingEmail  string
 		phone         string
 		userType      string
 		balance       float64
@@ -84,6 +90,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			u.username,
 			u.name,
 			u.email,
+			COALESCE(u.pending_email, ''),
 			COALESCE(u.phone_number, ''),
 			u.role,
 			COALESCE(c.balance, 0),
@@ -96,7 +103,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			ON u.user_id = c.user_id
 		WHERE u.username = ?
 	`
-	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
+	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
@@ -136,43 +143,70 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-    SELECT t.transaction_id, t.description, t.created_at, t.transaction_type, t.amount, t.terminal_id, t.status
+    SELECT t.transaction_id, t.description, t.created_at, t.transaction_type, t.amount, t.terminal_id, t.status, m.business_name, m.merchant_id
     FROM transactions t 
     JOIN cards c ON t.card_number = c.card_number 
     JOIN users u ON c.user_id = u.user_id
+    LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
     WHERE u.username = ? 
     ORDER BY t.created_at DESC LIMIT 5
 `
-rows, err := h.DB.Query(txnQuery, userID)
-var transactions []Transaction
-if err != nil {
-    fmt.Printf("Error fetching transactions: %v\n", err)
-} else {
-    defer rows.Close()
-    for rows.Next() {
-        var t Transaction
-        var createdAt string
-        var description sql.NullString
-        if err := rows.Scan(
-            &t.TransactionID,
-            &description,
-            &createdAt,
-            &t.Type,
-            &t.Amount,
-            &t.TerminalID,
-            &t.Status,
-        ); err != nil {
-            fmt.Printf("Error scanning transaction row: %v\n", err)
-            continue
-        }
-        t.Date = formatDate(createdAt)
-        t.Time = formatTime(createdAt)
-        if description.Valid {
-            t.Description = description.String
-        }
-        transactions = append(transactions, t)
-    }
-}
+	rows, err := h.DB.Query(txnQuery, userID)
+	var transactions []Transaction
+	if err != nil {
+		fmt.Printf("Error fetching transactions: %v\n", err)
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var t Transaction
+			var createdAt string
+			var description sql.NullString
+			var businessName sql.NullString
+			var merchantId sql.NullString
+			if err := rows.Scan(
+				&t.TransactionID,
+				&description,
+				&createdAt,
+				&t.Type,
+				&t.Amount,
+				&t.TerminalID,
+				&t.Status,
+				&businessName,
+				&merchantId,
+			); err != nil {
+				fmt.Printf("Error scanning transaction row: %v\n", err)
+				continue
+			}
+			t.Date = formatDate(createdAt)
+			t.Time = formatTime(createdAt)
+			if description.Valid {
+				t.Description = description.String
+			}
+			
+			if businessName.Valid {
+				t.MerchantName = businessName.String
+			} else if description.Valid {
+				t.MerchantName = description.String
+			} else {
+				t.MerchantName = "System"
+			}
+			
+			if merchantId.Valid {
+				t.MerchantID = merchantId.String
+			} else {
+				t.MerchantID = "N/A"
+			}
+
+			t.ServiceFee = 0.00
+			if strings.ToLower(t.Type) == "payment" && t.Amount >= 100 {
+				t.PointsEarned = int(t.Amount / 100)
+			} else {
+				t.PointsEarned = 0
+			}
+
+			transactions = append(transactions, t)
+		}
+	}
 
 	dashboardUser := DashboardUser{
 		ID:                 id,
@@ -180,6 +214,7 @@ if err != nil {
 		Username:           username,
 		Name:               fullName,
 		Email:              email,
+		PendingEmail:       pendingEmail,
 		Phone:              phone,
 		Initials:           initials,
 		Balance:            balance,

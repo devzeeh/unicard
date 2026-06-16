@@ -2,16 +2,22 @@ package user
 
 import (
 	"context"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"unicard-go/backend/internal/pkg/account"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+	smtp "unicard-go/backend/internal/pkg/smtpbody"
 
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/gomail.v2"
 )
 
 // Sentinel errors for password verification
@@ -80,7 +86,7 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// PATCH — at least one field required
-	if req.FullName == "" && req.Email == "" && req.Phone == "" {
+	if req.FullName == "" && req.Email == "" && req.Phone == "" && req.Username == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "At least one field is required",
@@ -92,21 +98,85 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	fields := []string{}
 	args := []any{}
 
+	var currentEmail, currentName string
+	emailChanged := false
+	if req.Email != "" {
+		err := h.DB.QueryRowContext(ctx, "SELECT email, name FROM users WHERE username = ?", username).Scan(&currentEmail, &currentName)
+		if err != nil && err != sql.ErrNoRows {
+			log.Printf("Failed to get current user data: %v", err)
+		} else if req.Email != currentEmail {
+			emailChanged = true
+		}
+	}
+
 	if req.FullName != "" {
 		fields = append(fields, "name = ?")
 		args = append(args, req.FullName)
+		currentName = req.FullName // use updated name for email if changed
 	}
-	if req.Email != "" {
+	if req.Email != "" && !emailChanged {
 		fields = append(fields, "email = ?")
 		args = append(args, req.Email)
+	} else if req.Email != "" && emailChanged {
+		b := make([]byte, 16)
+		rand.Read(b)
+		token := hex.EncodeToString(b)
+
+		fields = append(fields, "pending_email = ?")
+		args = append(args, req.Email)
+		fields = append(fields, "email_verification_token = ?")
+		args = append(args, token)
+
+		go func(emailTo, emailNew, name, token string) {
+			smtpHost := os.Getenv("SMTP_HOST")
+			smtpPort := 587
+			smtpEmail := os.Getenv("SMTP_EMAIL")
+			smtpSender := os.Getenv("SMTP_SENDER")
+			smtpPass := os.Getenv("SMTP_PASSWORD")
+
+			if smtpHost == "" || smtpEmail == "" {
+				log.Println("SMTP credentials not configured")
+				return
+			}
+
+			m := gomail.NewMessage()
+			m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+			m.SetHeader("To", emailTo)
+			m.SetHeader("Subject", "Approve Your Email Change")
+
+			baseURL := os.Getenv("BASE_URL")
+			if baseURL == "" {
+				baseURL = "http://localhost:3001"
+			}
+			verifyURL := fmt.Sprintf("%s/v1/verify-email?token=%s", baseURL, token)
+			htmlBody := fmt.Sprintf(smtp.EmailVerificationBody(), name, emailNew, verifyURL)
+			m.SetBody("text/html", htmlBody)
+
+			d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+			if err := d.DialAndSend(m); err != nil {
+				log.Printf("Failed to send verification email: %v", err)
+			}
+		}(currentEmail, req.Email, currentName, token)
 	}
 	if req.Phone != "" {
 		fields = append(fields, "phone_number = ?")
 		args = append(args, req.Phone)
 	}
+	if req.Username != "" {
+		fields = append(fields, "username = ?")
+		args = append(args, req.Username)
+	}
 
 	// Append username as last arg for WHERE clause
 	args = append(args, username)
+
+	if len(fields) == 0 {
+		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+			Success: true,
+			Message: "No changes to update",
+		})
+		return
+	}
 
 	query := "UPDATE users SET " + strings.Join(fields, ", ") + " WHERE username = ?"
 
@@ -120,9 +190,14 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	msg := "Profile updated successfully"
+	if emailChanged {
+		msg = "Profile updated. Please check your current email to approve the change."
+	}
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
-		Message: "Profile updated successfully",
+		Message: msg,
 	})
 }
 

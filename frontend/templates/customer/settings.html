@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <script src="../static/javascript/tailwind-config.js"></script>
+    <script src="/assets/style/tailwind.js"></script>
 </head>
 
 <body class="font-sans antialiased text-gray-900 bg-gray-100" data-username="{{.Username}}">
@@ -20,20 +20,25 @@
         <!-- Main Content Area -->
         <div id="main-content" class="flex-1 flex flex-col overflow-hidden transition-all duration-200 ease-in-out">
             <!-- Header -->
-            <header class="flex items-center justify-between md:justify-end h-16 px-5 sm:px-6 py-4 bg-white border-b border-gray-200 z-20 shrink-0">
+            <header
+                class="flex items-center justify-between md:justify-end h-16 px-5 sm:px-6 py-4 bg-white border-b border-gray-200 z-20 shrink-0">
                 <!-- Mobile Menu Button (Left) -->
                 <div class="flex items-center md:hidden">
                     <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 focus:outline-none">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
-                    <span class="ml-3 text-lg font-bold tracking-tight text-slate-900">Uni<span class="text-violet-600">Card</span></span>
+                    <span class="ml-3 text-lg font-bold tracking-tight text-slate-900">Uni<span
+                            class="text-violet-600">Card</span></span>
                 </div>
 
                 <!-- Profile Dropdown (Right) -->
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:block">Welcome, <span id="user-full-name">...</span></span>
+                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
+                            class="ml-1"><span
+                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
@@ -46,19 +51,33 @@
                         <div id="profile-dropdown-menu"
                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                             <div class="py-1">
-                                <a href="/u/{{.Username}}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
-                                    <span class="ml-3 align-middle">Profile</span>
+                                <a href="/u/{{.Username}}"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    <span class="ml-3">Profile</span>
                                 </a>
-                                <a href="/u/{{.Username}}/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                                    <span class="ml-3 align-middle">Settings</span>
+                                <a href="/u/{{.Username}}/settings"
+                                    class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                                    </svg>
+                                    <span class="ml-3">Settings</span>
                                 </a>
                                 <div class="border-t border-gray-100"></div>
                                 <button id="profile-logout-button"
-                                    class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-center text-gray-400 inline-block align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
-                                    <span class="ml-3 align-middle">Sign Out</span>
+                                    class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                                    </svg>
+                                    <span class="ml-3">Sign Out</span>
                                 </button>
                             </div>
                         </div>
@@ -74,52 +93,56 @@
 
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-6">
                         <div class="xl:col-span-3 space-y-6">
-                            
-                            <!-- Account Settings -->
-                            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-                                <h2 class="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-                                <form id="update-email-form" class="space-y-5" onsubmit="event.preventDefault();">
-                                    <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" name="email" id="settings-email" class="w-full md:w-1/2 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="your@email.com" required>
-                                    </div>
-                                    <div id="settings-email-error" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100"></div>
-                                    <div id="settings-email-success" class="hidden text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-100"></div>
-                                    <button id="update-email-btn" type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
-                                        Update Email
-                                    </button>
-                                </form>
-                            </div>
 
                             <!-- Security -->
                             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
                                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Security</h2>
-                                
+
                                 <div class="mb-8 border-b border-gray-100 pb-8">
                                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
-                                    <form id="settings-change-password-form" class="space-y-5" novalidate onsubmit="event.preventDefault();">
+                                    <form id="settings-change-password-form" class="space-y-5" novalidate
+                                        onsubmit="event.preventDefault();">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                                                <input type="password" name="current_password" id="settings_current_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
+                                                <label for="current_password"
+                                                    class="block text-sm font-medium text-gray-700 mb-1">Current
+                                                    Password</label>
+                                                <input type="password" name="current_password"
+                                                    id="settings_current_password"
+                                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                    required>
                                             </div>
                                         </div>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                                                <input type="password" name="new_password" id="settings_new_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
+                                                <label for="new_password"
+                                                    class="block text-sm font-medium text-gray-700 mb-1">New
+                                                    Password</label>
+                                                <input type="password" name="new_password" id="settings_new_password"
+                                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                    required>
                                             </div>
                                             <div>
-                                                <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                                                <input type="password" name="confirm_password" id="settings_confirm_password" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" required>
+                                                <label for="confirm_password"
+                                                    class="block text-sm font-medium text-gray-700 mb-1">Confirm New
+                                                    Password</label>
+                                                <input type="password" name="confirm_password"
+                                                    id="settings_confirm_password"
+                                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                    required>
                                             </div>
                                         </div>
-                                        
-                                        <!-- Error Area -->
-                                        <div id="settings-password-error" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100"></div>
-                                        <div id="settings-password-success" class="hidden text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-100"></div>
 
-                                        <button id="settings-change-password-btn" type="submit" class="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition">
+                                        <!-- Error Area -->
+                                        <div id="settings-password-error"
+                                            class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                                        </div>
+                                        <div id="settings-password-success"
+                                            class="hidden text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
+                                        </div>
+
+                                        <button id="settings-change-password-btn" type="submit"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition">
                                             Update Password
                                         </button>
                                     </form>
@@ -128,12 +151,16 @@
                                 <div>
                                     <div class="flex items-center justify-between">
                                         <div>
-                                            <h3 class="text-lg font-semibold text-gray-800">Two-Factor Authentication (2FA)</h3>
-                                            <p class="text-sm text-gray-500 mt-1">Add an extra layer of security to your account.</p>
+                                            <h3 class="text-lg font-semibold text-gray-800">Two-Factor Authentication
+                                                (2FA)</h3>
+                                            <p class="text-sm text-gray-500 mt-1">Add an extra layer of security to your
+                                                account.</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" id="toggle-2fa" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
                                         </label>
                                     </div>
                                 </div>
@@ -142,38 +169,47 @@
                             <!-- Preferences -->
                             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
                                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Preferences</h2>
-                                
+
                                 <div class="space-y-6">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <h3 class="text-base font-semibold text-gray-800">Email Notifications</h3>
-                                            <p class="text-sm text-gray-500 mt-1">Receive alerts for transactions and account updates via email.</p>
+                                            <p class="text-sm text-gray-500 mt-1">Receive alerts for transactions and
+                                                account updates via email.</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" id="toggle-email-notif" class="sr-only peer" checked>
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
                                         </label>
                                     </div>
 
                                     <div class="flex items-center justify-between border-t border-gray-100 pt-6">
                                         <div>
                                             <h3 class="text-base font-semibold text-gray-800">SMS Notifications</h3>
-                                            <p class="text-sm text-gray-500 mt-1">Receive SMS alerts for critical security events.</p>
+                                            <p class="text-sm text-gray-500 mt-1">Receive SMS alerts for critical
+                                                security events.</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" id="toggle-sms-notif" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
                                         </label>
                                     </div>
 
                                     <div class="flex items-center justify-between border-t border-gray-100 pt-6">
                                         <div>
                                             <h3 class="text-base font-semibold text-gray-800">Dark Mode</h3>
-                                            <p class="text-sm text-gray-500 mt-1">Switch to a dark theme for low-light environments.</p>
+                                            <p class="text-sm text-gray-500 mt-1">Switch to a dark theme for low-light
+                                                environments.</p>
                                         </div>
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" id="toggle-dark-mode" class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
                                         </label>
                                     </div>
                                 </div>
@@ -181,7 +217,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+        </div>
         </main>
     </div>
 
@@ -200,7 +236,8 @@
                 <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
@@ -223,7 +260,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Link to the external JavaScript files -->
     <script src="/assets/js/dashboard.js" defer></script>
     <script src="/assets/js/settings.js" defer></script>

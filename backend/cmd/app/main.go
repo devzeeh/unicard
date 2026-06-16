@@ -74,25 +74,29 @@ func main() {
 
 	// general endpoints
 	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("GET /signup", authHandler.SignupView)
 	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
-	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("GET /merchant-signup", authHandler.MerchantSignupView)
 	mux.HandleFunc("POST /v1/merchant-signup", authHandler.MerchantSignupHandler)
 	mux.HandleFunc("GET /admin-signup", authHandler.AdminSignupView)
 	mux.HandleFunc("POST /v1/admin-signup", authHandler.AdminSignupHandler)
-	mux.HandleFunc("POST /v1/signup/check-details", authHandler.CheckDetailsHandler)
+	// Customer Signup routes
+	mux.HandleFunc("GET /signup", authHandler.SignupView)
+	mux.HandleFunc("POST /v1/signup/send-otp", authHandler.SignupSendOTP)
+	mux.HandleFunc("POST /v1/signup/verify-otp", authHandler.SignupVerifyOTP)
 	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
+	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
 	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
 	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
 	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
 	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
 	mux.HandleFunc("GET /u/{username}", userHandler.ProfileView)
 	mux.HandleFunc("PATCH /u/{username}/profile/edit", userHandler.ProfileEdit)
+	mux.HandleFunc("GET /v1/verify-email", userHandler.VerifyEmail)
 	mux.HandleFunc("POST /v1/user/{username}/profile/verify-password", userHandler.ProfileVerifyPassword)
 	mux.HandleFunc("PUT /u/{username}/profile/password", userHandler.ProfileChangePassword)
 	mux.HandleFunc("GET /u/{username}/dashboard", userHandler.DashboardView)
 	mux.HandleFunc("GET /u/{username}/card", userHandler.CardView)
+	mux.HandleFunc("POST /v1/user/{username}/card/status", userHandler.UpdateCardStatus)
 	mux.HandleFunc("GET /u/{username}/settings", userHandler.SettingsView)
 	mux.HandleFunc("GET /u/{username}/topup", userHandler.TopUpView)
 	// Your frontend calls this to get the Xendit URL

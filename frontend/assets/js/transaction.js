@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Apply Search
         const searchVal = searchTxn ? searchTxn.value.toLowerCase() : "";
         if (searchVal) {
-            filtered = filtered.filter(tx => 
+            filtered = filtered.filter(tx =>
                 (tx.description && tx.description.toLowerCase().includes(searchVal)) ||
                 (tx.transaction_id && tx.transaction_id.toLowerCase().includes(searchVal)) ||
                 (tx.terminal_id && tx.terminal_id.toLowerCase().includes(searchVal))
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const total = filtered.length;
         const totalPages = Math.ceil(total / itemsPerPage) || 1;
         if (currentPage > totalPages) currentPage = totalPages;
-        
+
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, total);
         const paginated = filtered.slice(startIdx, endIdx);
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const sign = isPayment ? "-" : "+";
                 const amount = Number(tx.amount).toFixed(2);
                 const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
-                
+
                 let txDate = "N/A";
                 let txTime = "";
                 if (tx.date) {
@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
-                tr.onclick = function() {
+                tr.onclick = function () {
                     openTxnModal(tx, txDate, txTime);
                 };
 
@@ -205,24 +205,53 @@ document.addEventListener("DOMContentLoaded", function () {
     if (txnModal && closeTxnModalBtn) {
         closeTxnModalBtn.onclick = closeTxnModal;
         closeTxnModalBottomBtn.onclick = closeTxnModal;
-        txnModal.onclick = function(e) {
+        txnModal.onclick = function (e) {
             if (e.target === txnModal) closeTxnModal();
         };
     }
 
     function openTxnModal(tx, txDate, txTime) {
         if (!txnModal) return;
-        
+
         document.getElementById("modalTxnId").textContent = tx.transaction_id || 'N/A';
-        document.getElementById("modalTxnMerchant").textContent = tx.description || 'N/A';
-        document.getElementById("modalTxnTerminal").textContent = tx.terminal_id || 'N/A';
         document.getElementById("modalTxnDate").textContent = `${txDate} at ${txTime}`;
         document.getElementById("modalTxnType").textContent = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "N/A";
+
+        document.getElementById("modalTxnMerchant").textContent = tx.merchant_name || 'N/A';
+        const terminalIdEl = document.getElementById("modalTxnTerminalId");
+        const terminalLabelEl = document.getElementById("modalTxnTerminalLabel");
+        if (tx.terminal_id && tx.terminal_id !== 'N/A' && tx.terminal_id.trim() !== '') {
+            terminalIdEl.textContent = tx.terminal_id;
+            if (terminalLabelEl) terminalLabelEl.classList.remove("hidden");
+        } else {
+            terminalIdEl.textContent = '';
+            if (terminalLabelEl) terminalLabelEl.classList.add("hidden");
+        }
         
+        document.getElementById("modalTxnFee").textContent = `₱${Number(tx.service_fee || 0).toFixed(2)}`;
+
+        if (tx.points_earned && tx.points_earned > 0) {
+            document.getElementById("modalTxnPoints").textContent = `+${tx.points_earned}`;
+        } else {
+            document.getElementById("modalTxnPoints").textContent = "0";
+        }
+
+        document.getElementById("modalTxnDesc").textContent = tx.description || 'N/A';
+
+        const merchantRow = document.getElementById("modalTxnMerchantRow");
+        if (tx.type && tx.type.toLowerCase() === "topup") {
+            merchantRow.classList.remove("flex");
+            merchantRow.classList.add("hidden");
+        } else {
+            merchantRow.classList.remove("hidden");
+            merchantRow.classList.add("flex");
+        }
+
         const isPayment = tx.type && tx.type.toLowerCase() === "payment";
         const sign = isPayment ? "-" : "+";
         const colorClass = isPayment ? "text-red-600" : "text-green-600";
-        const amtEl = document.getElementById("modalTxnAmount");
+
+        const amtEl = document.getElementById("modalTxnTotal");
         amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
         amtEl.className = `font-bold text-lg ${colorClass}`;
 
