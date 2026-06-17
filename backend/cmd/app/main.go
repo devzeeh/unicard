@@ -118,9 +118,11 @@ func main() {
 
 	// merchant endpoints
 	mux.HandleFunc("GET /merchant/{username}/dashboard", merchantHandler.MerchantDashboardView)
-	mux.HandleFunc("GET /v1/merchant/{username}/dashboard-data", merchantHandler.MerchantDashboardDataHandler)
-	mux.HandleFunc("GET /merchant/{username}/incomes", merchantHandler.MerchantIncomesView)
+	mux.HandleFunc("GET /v1/merchant/{username}/dashboard", merchantHandler.MerchantDashboardDataHandler)
 	mux.HandleFunc("GET /merchant/{username}/transactions", merchantHandler.MerchantTransactionsView)
+	mux.HandleFunc("GET /v1/merchant/{username}/transactions", merchantHandler.TransactionHandler)
+	mux.HandleFunc("GET /merchant/{username}/incomes", merchantHandler.MerchantIncomesView)
+	mux.HandleFunc("GET /v1/merchant/{username}/incomes", merchantHandler.IncomeHandler)
 	mux.HandleFunc("GET /merchant/{username}/account", merchantHandler.MerchantAccountView)
 
 	// super admin endpoints
