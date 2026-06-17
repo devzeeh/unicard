@@ -111,7 +111,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	case "super_admin":
 		redirectURL = "/admin/" + userName // Super admin dashboard
 	case "merchant_admin", "merchant_staff":
-		redirectURL = "/merchant/dashboard" // Merchant dashboard
+		redirectURL = "/merchant/" + userName + "/dashboard" // Merchant dashboard
 	}
 
 	// SUCCESS User Login

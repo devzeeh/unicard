@@ -9,6 +9,7 @@ import (
 	"os"
 	"unicard-go/backend/internal/admin"
 	authentication "unicard-go/backend/internal/auth"
+	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/user"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -60,6 +61,7 @@ func main() {
 	authHandler := authentication.NewHandler(db, tpl)
 	adminHanlder := admin.NewHandler(db, tpl)
 	userHandler := user.NewHandler(db, tpl)
+	merchantHandler := merchant.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -113,6 +115,13 @@ func main() {
 	mux.HandleFunc("GET /v1/user/{username}", userHandler.DashboardHandler)
 	mux.HandleFunc("GET /v1/user/{username}/transactions", userHandler.TransactionsJSONHandler)
 	//mux.HandleFunc("GET /logout",)
+
+	// merchant endpoints
+	mux.HandleFunc("GET /merchant/{username}/dashboard", merchantHandler.MerchantDashboardView)
+	mux.HandleFunc("GET /v1/merchant/{username}/dashboard-data", merchantHandler.MerchantDashboardDataHandler)
+	mux.HandleFunc("GET /merchant/{username}/incomes", merchantHandler.MerchantIncomesView)
+	mux.HandleFunc("GET /merchant/{username}/transactions", merchantHandler.MerchantTransactionsView)
+	mux.HandleFunc("GET /merchant/{username}/account", merchantHandler.MerchantAccountView)
 
 	// super admin endpoints
 	mux.HandleFunc("GET /admin/{username}", adminHanlder.AdminDashboardView)
