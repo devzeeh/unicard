@@ -124,6 +124,7 @@ func main() {
 	mux.HandleFunc("GET /merchant/{username}/incomes", merchantHandler.MerchantIncomesView)
 	mux.HandleFunc("GET /v1/merchant/{username}/incomes", merchantHandler.IncomeHandler)
 	mux.HandleFunc("GET /merchant/{username}/account", merchantHandler.MerchantAccountView)
+	mux.HandleFunc("GET /v1/merchant/{username}/account", merchantHandler.MerchantAccountDataHandler)
 
 	// super admin endpoints
 	mux.HandleFunc("GET /admin/{username}", adminHanlder.AdminDashboardView)
