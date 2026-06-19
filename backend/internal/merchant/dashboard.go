@@ -40,6 +40,10 @@ type MerchantSummary struct {
 	NetRevenue         decimal.Decimal       `json:"net_revenue"`
 	TotalServiceFee    decimal.Decimal       `json:"total_service_fee"`
 	TotalIncome        decimal.Decimal       `json:"total_income"`
+	AvailableBalance   decimal.Decimal       `json:"available_balance"`
+	MonthlyNetIncome   decimal.Decimal       `json:"monthly_net_income"`
+	SettlementBank     *string               `json:"settlement_bank"`
+	SettlementAccount  *string               `json:"settlement_account"`
 	RecentTransactions []MerchantTransaction `json:"recent_transactions"`
 }
 
@@ -80,7 +84,7 @@ func (h *Handler) GetMerchantRecentTransactions(ctx context.Context, merchantID 
 
 	rows, err := h.DB.QueryContext(ctx, `
 		SELECT 
-			transaction_id, card_number,
+			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
 			transaction_type, amount,
 			points_earned, service_fee,
@@ -140,13 +144,14 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 
 	// Resolve merchant_id from username
 	var merchantID string
+	var settlementBank, settlementAccount *string
 	err := h.DB.QueryRowContext(ctx, `
-		SELECT m.merchant_id 
+		SELECT m.merchant_id, m.settlement_bank_name, m.settlement_account_number
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
 		WHERE u.username = ?
 		LIMIT 1`,
-		username).Scan(&merchantID)
+		username).Scan(&merchantID, &settlementBank, &settlementAccount)
 	if err != nil {
 		log.Println("Error fetching merchant ID:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -237,6 +242,15 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	stats, err := h.GetMerchantIncomeStats(ctx, merchantID)
+	var availableBalance, monthlyNetIncome decimal.Decimal
+	if err == nil {
+		availableBalance = stats.AvailableBalance
+		monthlyNetIncome = stats.MonthlyNetIncome
+	} else {
+		log.Println("Error fetching available balance for dashboard:", err)
+	}
+
 	summary := MerchantSummary{
 		Username:           username,
 		MerchantID:         merchantID,
@@ -248,6 +262,10 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 		NetRevenue:         totalRevenue.Sub(totalRefunds),
 		TotalServiceFee:    totalServiceFee,
 		TotalIncome:        totalIncome,
+		AvailableBalance:   availableBalance,
+		MonthlyNetIncome:   monthlyNetIncome,
+		SettlementBank:     settlementBank,
+		SettlementAccount:  settlementAccount,
 		RecentTransactions: recentTransactions,
 	}
 
