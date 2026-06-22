@@ -102,10 +102,10 @@ CREATE TABLE cards (
 CREATE TABLE transactions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal financial primary index scaled to 64-bit headroom to comfortably support billions of platform entries',
     transaction_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom unique public reference string (e.g., TXN-2026-104294) printed on digital and paper receipts',
-    card_number VARCHAR(20) NOT NULL COMMENT 'Links target token balance deduction via cards.card_number',
+    card_number VARCHAR(20) NULL COMMENT 'Links target token balance deduction via cards.card_number',
     merchant_id VARCHAR(50) NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.merchant_id',
     terminal_id VARCHAR(50) NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.terminal_id',
-    transaction_type ENUM('payment', 'refund', 'reversal', 'topup') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
+    transaction_type ENUM('payment', 'refund', 'reversal', 'topup', 'withdrawal') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
     amount DECIMAL(10, 2) NOT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
     points_earned DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Total points earned from the transaction',
     service_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Platform revenue slice collected by UniCard ecosystem engine per tap processing action',

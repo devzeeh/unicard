@@ -9,6 +9,7 @@ import (
 	"os"
 	"unicard-go/backend/internal/admin"
 	authentication "unicard-go/backend/internal/auth"
+	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/user"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -60,6 +61,7 @@ func main() {
 	authHandler := authentication.NewHandler(db, tpl)
 	adminHanlder := admin.NewHandler(db, tpl)
 	userHandler := user.NewHandler(db, tpl)
+	merchantHandler := merchant.NewHandler(db, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -114,6 +116,17 @@ func main() {
 	mux.HandleFunc("GET /v1/user/{username}/transactions", userHandler.TransactionsJSONHandler)
 	//mux.HandleFunc("GET /logout",)
 
+	// merchant endpoints
+	mux.HandleFunc("GET /merchant/{username}/dashboard", merchantHandler.MerchantDashboardView)
+	mux.HandleFunc("GET /v1/merchant/{username}/dashboard", merchantHandler.MerchantDashboardDataHandler)
+	mux.HandleFunc("GET /merchant/{username}/transactions", merchantHandler.MerchantTransactionsView)
+	mux.HandleFunc("GET /v1/merchant/{username}/transactions", merchantHandler.TransactionHandler)
+
+	mux.HandleFunc("GET /v1/merchant/{username}/incomes", merchantHandler.IncomeHandler)
+	mux.HandleFunc("GET /merchant/{username}/account", merchantHandler.MerchantAccountView)
+	mux.HandleFunc("GET /v1/merchant/{username}/account", merchantHandler.MerchantAccountDataHandler)
+	mux.HandleFunc("POST /v1/merchant/{username}/withdraw", merchantHandler.WithdrawHandler)
+
 	// super admin endpoints
 	mux.HandleFunc("GET /admin/{username}", adminHanlder.AdminDashboardView)
 	mux.HandleFunc("GET /v1/admin/{username}/dashboard-data", adminHanlder.AdminDashboardDataHandler)
@@ -124,6 +137,8 @@ func main() {
 	mux.HandleFunc("GET /v1/admin/{username}/terminals/unassigned", adminHanlder.GetUnassignedTerminalsHandler)
 	mux.HandleFunc("POST /v1/admin/{username}/terminals/add", adminHanlder.AddTerminalHandler)
 	mux.HandleFunc("GET /admin/{username}/settings", adminHanlder.SystemSettingsView)
+	mux.HandleFunc("GET /admin/{username}/transactions", adminHanlder.TransactionsView)
+	mux.HandleFunc("GET /v1/admin/{username}/transactions", adminHanlder.AllTransactionsJSONHandler)
 	mux.HandleFunc("POST /v1/admin/{username}/merchants/add", adminHanlder.AddMerchantHandler)
 	mux.HandleFunc("GET /admin/{username}/merchants/{id}", adminHanlder.MerchantInfoView)
 	mux.HandleFunc("GET /v1/admin/{username}/merchants/{id}/data", adminHanlder.MerchantInfoDataHandler)
