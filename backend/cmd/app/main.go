@@ -121,7 +121,7 @@ func main() {
 	mux.HandleFunc("GET /v1/merchant/{username}/dashboard", merchantHandler.MerchantDashboardDataHandler)
 	mux.HandleFunc("GET /merchant/{username}/transactions", merchantHandler.MerchantTransactionsView)
 	mux.HandleFunc("GET /v1/merchant/{username}/transactions", merchantHandler.TransactionHandler)
-	mux.HandleFunc("GET /merchant/{username}/incomes", merchantHandler.MerchantIncomesView)
+
 	mux.HandleFunc("GET /v1/merchant/{username}/incomes", merchantHandler.IncomeHandler)
 	mux.HandleFunc("GET /merchant/{username}/account", merchantHandler.MerchantAccountView)
 	mux.HandleFunc("GET /v1/merchant/{username}/account", merchantHandler.MerchantAccountDataHandler)
