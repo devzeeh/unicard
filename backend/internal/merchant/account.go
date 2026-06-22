@@ -103,7 +103,7 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             COALESCE(m.business_structure, ''),
 			COALESCE(m.business_document, ''),
             COALESCE(m.bir_document, ''),
-            COALESCE(m.document_status, 'pending'),
+            COALESCE(m.document_status, ''),
             COALESCE(m.message, '')
             
         FROM merchants m
