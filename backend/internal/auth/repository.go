@@ -1,12 +1,8 @@
 package authentication
 
 import (
-	"crypto/rand"
 	"database/sql"
-	"fmt"
 	"log"
-	"math/big"
-	"time"
 )
 
 // isUserIDExist checks if a given user ID already exists in the database.
@@ -22,104 +18,6 @@ func (h *Handler) isUserIDExist(userID int64) (bool, error) {
 		return false, err // Real DB error
 	}
 	return true, nil // It exists
-}
-
-// GenerateUniqueUsername creates a random unique username
-// Format: user + 12 random lowercase characters/numbers
-// Example: user9d8a7c2b3e4f
-func (h *Handler) GenerateUniqueUsername() (string, error) {
-	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
-	usernamePrefix := "user"
-	length := 7
-
-	loc, err := time.LoadLocation("Asia/Manila")
-	if err != nil {
-		//log.Printf("GenerateUniqueUsername error loading timezone: %v", err)
-		//return "", err
-		// Fallback to UTC if timezone loading fails
-		loc = time.UTC
-	}
-	time.Local = loc
-
-	for {
-		// Get the current date in DDYY format (Go uses "010206" as reference)
-		userDate := time.Now().In(loc).Format("06") // e.g "06" for 2026, "27" for 2027, etc.
-		// time.Now().Format("1504") // e.g., "1530" for 3:30 PM
-		timePart := time.Now().In(loc).Format("0405") // e.g., "1530" for 3:30 PM
-
-		// Combine date and time to form part of the username
-		//usernamePrefix = fmt.Sprintf("user%s%s", userDate, timePart)
-
-		// Generate the random suffix
-		randomPart := ""
-		for i := 0; i < length; i++ {
-			num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-			if err != nil {
-				return "", err
-			}
-			randomPart += string(charset[num.Int64()])
-		}
-
-		// Combine prefix + date + time + random part
-		username := fmt.Sprintf("%s%s%s%s", usernamePrefix, userDate, randomPart, timePart)
-
-		// Check DB for uniqueness
-		var existing string
-		query := "SELECT username FROM users WHERE username = ?"
-		err := h.DB.QueryRow(query, username).Scan(&existing)
-
-		if err == sql.ErrNoRows {
-			//fmt.Println("Generated unique username:", username)
-			return username, nil // Found a unique one!
-		} else if err != nil {
-			return "", err // Real DB Error
-		}
-
-		// Collision detected, loop runs again...
-		log.Println("Username collision! Retrying...")
-	}
-}
-
-// It generates the unique cardID for every card users
-// Checks the database for uniqueness.
-// Returns the unique card ID as string or an error if any occurs.
-// Example format: CARD-XXXXXXX
-func (h *Handler) GenerateCardID() (string, error) {
-	// Define charset: letters and numbers
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	cardIDPrefix := "CARD-"
-	randomLength := 7
-
-	for {
-		// Get the current date in MMDDYY format (Go uses "010206" as reference)
-		datePart := time.Now().Format("010206")
-
-		// Generate the 7 random characters
-		randomPart := ""
-		for i := 0; i < randomLength; i++ {
-			num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-			if err != nil {
-				return "", err
-			}
-			randomPart += string(charset[num.Int64()])
-		}
-
-		// Combine them: CARD- + Date + Random
-		// Example output: CARD-012626Ab7z9X1
-		cardID := fmt.Sprintf("%s%s%s", cardIDPrefix, datePart, randomPart)
-
-		// Check database for uniqueness
-		var tmpCardID string
-		query := "SELECT card_id FROM users WHERE card_id = ?"
-		err := h.DB.QueryRow(query, cardID).Scan(&tmpCardID)
-
-		if err == sql.ErrNoRows {
-			return cardID, nil // Unique ID found
-		} else if err != nil {
-			return "", err // DB error
-		}
-		log.Printf("Collision detected! Retrying... conflicting ID: %s", cardID)
-	}
 }
 
 // It check the initial balance based on card number prefix
@@ -154,27 +52,6 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 	}
 	if err != nil {
 		log.Printf("Phone number check error: %v", err)
-		return false, err
-	}
-	return true, nil
-}
-
-// This function checks if a given full name already exists in the database.
-// It executes a SQL query to search for the full name in the users table.
-// If the full name is found, it returns true. If not found, it returns false.
-// If an error occurs during the query, it returns the error.
-func (h *Handler) isFullNameExist(fullName string) (bool, error) {
-	// Hold the existing full name
-	var existingName string
-
-	// Check query
-	query := "SELECT name FROM users WHERE name = ?"
-	err := h.DB.QueryRow(query, fullName).Scan(&existingName)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	if err != nil {
-		log.Printf("Full name check error: %v", err)
 		return false, err
 	}
 	return true, nil

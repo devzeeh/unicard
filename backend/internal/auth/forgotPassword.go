@@ -120,7 +120,7 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 
 	// Fetch the user's name
 	var fullName string
-	err = h.DB.QueryRowContext(ctx, "SELECT full_name FROM users WHERE email = ?", req.Email).Scan(&fullName)
+	err = h.DB.QueryRowContext(ctx, "SELECT name FROM users WHERE email = ?", req.Email).Scan(&fullName)
 	if err != nil {
 		fullName = "there" // Fallback if name is not found
 	}
