@@ -61,10 +61,10 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT 
 			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
-			transaction_type, amount,
-			points_earned, service_fee,
-			net_merchant_payout, processed_by,
-			status, description, created_at
+			COALESCE(transaction_type, ''), amount,
+			COALESCE(points_earned, 0), COALESCE(service_fee, 0),
+			COALESCE(net_merchant_payout, 0), processed_by,
+			COALESCE(status, ''), description, COALESCE(created_at, '')
 		FROM transactions 
 		WHERE merchant_id = ?`
 
@@ -100,7 +100,7 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var transactions []MerchantTransaction
+	transactions := []MerchantTransaction{}
 	for rows.Next() {
 		var t MerchantTransaction
 		if err := rows.Scan(

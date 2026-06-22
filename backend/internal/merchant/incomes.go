@@ -116,11 +116,11 @@ func (h *Handler) GetMerchantIncomeHistory(ctx context.Context, merchantID strin
 
 	rows, err := h.DB.QueryContext(ctx, `
 		SELECT 
-			created_at, description,
+			COALESCE(created_at, ''), description,
 			transaction_id, COALESCE(card_number, ''),
-			transaction_type, amount,
-			net_merchant_payout, service_fee,
-			processed_by,terminal_id
+			COALESCE(transaction_type, ''), amount,
+			COALESCE(net_merchant_payout, 0), COALESCE(service_fee, 0),
+			processed_by, terminal_id
 		FROM transactions
 		WHERE merchant_id = ? AND status = 'completed'
 		ORDER BY created_at DESC LIMIT 15

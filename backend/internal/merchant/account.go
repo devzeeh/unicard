@@ -79,16 +79,16 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
 	err := h.DB.QueryRowContext(ctx, `
         SELECT 
             m.merchant_id, 
-            m.status, 
-            DATE_FORMAT(m.created_at, '%M %d, %Y') as created_at,
+            COALESCE(m.status, ''), 
+            COALESCE(DATE_FORMAT(m.created_at, '%M %d, %Y'), '') as created_at,
             
             -- Business Info
-            m.business_name, 
-            m.business_type, 
+            COALESCE(m.business_name, ''), 
+            COALESCE(m.business_type, ''), 
             COALESCE(m.business_structure, ''),
-            m.business_email, 
-            m.business_phone, 
-            m.business_address,
+            COALESCE(m.business_email, ''), 
+            COALESCE(m.business_phone, ''), 
+            COALESCE(m.business_address, ''),
             
             -- Location Info
             COALESCE(m.city, ''),
@@ -101,7 +101,7 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             
             -- Document Info
             COALESCE(m.business_structure, ''),
-			COALESCE(m.business_document),
+			COALESCE(m.business_document, ''),
             COALESCE(m.bir_document, ''),
             COALESCE(m.document_status, 'pending'),
             COALESCE(m.message, '')
