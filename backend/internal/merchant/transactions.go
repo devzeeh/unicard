@@ -53,18 +53,43 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	search := r.URL.Query().Get("search")
+	txType := r.URL.Query().Get("type")
+	sortParam := r.URL.Query().Get("sort")
+
 	// getting all transactions
 	query := `SELECT 
-			transaction_id, card_number,
+			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
 			transaction_type, amount,
 			points_earned, service_fee,
 			net_merchant_payout, processed_by,
 			status, description, created_at
 		FROM transactions 
-		WHERE merchant_id = ? 
-		ORDER BY created_at DESC LIMIT 15`
-	rows, err := h.DB.QueryContext(ctx, query, merchantID)
+		WHERE merchant_id = ?`
+
+	args := []interface{}{merchantID}
+
+	if txType != "" && txType != "all" {
+		query += ` AND transaction_type = ?`
+		args = append(args, txType)
+	}
+
+	if search != "" {
+		query += ` AND (description LIKE ? OR transaction_id LIKE ?)`
+		searchTerm := "%" + search + "%"
+		args = append(args, searchTerm, searchTerm)
+	}
+
+	if sortParam == "asc" {
+		query += ` ORDER BY created_at ASC`
+	} else {
+		query += ` ORDER BY created_at DESC`
+	}
+	
+	query += ` LIMIT 100`
+
+	rows, err := h.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		log.Println("Error fetching transactions:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

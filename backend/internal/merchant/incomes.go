@@ -46,20 +46,6 @@ type IncomeResponse struct {
 	History []IncomeHistory `json:"history"`
 }
 
-// MerchantIncomesView renders the merchant_incomes.html template
-func (h *Handler) MerchantIncomesView(w http.ResponseWriter, r *http.Request) {
-	log.Println("MerchantIncomesView running...")
-	data := MerchantPageData{
-		Page:     "incomes",
-		Username: r.PathValue("username"),
-	}
-	err := h.Tpl.ExecuteTemplate(w, "merchant_incomes.html", data)
-	if err != nil {
-		log.Println("Error executing template:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-}
-
 func (h *Handler) GetMerchantIncomeStats(ctx context.Context, merchantID string) (IncomeStat, error) {
 	log.Println("GetMerchantIncomeStats running...")
 
@@ -131,7 +117,7 @@ func (h *Handler) GetMerchantIncomeHistory(ctx context.Context, merchantID strin
 	rows, err := h.DB.QueryContext(ctx, `
 		SELECT 
 			created_at, description,
-			transaction_id, card_number,
+			transaction_id, COALESCE(card_number, ''),
 			transaction_type, amount,
 			net_merchant_payout, service_fee,
 			processed_by,terminal_id
