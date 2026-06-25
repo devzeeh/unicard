@@ -53,7 +53,7 @@ func saveBase64ToFile(b64data string) string {
 	}
 	// Create directory if not exists
 	os.MkdirAll("./storage/documents", os.ModePerm)
-	fileName := fmt.Sprintf("%d%s", time.Now().Unix(), ext)
+	fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 	filePath := filepath.Join("./storage/documents", fileName)
 
 	err = os.WriteFile(filePath, data, 0644)
