@@ -1,407 +1,146 @@
-CREATE DATABASE  IF NOT EXISTS `unicard` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `unicard`;
--- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
---
--- Host: 127.0.0.1    Database: unicard
--- ------------------------------------------------------
--- Server version	8.0.44
+-- updated sql file for unicard
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE IF NOT EXISTS unicard;
+USE unicard;
 
---
--- Table structure for table `admin_users`
---
+-- =========================================================================
+-- CORE IDENTITY & AUTHENTICATION TABLES
+-- =========================================================================
 
-DROP TABLE IF EXISTS `admin_users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `admin_users` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Bcrypt password hash',
-  `role` enum('Super admin','Admin','Support','Viewer') COLLATE utf8mb4_unicode_ci DEFAULT 'Admin',
-  `status` enum('Active','Inactive','Suspended') COLLATE utf8mb4_unicode_ci DEFAULT 'Active',
-  `last_login` timestamp NULL DEFAULT NULL,
-  `login_attempts` int DEFAULT '0',
-  `locked_until` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `email` (`email`),
-  KEY `idx_username` (`username`),
-  KEY `idx_email` (`email`),
-  KEY `idx_role` (`role`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='System administrator accounts';
-/*!40101 SET character_set_client = @saved_cs_client */;
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal row index optimized for database indexing and fast joins',
+    user_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public ID (e.g., UNI-YYMM-minsecxxxx) used in APIs and frontend',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT 'Unique handle for admin/staff to log in quickly without an email',
+    name VARCHAR(100) NOT NULL COMMENT 'Full name of the individual user or client contact person',
+    email VARCHAR(100) UNIQUE NOT NULL COMMENT 'Primary email address used for consumer logins and notifications',
+    phone_number VARCHAR(20) NULL UNIQUE COMMENT 'Mobile number (e.g., +639...) for OTPs and SMS transaction alerts',
+    password_hash VARCHAR(255) NOT NULL COMMENT 'Cryptographically secured password string handled via bcrypt in Go',
+    role ENUM('super_admin', 'merchant_admin', 'merchant_staff', 'customer') NOT NULL COMMENT 'Defines application-wide role-based access control',
+    status ENUM('active', 'suspended', 'inactive') DEFAULT 'active' COMMENT 'Account access state for platform security and compliance checks',
+    pending_email VARCHAR(100) NULL UNIQUE COMMENT 'Temporary email storage for account recovery and verification changes',
+    email_verification_token VARCHAR(255) NULL UNIQUE COMMENT 'Token for verifying email address updates',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated timestamp of account creation'
+) COMMENT='Core identity table tracking authentication and tenancy access control levels';
 
---
--- Dumping data for table `admin_users`
---
 
-LOCK TABLES `admin_users` WRITE;
-/*!40000 ALTER TABLE `admin_users` DISABLE KEYS */;
-INSERT INTO `admin_users` VALUES (1,'devzeeh','roxas.johnerrol@gmail.com','john errol','$2a$12$tjycPwp4svJajA6cAIywK.61wL/236Eht6E/1PgyyG1zQJM3KnWue','Admin','Active',NULL,0,NULL,'2026-05-20 02:01:11','2026-05-20 02:01:11');
-/*!40000 ALTER TABLE `admin_users` ENABLE KEYS */;
-UNLOCK TABLES;
+CREATE TABLE system_settings (
+    setting_key VARCHAR(50) PRIMARY KEY COMMENT 'Unique string configuration key acting as the primary look-up token',
+    setting_value VARCHAR(255) NOT NULL COMMENT 'The active parameter threshold or value parsed directly by the Go backend',
+    description TEXT NULL COMMENT 'Descriptive documentation notes detailing exactly what system rules or parameters this alters',
+    updated_by VARCHAR(50) NOT NULL COMMENT 'The public users.user_id of the Super Admin who executed the latest configuration adjustment override',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp tracking when this specific configuration parameter was initialized',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically locks the exact clock timestamp whenever this system parameter value is updated',
+    FOREIGN KEY (updated_by) REFERENCES users(user_id)
+) COMMENT='Global platform configuration matrix driving dynamic fees, operational bounds, and system constants';
 
---
--- Table structure for table `card_reports`
---
 
-DROP TABLE IF EXISTS `card_reports`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `card_reports` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `card_number` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Printed 16-digit card number',
-  `reason` enum('Lost','Stolen','Fraud','User request','Admin action') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `reported_by` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User ID of the person who filed the report (user or admin)',
-  `status` enum('Reported','Resolved','Replaced') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `replacement_card_number` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `blocked_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `resolved_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `replacement_card_number` (`replacement_card_number`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_card_number` (`card_number`),
-  KEY `idx_status` (`status`),
-  CONSTRAINT `card_reports_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `card_reports_ibfk_2` FOREIGN KEY (`card_number`) REFERENCES `cards` (`card_number`),
-  CONSTRAINT `card_reports_ibfk_3` FOREIGN KEY (`replacement_card_number`) REFERENCES `cards` (`card_number`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Blocked and lost card records';
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- =========================================================================
+-- MERCHANT TENANCY & HARDWARE REGISTRY TABLES
+-- =========================================================================
 
---
--- Dumping data for table `card_reports`
---
+CREATE TABLE merchants (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal merchant row index used for fast database indexing',
+    merchant_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public identifier for the business entity (e.g., MCH-2026-001)',
+    business_name VARCHAR(150) NOT NULL COMMENT 'Registered trade or company name of the client merchant',
+    business_type ENUM('retail', 'transportation', 'food_and_beverage', 'services', 'other') NOT NULL COMMENT 'Industry category for transaction filtering and analytics',
+    business_registration_number VARCHAR(100) NULL UNIQUE COMMENT 'Official government tracking number (e.g., DTI, SEC, or BIR TIN)',
+    business_address TEXT NOT NULL COMMENT 'Physical location of the main store or corporate headquarters',
+    user_id VARCHAR(50) NOT NULL COMMENT 'Links to the user_id in the users table who owns this business account',
+    owner_name VARCHAR(100) NOT NULL COMMENT 'Full name of the principal owner or authorized business representative',
+    business_email VARCHAR(100) NOT NULL UNIQUE COMMENT 'Official company contact email address for corporate updates and billing statements',
+    business_phone VARCHAR(20) NOT NULL UNIQUE COMMENT 'Official telephone or mobile number for merchant support and emergency updates',
+    commission_rate DECIMAL(5, 2) DEFAULT 2.00 COMMENT 'Percentage cut taken by UniCard per processed card transaction (e.g., 2.50 = 2.5%)',
+    settlement_account_name VARCHAR(100) NULL COMMENT 'The name on the merchant bank account or mobile wallet for payouts',
+    settlement_account_number VARCHAR(50) NULL COMMENT 'The actual bank account number or mobile number (GCash/Maya) for payouts',
+    settlement_bank_name VARCHAR(100) NULL COMMENT 'The target bank or e-wallet company name (e.g., BDO, BPI, GCash, Maya)',
+    status ENUM('pending approval', 'approved', 'rejected', 'active', 'suspended') DEFAULT 'pending approval' COMMENT 'Operational state of the merchant ecosystem tenancy',
+    dti_document VARCHAR(255) NULL COMMENT 'File path for the uploaded DTI registration document',
+    bir_document VARCHAR(255) NULL COMMENT 'File path for the uploaded BIR registration document',
+    other_document VARCHAR(255) NULL COMMENT 'File path for any other uploaded business documents',
+    business_document VARCHAR(255) NULL COMMENT 'Primary business registration document path (DTI or SEC depending on business_structure)',
+    business_structure ENUM('sole_proprietorship', 'partnership', 'corporation', 'cooperative') NULL COMMENT 'Legal structure of the business entity used to determine required registration documents',
+    city VARCHAR(100) NULL COMMENT 'City or municipality where the primary business is physically located',
+    postal_code VARCHAR(20) NULL COMMENT 'Postal or ZIP code of the primary business address location',
+    document_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending' COMMENT 'Verification state of the submitted business registration and compliance documents',
+    message TEXT NULL COMMENT 'Admin-written note or feedback message regarding document review or account status changes',
+    approved_by VARCHAR(50) NULL COMMENT 'The user_id of the Super Admin who verified and activated this company profile',
+    approved_at TIMESTAMP NULL COMMENT 'The specific date and timestamp when the business was activated',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated date and time record of the initial registration request',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically updates whenever any merchant profile field is modified',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
+) COMMENT='Enterprise business registry tracking partner tenants, hardware mapping nodes, and financial settlement details';
 
-LOCK TABLES `card_reports` WRITE;
-/*!40000 ALTER TABLE `card_reports` DISABLE KEYS */;
-/*!40000 ALTER TABLE `card_reports` ENABLE KEYS */;
-UNLOCK TABLES;
 
---
--- Table structure for table `cards`
---
+CREATE TABLE terminals (
+    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal hardware registry auto-increment row index',
+    terminal_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom public hardware identifier (e.g., TRM-2026-0001) used in API payloads',
+    terminal_sn VARCHAR(50) UNIQUE NOT NULL COMMENT 'Physical factory-assigned unique serial number or MAC address of the ESP32 board',
+    merchant_id VARCHAR(50) NULL COMMENT 'Links to the merchant_id of the managing merchant entity',
+    device_name VARCHAR(100) NOT NULL COMMENT 'Human-readable descriptor identifying placement (e.g., Counter 1, Jeepney Plate # ABC-123)',
+    location_details VARCHAR(255) NULL COMMENT 'Optional physical sector data, such as a branch route path or stall number designation',
+    status ENUM('active', 'suspended', 'inactive') DEFAULT 'inactive' COMMENT 'Operational network connectivity state of the edge node hardware',
+    last_heartbeat TIMESTAMP NULL COMMENT 'Tracks the precise timestamp of the last successful ping packet received from the ESP32 network stack',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp tracking initial edge device registration',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically monitors configuration adjustments or state transitions over time',
+    -- Fixed: was merchants(user_id), now correctly points to merchants(merchant_id)
+    FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE
+) COMMENT='Hardware node registry tracking deployed physical authentication nodes and network heartbeat states';
 
-DROP TABLE IF EXISTS `cards`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `cards` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `card_uid` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'RFID/NFC Tag ID (Internal)',
-  `card_holder` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `card_number` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Printed 16-digit card number',
-  `card_type` enum('Regular','PWD','Student','Senior') COLLATE utf8mb4_unicode_ci DEFAULT 'Regular',
-  `expiry_date` date DEFAULT NULL,
-  `cvv` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Security code (optional storage)',
-  `initial_amount` decimal(10,2) DEFAULT '0.00' COMMENT 'Amount to credit user upon registration (Set first by ADMIN)',
-  `status` enum('Active','Inactive','Blocked','Lost','Expired') COLLATE utf8mb4_unicode_ci DEFAULT 'Inactive',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When card was added to inventory',
-  `is_primary` tinyint(1) DEFAULT '0' COMMENT 'Is this the primary card for the user?',
-  `linked_at` timestamp NULL DEFAULT NULL COMMENT 'Card was linked to user',
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `card_uid` (`card_uid`),
-  UNIQUE KEY `card_number` (`card_number`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_card_uid` (`card_uid`),
-  KEY `idx_card_number` (`card_number`),
-  KEY `idx_status` (`status`),
-  KEY `idx_card_holder` (`card_holder`),
-  CONSTRAINT `cards_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Master inventory of physical cards';
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `cards`
---
+-- =========================================================================
+-- UTILITY & USER TRANSACTION LOGS TABLES (HIGH GROWING DATASETS)
+-- =========================================================================
 
-LOCK TABLES `cards` WRITE;
-/*!40000 ALTER TABLE `cards` DISABLE KEYS */;
-INSERT INTO `cards` VALUES (1,'840570851385','A346F101','errol roxas','2621020251171655','Regular','2036-04-09',NULL,100.00,'Active','2026-02-14 08:50:13',0,NULL,'2026-04-09 09:33:05'),(3,'173886440021','93C13FED','john errol devss','2621028394671655','Regular','2036-02-21',NULL,100.00,'Active','2026-02-21 08:18:02',0,NULL,'2026-04-09 09:40:23'),(4,'615921401740','7310BCEC','john dev','2621020252341655','Regular','2036-02-21',NULL,100.00,'Active','2026-02-21 08:19:52',0,'2026-04-09 10:24:58','2026-04-09 10:24:58'),(5,'573343578549','53A327EC','maja salvador','2621028700527532','Regular','2036-02-21',NULL,100.00,'Active','2026-02-21 08:33:19',0,'2026-04-09 10:35:51','2026-04-09 10:35:51'),(6,'427079423054','F3BF44EC','julia baretto','2621062102879616','Regular','2036-04-09',NULL,100.00,'Active','2026-02-21 08:37:42',0,'2026-04-09 10:40:59','2026-04-09 10:40:59'),(7,'799817330001','038981EC','frances cruz','2621062102292676','Regular','2036-04-28',NULL,100.00,'Active','2026-02-21 08:41:57',0,'2026-04-28 06:05:53','2026-04-28 06:05:53'),(8,'849645895086','2067BE14','ash cue','2621028885926930','Regular','2036-04-29',NULL,100.00,'Active','2026-02-21 08:45:59',0,'2026-04-29 04:17:44','2026-04-29 04:17:44'),(9,'242070109521','50B32514','mhissy acosta','2621027620974570','Regular','2036-04-29',NULL,100.00,'Active','2026-02-21 08:47:26',0,'2026-04-29 04:31:54','2026-04-29 04:31:54'),(10,'100957470319','43006A19','lauren yen','2621020251771655','Regular','2036-05-01',NULL,100.00,'Active','2026-02-21 08:52:17',0,'2026-05-01 03:50:25','2026-05-01 03:50:25'),(11,NULL,'0005584041',NULL,'2601050762341385','Regular','2036-05-01',NULL,100.00,'Inactive','2026-05-01 04:08:10',0,NULL,'2026-05-01 04:08:10');
-/*!40000 ALTER TABLE `cards` ENABLE KEYS */;
-UNLOCK TABLES;
+CREATE TABLE cards (
+    card_number VARCHAR(20) PRIMARY KEY COMMENT 'The visible consumer-facing identifier printed on the physical plastic token',
+    card_uid VARCHAR(50) NOT NULL UNIQUE COMMENT 'The physical hardware chip unique UID read directly from the MIFARE/RFID sectors',
+    user_id VARCHAR(50) NULL COMMENT 'Links cardholder account identity via the public users.user_id string identifier',
+    card_type ENUM('regular', 'student', 'pwd', 'senior') DEFAULT 'regular' COMMENT 'Drives dynamic discount calculation algorithms across transportation fares',
+    discount_verified BOOLEAN DEFAULT FALSE COMMENT 'Flags whether regulatory documents were verified for fare discount tier eligibility',
+    balance DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Current secure stored monetary value assigned to the physical card unit',
+    loyalty_points DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Accrued transaction reward points redeemable at verified retail merchant stations',
+    status ENUM('active', 'inactive', 'blocked', 'lost') DEFAULT 'inactive' COMMENT 'Lifecycle block status constraint to instantly freeze stolen or missing tokens',
+    expiry_date DATE NOT NULL COMMENT 'Expiration threshold date determining card block lifecycle validations',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp tracking when the physical token record was registered in inventory',
+    linked_at TIMESTAMP NULL DEFAULT NULL COMMENT 'Timestamp tracking the exact moment the card was registered to a specific user',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Automatically updates when balances adjust or card status switches occur',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) COMMENT='Ecosystem transit wallet asset tracker maintaining balances, hardware mapping tokens, and fare tier flags';
 
---
--- Table structure for table `fare_settings`
---
 
-DROP TABLE IF EXISTS `fare_settings`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `fare_settings` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `merchant_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `business_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `base_fare` decimal(10,2) DEFAULT '13.00',
-  `per_km_rate` decimal(10,2) DEFAULT '1.50',
-  `minimum_fare` decimal(10,2) DEFAULT '13.00',
-  `pwd_discount_rate` decimal(5,2) DEFAULT '20.00',
-  `student_discount_rate` decimal(5,2) DEFAULT '20.00',
-  `senior_discount_rate` decimal(5,2) DEFAULT '20.00',
-  `loyalty_rate` decimal(5,4) DEFAULT '0.0020' COMMENT '0.0020 = 0.2% cashback',
-  `route_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'For transport: route or plate number',
-  `effective_from` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `effective_to` timestamp NULL DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT '1',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `merchant_code` (`merchant_code`),
-  KEY `idx_route_number` (`route_number`),
-  KEY `idx_merchant_code` (`merchant_code`),
-  KEY `idx_is_active` (`is_active`),
-  CONSTRAINT `fare_settings_ibfk_1` FOREIGN KEY (`merchant_code`) REFERENCES `merchants` (`merchant_code`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Configurable fare and discount settings';
-/*!40101 SET character_set_client = @saved_cs_client */;
+CREATE TABLE transactions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal financial primary index scaled to 64-bit headroom to comfortably support billions of platform entries',
+    transaction_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom unique public reference string (e.g., TXN-2026-104294) printed on digital and paper receipts',
+    card_number VARCHAR(20) NULL COMMENT 'Links target token balance deduction via cards.card_number',
+    merchant_id VARCHAR(50) NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.merchant_id',
+    terminal_id VARCHAR(50) NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.terminal_id',
+    transaction_type ENUM('payment', 'refund', 'reversal', 'topup', 'withdrawal') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
+    amount DECIMAL(10, 2) NOT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
+    points_earned DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Total points earned from the transaction',
+    service_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Platform revenue slice collected by UniCard ecosystem engine per tap processing action',
+    net_merchant_payout DECIMAL(10, 2) GENERATED ALWAYS AS (amount - service_fee) STORED COMMENT 'Automatically calculated column tracking exactly how much money goes to the merchant after our platform cut',
+    processed_by VARCHAR(50) NULL COMMENT 'Public string identifier users.user_id capturing the identity of the physical staff member operating the payment client terminal',
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'completed' COMMENT 'Lifecycle state of the transaction for tracking settlement',
+    description VARCHAR(255) NULL COMMENT 'Optional human-readable note or system-generated label describing the transaction context',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Cryptographic server node timestamp securing exactly when transaction settlement clearing finalized',
+    FOREIGN KEY (card_number) REFERENCES cards(card_number)
+) COMMENT='High-growth financial master ledger capturing all terminal token taps, transaction classifications, and system fees';
 
---
--- Dumping data for table `fare_settings`
---
-
-LOCK TABLES `fare_settings` WRITE;
-/*!40000 ALTER TABLE `fare_settings` DISABLE KEYS */;
-/*!40000 ALTER TABLE `fare_settings` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `loyalty_redemptions`
---
-
-DROP TABLE IF EXISTS `loyalty_redemptions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `loyalty_redemptions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `transaction_id` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `points_used` decimal(10,2) NOT NULL,
-  `value_php` decimal(10,2) NOT NULL COMMENT 'PHP value of redeemed points',
-  `status` enum('Pending','Completed','Cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'Completed',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `transaction_id` (`transaction_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_created_at` (`created_at`),
-  KEY `idx_transaction_id` (`transaction_id`),
-  CONSTRAINT `loyalty_redemptions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `loyalty_redemptions_ibfk_2` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Loyalty points redemption history';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `loyalty_redemptions`
---
-
-LOCK TABLES `loyalty_redemptions` WRITE;
-/*!40000 ALTER TABLE `loyalty_redemptions` DISABLE KEYS */;
-/*!40000 ALTER TABLE `loyalty_redemptions` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `merchants`
---
-
-DROP TABLE IF EXISTS `merchants`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `merchants` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `merchant_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Public merchant identifier',
-  `business_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `business_type` enum('Transport','Retail','Both') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `owner_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `address` text COLLATE utf8mb4_unicode_ci,
-  `route_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'For transport: route or plate number',
-  `store_location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'For retail: store address',
-  `commission_rate` decimal(5,2) DEFAULT '0.00' COMMENT 'Commission percentage',
-  `settlement_account` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Bank account for settlements',
-  `status` enum('Active','Suspended','Inactive','Removed') COLLATE utf8mb4_unicode_ci DEFAULT 'Active',
-  `verified` tinyint(1) DEFAULT '0' COMMENT 'Verified status indicates if the merchant has completed KYC/verification',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `merchant_code` (`merchant_code`),
-  KEY `idx_merchant_code` (`merchant_code`),
-  KEY `idx_business_type` (`business_type`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Merchant accounts (drivers and store owners)';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `merchants`
---
-
-LOCK TABLES `merchants` WRITE;
-/*!40000 ALTER TABLE `merchants` DISABLE KEYS */;
-/*!40000 ALTER TABLE `merchants` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `receipts`
---
-
-DROP TABLE IF EXISTS `receipts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `receipts` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `transaction_id` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `receipt_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `receipt_type` enum('Payment','Topup','Refund') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email_sent` tinyint(1) DEFAULT '0',
-  `email_sent_at` timestamp NULL DEFAULT NULL,
-  `email_opened` tinyint(1) DEFAULT '0',
-  `pdf_generated` tinyint(1) DEFAULT '0',
-  `pdf_data` longblob,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `receipt_number` (`receipt_number`),
-  KEY `idx_transaction_id` (`transaction_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_receipt_number` (`receipt_number`),
-  CONSTRAINT `receipts_ibfk_1` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `receipts_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='E-receipt generation and tracking';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `receipts`
---
-
-LOCK TABLES `receipts` WRITE;
-/*!40000 ALTER TABLE `receipts` DISABLE KEYS */;
-/*!40000 ALTER TABLE `receipts` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `transactions`
---
-
-DROP TABLE IF EXISTS `transactions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `transactions` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `card_number` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `transaction_type` enum('Topup','Payment','Refund','Adjustment') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `category` enum('Transport','Retail','Other') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `amount` decimal(10,2) NOT NULL COMMENT 'Final transaction amount',
-  `balance_before` decimal(10,2) NOT NULL,
-  `balance_after` decimal(10,2) NOT NULL,
-  `discount_amount` decimal(10,2) DEFAULT '0.00' COMMENT 'If amount is 8.00 and discount is 2.00, the original price was 10.00.',
-  `discount_type` enum('Regular','PWD','Student','Senior','Promo') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Reason for discount (PWD, Student, Senior, Promo)',
-  `points_earned` decimal(10,2) DEFAULT '0.00',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'Optional notes or item details (e.g., "Monthly Pass")',
-  `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Route number or store name(Human-readable location (e.g., "Main St. Coffee" or "Bus 42")',
-  `merchant_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Link to the merchant who received payment (Nullable for system adjustments)',
-  `terminal_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ID of the physical device/reader used (for debugging/tracking)',
-  `payment_method` enum('Stripe','E-Wallet','Bank','Cash','Points') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `reference_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'External/Internal REF ID (e.g. Stripe Charge ID, GCash Ref No.)',
-  `transaction_id` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('Pending','Completed','Failed','Refunded') COLLATE utf8mb4_unicode_ci DEFAULT 'Completed',
-  `failure_reason` text COLLATE utf8mb4_unicode_ci COMMENT 'Error message if status is "Failed" (e.g., "Insufficient funds")',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `completed_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_card_number` (`card_number`),
-  KEY `idx_transaction_type` (`transaction_type`),
-  KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`),
-  KEY `idx_merchant_code` (`merchant_code`),
-  KEY `idx_reference_id` (`reference_id`),
-  KEY `idx_transaction_id` (`transaction_id`),
-  CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`merchant_code`) REFERENCES `merchants` (`merchant_code`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='All transaction records (payments, top-ups, refunds)';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `transactions`
---
-
-LOCK TABLES `transactions` WRITE;
-/*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
-/*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `users`
---
-
-DROP TABLE IF EXISTS `users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `users` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Public user ID (e.g., account number)',
-  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Login username',
-  `full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Bcrypt password hash',
-  `card_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'RFID card unique identifier (internal)',
-  `card_number` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '16-digit printed card number',
-  `user_type` enum('Regular','PWD','Student','Senior') COLLATE utf8mb4_unicode_ci DEFAULT 'Regular',
-  `balance` decimal(10,2) DEFAULT '0.00' COMMENT 'Current card balance in PHP',
-  `loyalty_points` decimal(10,2) DEFAULT '0.00' COMMENT 'Accumulated loyalty points',
-  `status` enum('Active','Blocked','Inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'Active',
-  `id_verified` tinyint(1) DEFAULT '0' COMMENT 'Has user uploaded valid ID',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `last_login` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`),
-  UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `card_id` (`card_id`),
-  UNIQUE KEY `card_number` (`card_number`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_username` (`username`),
-  KEY `idx_email` (`email`),
-  KEY `idx_card_number` (`card_number`),
-  KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User accounts and card information';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `users`
---
-
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'840570851385','user26fxvolv05729','errol roxas','one.devteam.25@gmail.com','09952329743','$2a$10$qpIlzDQLDucvSdNWZy/R3OMdhonkG2bo75WyHZjz8QnOB4NasmbMa','CARD-021426fgxRf9Q','459543887671','Regular',100.00,0.00,'Active',0,'2026-02-13 20:57:29','2026-02-21 04:33:59',NULL),(43,'173886440021','user26ehrzr3e2121','john errol devss','devzeeh@gmail.com','09123456789','$2a$10$1cDLHp3cfBoPtXYzGjkMquqv/whHWE/qlHLFNKgp6kQfZ/IsG8yJi','CARD-040926nzAdIIc','2621028394671655','Regular',100.00,0.00,'Active',0,'2026-04-08 20:21:21','2026-04-17 07:14:57',NULL),(44,'615921401740','user26ilbbt392458','john dev','jjohnroxas06@gmail.com','09123456788','$2a$10$ETcFIEEED8jmkwaK3OicpueNulxYPCEJToeKZjZWTQsA8lSNWHkR.','CARD-040926mcnG6F7','2621020252341655','Regular',100.00,0.00,'Active',0,'2026-04-08 22:24:58','2026-05-20 01:49:20',NULL),(45,'573343578549','user262evjp0v3551','maja salvador','majasalvador@gmail.com','09123123412','$2a$12$u3ySLle7MOBG/2FeOjS96eyCxITcjD10LvYPDOP9pkuvxLe6JHVx2','CARD-040926EvJOB49','2621028700527532','Regular',100.00,0.00,'Active',0,'2026-04-08 22:35:51','2026-04-14 05:08:25',NULL),(47,'427079423054','user26t5tp7ys4059','julia baretto','juliabaretto@gmail.com','0987654321','$2a$10$SnUcFjvugos89TQFqJqDm.6bKCtcrNOdAwvxdLMnvaMU8nrBiMDf.','CARD-040926VQUXMFZ','2621062102879616','Regular',100.00,0.00,'Active',0,'2026-04-08 22:40:59','2026-04-09 10:40:59',NULL),(48,'799817330001','user266iynhsu0553','frances cruz','francescruz@gmail.com','09987654321','$2a$12$xC4wv64kjhMF8Rt6dswkFOleSaU5olPTameBMh5uDX1rGLV6nHEDi','CARD-042826Z2nMhwE','2621062102292676','Regular',100.00,0.00,'Active',0,'2026-04-27 18:05:53','2026-04-28 06:29:20',NULL),(49,'849645895086','user26xx95elc1744','ash cue','jjohnroxas06+dev@gmail.com','09987252723','$2a$10$Hbu8bQ1iCBuIE8U5LCanOeDlqY8WHhE7bNzN6HIHvtSncBMi5fLoC','CARD-042926N1gZYZs','2621028885926930','Regular',100.00,0.00,'Active',0,'2026-04-29 04:17:44','2026-04-29 04:17:44',NULL),(50,'242070109521','user26i89wuxv3154','mhissy acosta','missacosta@gmail.com','09987526323','$2a$10$BimoLj3vyJqFcpquZ5LcauViuR0ZJwwFa0zEG/176yVNbBSTGy7/G','CARD-042926zX5v3kZ','2621027620974570','Regular',100.00,0.00,'Active',0,'2026-04-29 04:31:54','2026-04-29 04:31:54',NULL),(51,'100957470319','user26fw59znn5025','lauren yen','laurenyen@gmail.com','09765434526','$2a$10$/AOys2.oPFXDPOjNQDcBM.vG1WNAF0k3Ej1YvYerqzbIUy5upa8Pa','CARD-050126FFAanLE','2621020251771655','Regular',100.00,0.00,'Active',0,'2026-05-01 03:50:25','2026-05-01 03:50:25',NULL);
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2026-05-20 10:05:59
+CREATE TABLE top_ups (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Internal tracking row index scaled to 64-bit headroom to safely accommodate massive historical logging growth',
+    topup_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'Custom unique public transaction code (e.g., LD-2026-987153) used for user receipts and payment gateway queries',
+    card_number VARCHAR(20) NOT NULL COMMENT 'Links target token balance injection via cards.card_number',
+    amount DECIMAL(10, 2) NOT NULL COMMENT 'Gross load amount requested by the customer before convenience charges are applied',
+    convenience_fee DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Ecosystem engine collection fee applied to over-the-air channels like GCash or Maya webhooks',
+    gateway_cost DECIMAL(10, 2) DEFAULT 0.00 COMMENT 'Actual fee incurred from external payment providers (GCash, Maya, Bank) per transaction',
+    net_gateway_fee DECIMAL(10, 2) GENERATED ALWAYS AS (convenience_fee - gateway_cost) STORED COMMENT 'Automatically calculated net revenue kept by the platform after 3rd party costs',
+    total_charged DECIMAL(10, 2) GENERATED ALWAYS AS (amount + convenience_fee) STORED COMMENT 'Automatically calculated column representing the absolute total cash value collected from the external channel source',
+    payment_method ENUM('cash', 'gcash', 'maya', 'over_the_counter', 'xendit') NOT NULL COMMENT 'Drives system tracking to audit cash-drawer liquid positions against programmatic API callbacks',
+    handled_by VARCHAR(50) NULL COMMENT 'Public user_id string identifier referencing the administrative staff member who manually accepted physical bills if OTC cash-loaded',
+    external_id VARCHAR(255) NULL UNIQUE COMMENT 'External reference ID from payment gateways like Xendit to prevent double processing',
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'completed' COMMENT 'State pipeline tracker handling payment gateway processing exceptions or drops',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Auto-generated clock timestamp mapping exactly when wallet balance credits were finalized',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tracks chronological life cycle changes, such as a top-up shifting from pending to completed',
+    FOREIGN KEY (card_number) REFERENCES cards(card_number)
+) COMMENT='High-growth balance loader ledger maintaining immutable compliance auditing for all incoming ecosystem liquidity channels';
