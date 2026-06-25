@@ -45,11 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 reader.onerror = error => reject(error);
             });
 
-            const dtiFile = document.getElementById("dtiDocument").files[0];
+            const bizDocFile = document.getElementById("businessDocument").files[0];
             const birFile = document.getElementById("birDocument").files[0];
             const otherFile = document.getElementById("otherDocument").files[0];
 
-            const dtiDocument = await toBase64(dtiFile);
+            const businessDocument = await toBase64(bizDocFile);
             const birDocument = await toBase64(birFile);
             const otherDocument = await toBase64(otherFile);
 
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 businessPhone,
                 businessEmail,
                 password,
-                dtiDocument,
+                businessDocument,
                 birDocument,
                 otherDocument
             };

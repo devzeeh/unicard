@@ -20,20 +20,20 @@ import (
 )
 
 type MerchantSignupRequest struct {
-	BusinessName    string `json:"businessName" validate:"required"`
-	BusinessType    string `json:"businessType" validate:"required"`
-	BusinessAddress string `json:"businessAddress" validate:"required"`
-	OwnerName       string `json:"ownerName" validate:"required"`
-	BusinessPhone   string `json:"businessPhone" validate:"required"`
-	BusinessEmail   string `json:"businessEmail" validate:"required,email"`
-	Password        string `json:"password" validate:"required,min=6"`
-	DtiDocument     string `json:"dtiDocument"`
-	BirDocument     string `json:"birDocument"`
-	OtherDocument   string `json:"otherDocument"`
+	BusinessName     string `json:"businessName" validate:"required"`
+	BusinessType     string `json:"businessType" validate:"required"`
+	BusinessAddress  string `json:"businessAddress" validate:"required"`
+	OwnerName        string `json:"ownerName" validate:"required"`
+	BusinessPhone    string `json:"businessPhone" validate:"required"`
+	BusinessEmail    string `json:"businessEmail" validate:"required,email"`
+	Password         string `json:"password" validate:"required,min=6"`
+	BusinessDocument string `json:"businessDocument"`
+	BirDocument      string `json:"birDocument"`
+	OtherDocument    string `json:"otherDocument"`
 }
 
 // Helper to save base64 to file
-func saveBase64ToFile(b64data, merchantID, docType string) string {
+func saveBase64ToFile(b64data string) string {
 	if b64data == "" {
 		return ""
 	}
@@ -53,9 +53,9 @@ func saveBase64ToFile(b64data, merchantID, docType string) string {
 	}
 	// Create directory if not exists
 	os.MkdirAll("./storage/documents", os.ModePerm)
-	fileName := fmt.Sprintf("%s_%s_%d%s", merchantID, docType, time.Now().Unix(), ext)
+	fileName := fmt.Sprintf("%d%s", time.Now().Unix(), ext)
 	filePath := filepath.Join("./storage/documents", fileName)
-	
+
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
 		return ""
@@ -184,23 +184,23 @@ func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) 
 	regNum := fmt.Sprintf("UCBZ-%s-%010d", time.Now().Format("010205"), nReg.Int64())
 
 	// Save Documents
-	dtiPath := saveBase64ToFile(req.DtiDocument, merchantID, "DTI")
-	birPath := saveBase64ToFile(req.BirDocument, merchantID, "BIR")
-	otherPath := saveBase64ToFile(req.OtherDocument, merchantID, "OTHER")
+	bizDocPath := saveBase64ToFile(req.BusinessDocument)
+	birPath := saveBase64ToFile(req.BirDocument)
+	otherPath := saveBase64ToFile(req.OtherDocument)
 
 	// Insert Merchant with placeholder 'PENDING' for settlement fields
 	fixedCommissionRate := 2.00
 	merchStmt := `INSERT INTO merchants (
 		merchant_id, business_name, business_type, business_registration_number, business_address, 
 		user_id, owner_name, business_email, business_phone, commission_rate, 
-		status, dti_document, bir_document, other_document
+		status, business_document, bir_document, other_document
 	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	
+
 	_, err = tx.ExecContext(ctx, merchStmt,
 		merchantID, req.BusinessName, req.BusinessType, regNum, req.BusinessAddress,
 		userID, req.OwnerName, req.BusinessEmail, req.BusinessPhone, fixedCommissionRate,
 		"pending approval",
-		dtiPath, birPath, otherPath,
+		bizDocPath, birPath, otherPath,
 	)
 
 	if err != nil {

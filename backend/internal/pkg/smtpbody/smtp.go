@@ -285,6 +285,45 @@ func EmailVerificationBody() string {
 		</div>
 		<div class="footer">
 			&copy; ` + Year() + ` Unicard. All rights reserved.
+	</div>
+</body>
+</html>`
+}
+
+func MerchantDeletedEmail() string {
+	return `<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Unicard Account Deleted</title>
+	<style>
+		body { font-family: 'Inter', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+		.container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
+		.header { background-color: #0f172a; color: #ffffff; padding: 20px; text-align: center; }
+		.header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+		.content { padding: 30px; color: #334155; line-height: 1.6; }
+		.content p { margin: 0 0 15px; }
+		.reason-box { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; color: #7f1d1d; }
+		.footer { background-color: #f8fafc; padding: 15px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1>Unicard</h1>
+		</div>
+		<div class="content">
+			<p>Hello %s,</p>
+			<p>This is a formal notice that your Unicard merchant account has been permanently deleted by an administrator.</p>
+			<div class="reason-box">
+				<strong>Note:</strong><br>
+				All terminals associated with your account have been deactivated and unregistered. Your account access has been revoked.
+			</div>
+			<p>If you have any pending settlements or questions regarding this action, please contact our support team immediately.</p>
+			<p>Thank you,<br>The Unicard Team</p>
+		</div>
+		<div class="footer">
+			&copy; ` + Year() + ` Unicard. All rights reserved.
 		</div>
 	</div>
 </body>

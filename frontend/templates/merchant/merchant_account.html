@@ -132,7 +132,16 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Bank Name</label>
-                                        <input type="text" id="bankName" readonly class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 focus:outline-none uppercase" value="" />
+                                        <select id="bankName" disabled class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 focus:outline-none uppercase appearance-none cursor-not-allowed">
+                                            <option value="" disabled selected>Select a Bank</option>
+                                            <option value="BDO">BDO</option>
+                                            <option value="METROBANK">METROBANK</option>
+                                            <option value="MAYA BANK">MAYA BANK</option>
+                                            <option value="GOTYME BANK">GOTYME BANK</option>
+                                            <option value="BPI">BPI</option>
+                                            <option value="AUB">AUB</option>
+                                            <option value="EASTWEST">EASTWEST</option>
+                                        </select>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-700 mb-2">Account Holder Name</label>
@@ -143,18 +152,43 @@
                                         <input type="text" id="bankAccount" readonly class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 font-mono tracking-widest focus:outline-none" value="" />
                                     </div>
                                 </div>
+                                <div id="bankDetailsActionContainer" class="hidden mt-4 flex justify-end space-x-3">
+                                    <button type="button" id="bankDetailsCancelBtn" class="hidden px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                                    <button type="button" id="editBankDetailsBtn" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">Edit</button>
+                                    <button type="button" id="saveBankDetailsBtn" class="hidden px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors opacity-50 cursor-not-allowed" disabled>Save Changes</button>
+                                </div>
                             </div>
                         </section>
 
                         <!-- Documents -->
                         <section class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+                            <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                                 <h3 class="text-lg font-bold text-gray-900 flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                     Uploaded Documents
                                 </h3>
+                                <div class="flex items-center gap-2">
+                                    <span id="displayDocumentStatus" class="mr-2"></span>
+                                    <button type="button" id="globalDocCancelBtn" class="hidden px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                                    <button type="button" id="globalDocUploadBtn" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">Edit</button>
+                                </div>
                             </div>
                             <div class="p-6">
+                                <div id="docMessageContainer" class="hidden mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3 w-full">
+                                            <h3 class="text-sm font-bold text-amber-800">Admin Feedback</h3>
+                                            <div class="mt-1 text-sm text-amber-700">
+                                                <p id="displayAccountMessage"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div id="documentsContainer" class="space-y-4">
                                     <!-- Populated by JS -->
                                 </div>
@@ -165,6 +199,38 @@
             </main>
         </div>
     </div>
+    <!-- Document Viewer Modal -->
+    <div id="documentViewerModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4 md:p-8">
+        <div class="relative w-full max-w-5xl h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900">Document Viewer</h3>
+                <div class="flex items-center gap-4">
+                    <div id="imageZoomControls" class="hidden flex items-center gap-2 mr-4 border-r border-gray-200 pr-4">
+                        <button id="zoomOutBtn" class="p-1 rounded text-gray-500 hover:bg-gray-100 focus:outline-none" title="Zoom Out">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg>
+                        </button>
+                        <span id="zoomLevel" class="text-xs font-medium text-gray-600 w-12 text-center">100%</span>
+                        <button id="zoomInBtn" class="p-1 rounded text-gray-500 hover:bg-gray-100 focus:outline-none" title="Zoom In">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                        </button>
+                        <button id="zoomResetBtn" class="p-1 rounded text-gray-500 hover:bg-gray-100 focus:outline-none" title="Reset Zoom">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                    <button onclick="document.getElementById('documentViewerModal').classList.add('hidden'); document.getElementById('documentViewerFrame').src=''; document.getElementById('documentViewerImage').src='';" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 bg-gray-100 overflow-hidden rounded-b-xl flex items-center justify-center p-4">
+                <iframe id="documentViewerFrame" class="hidden w-full h-full border-0 bg-transparent" src=""></iframe>
+                <img id="documentViewerImage" class="hidden max-w-full max-h-full object-contain drop-shadow-md bg-white p-2" src="" alt="Document Preview">
+            </div>
+        </div>
+    </div>
+
     <style>
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(10px); }
