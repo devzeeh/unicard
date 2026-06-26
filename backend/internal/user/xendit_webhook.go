@@ -2,14 +2,10 @@ package user
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // XenditWebhookPayload represents the expected payload from Xendit Invoice webhook
@@ -70,113 +66,81 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 	// switch case for payment status
 	switch payload.Status {
 	case "PAID", "SETTLED":
-		externalID := payload.ExternalID
-		// check if external id is for top up
-		if strings.HasPrefix(externalID, "TOPUP") && len(externalID) > 21 {
-			// TOPUP is 5 chars, CardNumber is strictly 16 chars
-			// indexes 5 to 21
-			cardNumber := externalID[5:21]
+		externalID := payload.ExternalID // This maps to our topup_id
 
-			remainder := externalID[21:]
-			// find first dot
-			firstDot := strings.Index(remainder, ".")
-			if firstDot == -1 || len(remainder) < firstDot+3 {
-				log.Println("Invalid external ID format: missing base amount")
-				http.Error(w, "Invalid external ID data", http.StatusBadRequest)
-				return
-			}
-			baseAmountStr := remainder[:firstDot+3] // e.g. 50.00
-
-			remainder2 := remainder[firstDot+3:]
-			// find second dot
-			secondDot := strings.Index(remainder2, ".")
-			if secondDot == -1 || len(remainder2) < secondDot+3 {
-				log.Println("Invalid external ID format: missing fee amount")
-				http.Error(w, "Invalid external ID data", http.StatusBadRequest)
-				return
-			}
-			convenienceFeeStr := remainder2[:secondDot+3] // e.g. 15.00
-
-			// convert string to float
-			baseAmount, err1 := strconv.ParseFloat(baseAmountStr, 64)
-			convenienceFee, err2 := strconv.ParseFloat(convenienceFeeStr, 64)
-
-			if err1 != nil || err2 != nil {
-				log.Println("Failed to parse amounts from external ID")
-				http.Error(w, "Invalid external ID data", http.StatusBadRequest)
-				return
-			}
-
-			// process successful top up
-			err := h.processSuccessfulTopUp(cardNumber, baseAmount, convenienceFee, 0.0, "xendit", payload.ExternalID)
-			if err != nil {
-				log.Println("Database transaction failed:", err)
-				w.WriteHeader(http.StatusOK) // don't return 500 to Xendit
-				return
-			}
-
-			log.Printf("Successfully loaded ₱%.2f onto card %s via Xendit", baseAmount, cardNumber)
-		} else {
-			log.Println("Unrecognized External ID format:", payload.ExternalID)
+		// Start Database Transaction
+		tx, err := h.DB.Begin()
+		if err != nil {
+			log.Println("Failed to start transaction:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-	// log if payment failed or expired
-	case "EXPIRED", "FAILED":
-		log.Printf("Payment failed for external ID: %s, status: %s", payload.ExternalID, payload.Status)
+		defer tx.Rollback()
+
+		var cardNumber string
+		var amount float64
+		var currentStatus string
+
+		// Fetch the top-up record
+		err = tx.QueryRow(`SELECT card_number, amount, status FROM top_ups WHERE topup_id = ?`, externalID).Scan(&cardNumber, &amount, &currentStatus)
+		if err != nil {
+			log.Println("Failed to find top-up record or invalid external_id:", err)
+			w.WriteHeader(http.StatusOK) // Ignore if not found
+			return
+		}
+
+		// Prevent double processing
+		if currentStatus == "completed" {
+			log.Println("Top-up already completed, skipping.")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Update the User's Balance
+		if _, err := tx.Exec(`UPDATE cards SET balance = balance + ? WHERE card_number = ?`, amount, cardNumber); err != nil {
+			log.Println("Failed to update card balance:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Mark the top-up ledger as completed
+		if _, err := tx.Exec(`UPDATE top_ups SET status = 'completed' WHERE topup_id = ?`, externalID); err != nil {
+			log.Println("Failed to update top_ups status:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Mark the transaction ledger as completed. We find the related pending transaction by card_number, amount, and status.
+		// We use LIMIT 1 to ensure we only update one pending transaction if there are duplicates.
+		if _, err := tx.Exec(`UPDATE transactions SET status = 'completed', description = 'Successful topup via Xendit' WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, amount); err != nil {
+			log.Println("Failed to update transactions status:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := tx.Commit(); err != nil {
+			log.Println("Failed to commit transaction:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Successfully loaded ₱%.2f onto card %s via Xendit", amount, cardNumber)
+
+	// log if payment failed, expired, or canceled
+	case "EXPIRED", "FAILED", "PENDING", "CANCELED":
+		log.Printf("Payment failed or pending for external ID: %s, status: %s", payload.ExternalID, payload.Status)
+		if payload.Status == "EXPIRED" || payload.Status == "FAILED" || payload.Status == "CANCELED" {
+			// Update the database records to failed so users see it as failed
+			_, _ = h.DB.Exec(`UPDATE top_ups SET status = 'failed' WHERE topup_id = ? AND status = 'pending'`, payload.ExternalID)
+			
+			var cardNumber string
+			var amount float64
+			if err := h.DB.QueryRow(`SELECT card_number, amount FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount); err == nil {
+				_, _ = h.DB.Exec(`UPDATE transactions SET status = 'failed', description = 'Failed topup via Xendit' WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, amount)
+			}
+		}
 	}
 
 	// Always 200 OK to Xendit
 	w.WriteHeader(http.StatusOK)
-}
-
-// Helper function to handle the database transaction
-func (h *Handler) processSuccessfulTopUp(cardNumber string, baseAmount float64, convenienceFee float64, paymentGatewayCost float64, paymentMethod string, externalID string) error {
-	topupID := fmt.Sprintf("TOPUP-%d", time.Now().UnixNano())
-	transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
-
-	// begin transaction to make sure that all database operations are performed in a single unit of work
-	// if any operation fails, the entire transaction will be rolled back and the database will be left unchanged
-	tx, err := h.DB.Begin()
-	if err != nil {
-		return err
-	}
-	// if transaction fails, rollback not close the transaction
-	// Rollback() will do nothing if the transaction is already closed (committed or rolled back)
-	// so that's why we use defer tx.Rollback()
-	// This pattern ensures that the database connection is properly managed
-	// and that any errors during the transaction are handled gracefully.
-	defer tx.Rollback()
-
-	// Check if already processed
-	// this prevents double top up if xendit sends multiple webhooks or network delay causes multiple requests
-	// using external_id as unique identifier for each top up
-	var exists bool
-	if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM top_ups WHERE external_id = ?)`, externalID).Scan(&exists); err != nil {
-		return err
-	}
-	if exists {
-		return nil // already processed, skip silently
-	}
-
-	// Update User Balance
-	// Using atomic update to prevent race conditions
-	if _, err := tx.Exec(`UPDATE cards SET balance = balance + ? WHERE card_number = ?`, baseAmount, cardNumber); err != nil {
-		return err
-	}
-
-	// Insert into Loading Ledger (top_ups table)
-	// top_ups table is our loading ledger
-	queryTopUp := `INSERT INTO top_ups (topup_id, card_number, amount, convenience_fee, gateway_cost, payment_method, handled_by, external_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-	if _, err := tx.Exec(queryTopUp, topupID, cardNumber, baseAmount, convenienceFee, paymentGatewayCost, paymentMethod, "payment gateway", externalID); err != nil {
-		return err
-	}
-
-	// Insert into Spending Ledger (transactions table)
-	// transactions table is our spending ledger
-	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	if _, err := tx.Exec(queryTx, transactionID, cardNumber, "xendit", "xendit", "topup", baseAmount, convenienceFee, "xendit", "Successful topup via Xendit"); err != nil {
-		return err
-	}
-
-	// Commit the transaction if everything is fine
-	return tx.Commit()
 }
