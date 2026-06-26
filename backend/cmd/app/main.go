@@ -113,7 +113,7 @@ func main() {
 
 	// Payment gateway endpoints
 	// Xendit's servers call this behind the scenes when the payment is done
-	mux.HandleFunc("POST /api/webhooks/xendit", userHandler.XenditWebhook)
+	mux.HandleFunc("POST /api/webhooks/xendit/invoice", userHandler.XenditWebhook)
 	mux.HandleFunc("POST /api/webhooks/xendit/disbursement", merchantHandler.XenditDisbursementWebhook)
 	mux.Handle("POST /v1/user/{username}/topup/checkout", requireCustomer(http.HandlerFunc(userHandler.CreateXenditInvoice)))
 	mux.Handle("GET /u/{username}/transaction", requireCustomer(http.HandlerFunc(userHandler.TransactionView)))
