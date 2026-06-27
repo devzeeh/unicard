@@ -17,8 +17,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var tpl *template.Template
-var db *sql.DB
+var (
+	tpl *template.Template
+	db  *sql.DB
+)
 
 func main() {
 	// Load .env file
@@ -77,7 +79,7 @@ func main() {
 
 	// general endpoints
 	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler) // Login authentication endpoint
+	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler)  // Login authentication endpoint
 	mux.HandleFunc("POST /v1/refresh", authHandler.RefreshTokenHandler) // Refresh token endpoint
 	mux.HandleFunc("GET /merchant-signup", authHandler.MerchantSignupView)
 	mux.HandleFunc("POST /v1/merchant-signup", authHandler.MerchantSignupHandler)
@@ -181,8 +183,8 @@ func main() {
 	})
 
 	// Start Server
-	fmt.Println("Server started on: http://" + serverAddress + port)
-	if err := http.ListenAndServe(serverAddress+port, customHandler); err != nil {
+	fmt.Println("Server started on: http://" + serverAddress + ":" + port)
+	if err := http.ListenAndServe(serverAddress+":"+port, customHandler); err != nil {
 		log.Fatal(err)
 	}
 }

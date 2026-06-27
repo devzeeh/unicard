@@ -26,14 +26,14 @@ type BusinessDetails struct {
 
 type BusinessDocument struct {
 	DocumentType      string `json:"document_type"`
-	Status            string `json:"status"`
-	Message           string `json:"message,omitempty"`
+	Status            string `json:"document_status"`
+	Message           string `json:"message"`
 	BusinessStructure string `json:"business_structure"`
 	DocumentURL       string `json:"document_url"`
 }
 
 type BusinessBankDetails struct {
-	AccountHolderName string `json:"account_holder_name"`
+	AccountHolderName string `json:"account_name"`
 	BankName          string `json:"bank_name"`
 	AccountNumber     string `json:"account_number"`
 }
@@ -47,6 +47,28 @@ type AccountSummary struct {
 	BusinessDetails     BusinessDetails     `json:"business_details"`
 	BusinessBankDetails BusinessBankDetails `json:"business_bank_details"`
 	BusinessDocuments   []BusinessDocument  `json:"business_document"`
+}
+
+type MerchantDetails struct {
+	merchantID        string `db:"merchant_id"`
+	accountStatus     string `db:"status"`
+	businessName      string `db:"business_name"`
+	businessType      string `db:"business_type"`
+	businessStructure string `db:"business_structure"`
+	businessEmail     string `db:"business_email"`
+	businessPhone     string `db:"business_phone"`
+	businessAddress   string `db:"business_address"`
+	city              string `db:"city"`
+	postalCode        string `db:"postal_code"`
+	accName           string `db:"settlement_account_name"`
+	bankName          string `db:"settlement_bank_name"`
+	accNumber         string `db:"settlement_account_number"`
+	businessDoc       string `db:"business_document,bir_document"`
+	birDoc            string `db:"bir_document"`
+	otherDoc          string `db:"other_document"`
+	docStatus         string `db:"document_status"`
+	docMessage        string `db:"message"`
+	createdAtStr      string `db:"created_at"`
 }
 
 // MerchantAccountView renders the merchant_account.html template
@@ -76,21 +98,15 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// 1. Holds the data fetched from the database
-	var (
-		merchantID, accountStatus, businessName, businessType, businessStructure,
-		businessEmail, businessPhone, businessAddress, city,
-		postalCode, accName, bankName, accNumber, businessDoc, birDoc, otherDoc,
-		docStatus, docMessage, createdAtStr string
-	)
+	// Holds the data fetched from the database
+	var merchant MerchantDetails
 
-	// 2. Execute the full JOIN query
+	// Execute the full JOIN query
 	err := h.DB.QueryRowContext(ctx, `
         SELECT 
             m.merchant_id, 
             COALESCE(m.status, ''), 
             COALESCE(DATE_FORMAT(m.created_at, '%M %d, %Y'), '') as created_at,
-            
             -- Business Info
             COALESCE(m.business_name, ''), 
             COALESCE(m.business_type, ''), 
@@ -98,16 +114,13 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             COALESCE(m.business_email, ''), 
             COALESCE(m.business_phone, ''), 
             COALESCE(m.business_address, ''),
-            
             -- Location Info
             COALESCE(m.city, ''),
-            COALESCE(m.postal_code, ''),
-            
+            COALESCE(m.postal_code, ''), 
             -- Bank Info
             COALESCE(m.settlement_account_name, ''), 
             COALESCE(m.settlement_bank_name, ''), 
             COALESCE(m.settlement_account_number, ''),
-            
             -- Document Info
             COALESCE(m.business_structure, ''),
 			COALESCE(m.business_document, ''),
@@ -115,31 +128,15 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             COALESCE(m.other_document, ''),
             COALESCE(m.document_status, ''),
             COALESCE(m.message, '')
-            
         FROM merchants m
         JOIN users u ON m.user_id = u.user_id
         WHERE u.username = ?
     `, username).Scan(
-		&merchantID,
-		&accountStatus,
-		&createdAtStr,
-		&businessName,
-		&businessType,
-		&businessStructure,
-		&businessEmail,
-		&businessPhone,
-		&businessAddress,
-		&city,
-		&postalCode,
-		&accName,
-		&bankName,
-		&accNumber,
-		&businessStructure,
-		&businessDoc,
-		&birDoc,
-		&otherDoc,
-		&docStatus,
-		&docMessage,
+		&merchant.merchantID, &merchant.accountStatus, &merchant.createdAtStr, &merchant.businessName,
+		&merchant.businessType, &merchant.businessStructure, &merchant.businessEmail, &merchant.businessPhone,
+		&merchant.businessAddress, &merchant.city, &merchant.postalCode, &merchant.accName,
+		&merchant.bankName, &merchant.accNumber, &merchant.businessStructure, &merchant.businessDoc,
+		&merchant.birDoc, &merchant.otherDoc, &merchant.docStatus, &merchant.docMessage,
 	)
 
 	if err != nil {
@@ -151,80 +148,77 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// 3. Format UI Logic
-	memberSince := createdAtStr
+	// Format UI Logic
+	memberSince := merchant.createdAtStr
 
 	var maskedAccount string
-	if len(accNumber) > 4 {
-		maskedAccount = "**** **** **** " + accNumber[len(accNumber)-4:]
-	} else if accNumber != "" {
-		maskedAccount = accNumber
+	if len(merchant.accNumber) > 4 {
+		maskedAccount = "**** **** **** " + merchant.accNumber[len(merchant.accNumber)-4:]
+	} else if merchant.accNumber != "" {
+		maskedAccount = merchant.accNumber
 	}
 
-	// 4. Update the dynamic Document Array logic
+	// Update the dynamic Document Array logic
 	documents := []BusinessDocument{}
 
 	// Business Registration (DTI or SEC)
-	if businessDoc != "" {
+	if merchant.businessDoc != "" {
 		registrationLabel := "DTI/SEC Registration"
 
 		documents = append(documents, BusinessDocument{
 			DocumentType:      registrationLabel,
-			Status:            docStatus,  // Quotes removed!
-			Message:           docMessage, // Quotes removed!
-			BusinessStructure: businessStructure,
-			DocumentURL:       businessDoc,
+			Status:            merchant.docStatus,  // Quotes removed!
+			Message:           merchant.docMessage, // Quotes removed!
+			BusinessStructure: merchant.businessStructure,
+			DocumentURL:       merchant.businessDoc,
 		})
 	}
 
 	// Tax Registration (BIR)
-	if birDoc != "" {
+	if merchant.birDoc != "" {
 		documents = append(documents, BusinessDocument{
 			DocumentType: "BIR Certificate",
-			Status:       docStatus,
-			Message:      docMessage,
-			DocumentURL:  birDoc,
+			Status:       merchant.docStatus,
+			Message:      merchant.docMessage,
+			DocumentURL:  merchant.birDoc,
 		})
 	}
 
 	// Other Document
-	if otherDoc != "" {
+	if merchant.otherDoc != "" {
 		documents = append(documents, BusinessDocument{
 			DocumentType: "Other Document",
-			Status:       docStatus,
-			Message:      docMessage,
-			DocumentURL:  otherDoc,
+			Status:       merchant.docStatus,
+			Message:      merchant.docMessage,
+			DocumentURL:  merchant.otherDoc,
 		})
 	}
 
-	// 5. Construct the final struct
+	// Construct the final struct
 	responseData := AccountSummary{
-		MerchantID:     merchantID,
-		AccountStatus:  accountStatus,
-		DocumentStatus: docStatus,
-		AccountMessage: docMessage,
+		MerchantID:     merchant.merchantID,
+		AccountStatus:  merchant.accountStatus,
+		DocumentStatus: merchant.docStatus,
+		AccountMessage: merchant.docMessage,
 		MemberSince:    memberSince,
-
 		BusinessDetails: BusinessDetails{
-			BusinessName:    businessName,
-			BusinessType:    businessType,
-			BusinessEmail:   businessEmail,
-			BusinessPhone:   businessPhone,
-			BusinessAddress: businessAddress,
-			City:            city,
-			PostalCode:      postalCode,
+			BusinessName:    merchant.businessName,
+			BusinessType:    merchant.businessType,
+			BusinessEmail:   merchant.businessEmail,
+			BusinessPhone:   merchant.businessPhone,
+			BusinessAddress: merchant.businessAddress,
+			City:            merchant.city,
+			PostalCode:      merchant.postalCode,
 		},
-
 		BusinessBankDetails: BusinessBankDetails{
-			AccountHolderName: accName,
-			BankName:          bankName,
+			AccountHolderName: merchant.accName,
+			BankName:          merchant.bankName,
 			AccountNumber:     maskedAccount,
 		},
-
 		BusinessDocuments: documents,
 	}
 
-	// 6. Send response
+	// Send response
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Account profile retrieved successfully",
@@ -240,12 +234,7 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req struct {
-		BankName          string `json:"bank_name"`
-		AccountHolderName string `json:"account_holder_name"`
-		AccountNumber     string `json:"account_number"`
-	}
-
+	var req BusinessBankDetails
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid request payload"})
 		return
@@ -341,9 +330,10 @@ func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
 	dbPath := "/" + strings.ReplaceAll(filePath, "\\", "/")
 
 	col := "business_document"
-	if docType == "BIR Certificate" {
+	switch docType {
+	case "BIR Certificate":
 		col = "bir_document"
-	} else if docType == "Other Document" {
+	case "Other Document":
 		col = "other_document"
 	}
 
