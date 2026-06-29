@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
 	"github.com/go-playground/validator/v10" // For struct validation
@@ -113,6 +114,39 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	case "merchant_admin", "merchant_staff":
 		redirectURL = "/merchant/" + userName + "/dashboard" // Merchant dashboard
 	}
+
+	// Generate JWT Tokens (Access & Refresh)
+	accessToken, refreshToken, err := GenerateTokens(ID, role)
+	if err != nil {
+		log.Printf("Error generating tokens: %v", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Internal server error during login",
+		})
+		return
+	}
+
+	// Set Access Token as HttpOnly cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    accessToken,
+		Expires:  time.Now().Add(1 * time.Minute), // 15 minutes expiration
+		HttpOnly: true,
+		Secure:   true, // Important for SameSite=StrictMode
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+
+	// Set Refresh Token as HttpOnly cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(7 * 24 * time.Hour), // 7 days expiration
+		HttpOnly: true,
+		Secure:   true, // Important for SameSite=StrictMode
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
 
 	// SUCCESS User Login
 	log.Printf("Login success for user: %s", loginReq.Identifier)

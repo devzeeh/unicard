@@ -51,6 +51,8 @@ function populateMerchantUI(merchant) {
     document.getElementById('businessType').textContent = merchant.BusinessType.replace(/_/g, ' ');
     document.getElementById('registrationNum').textContent = merchant.RegistrationNum || 'N/A';
     document.getElementById('businessAddress').textContent = merchant.BusinessAddress;
+    document.getElementById('businessCity').textContent = merchant.City || 'N/A';
+    document.getElementById('businessPostalCode').textContent = merchant.PostalCode || 'N/A';
     document.getElementById('createdAt').textContent = new Date(merchant.CreatedAt).toLocaleDateString();
     
     document.getElementById('ownerName').textContent = merchant.OwnerName;
@@ -60,7 +62,8 @@ function populateMerchantUI(merchant) {
     const renderDoc = (url, elId) => {
         const el = document.getElementById(elId);
         if (url) {
-            el.innerHTML = `<button type="button" onclick="openDocumentViewer('${url}')" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1">
+            const safeUrl = url.replace(/\\/g, '/').replace(/'/g, "\\'");
+            el.innerHTML = `<button type="button" onclick="openDocumentViewer('${safeUrl}')" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 View Document
             </button>`;
@@ -69,7 +72,7 @@ function populateMerchantUI(merchant) {
         }
     };
 
-    renderDoc(merchant.DtiDocument, 'dtiDocumentLink');
+    renderDoc(merchant.BusinessDocument, 'businessDocumentLink');
     renderDoc(merchant.BirDocument, 'birDocumentLink');
     renderDoc(merchant.OtherDocument, 'otherDocumentLink');
 
@@ -109,7 +112,7 @@ function populateMerchantUI(merchant) {
         btnApprove.classList.add('hidden');
         btnReject.classList.add('hidden');
         btnDelete.classList.remove('hidden');
-    } else if (statusLower === 'pending_approval' || statusLower === 'pending approval') {
+    } else if (statusLower === 'pending_approval' || statusLower === 'pending approval' || (statusLower === 'rejected' && merchant.DocumentStatus && merchant.DocumentStatus.toLowerCase() === 'pending')) {
         btnSuspend.classList.add('hidden');
         btnApprove.classList.remove('hidden');
         btnReject.classList.remove('hidden');
@@ -122,19 +125,97 @@ function populateMerchantUI(merchant) {
     }
 }
 
+let currentZoom = 1;
+let isDragging = false;
+let startX = 0, startY = 0, translateX = 0, translateY = 0;
+
 window.openDocumentViewer = function(url) {
     const modal = document.getElementById('documentViewerModal');
     const iframe = document.getElementById('documentViewerFrame');
-    const downloadBtn = document.getElementById('downloadDocumentBtn');
+    const img = document.getElementById('documentViewerImage');
+    const zoomControls = document.getElementById('imageZoomControls');
     
-    if (modal && iframe && downloadBtn) {
-        iframe.src = url;
-        downloadBtn.href = url;
+    if (modal && iframe && img) {
+        const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+        if (isImage) {
+            iframe.classList.add('hidden');
+            img.classList.remove('hidden');
+            if (zoomControls) zoomControls.classList.remove('hidden');
+            img.src = url;
+            resetZoom();
+        } else {
+            img.classList.add('hidden');
+            iframe.classList.remove('hidden');
+            if (zoomControls) zoomControls.classList.add('hidden');
+            iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=0';
+        }
         modal.classList.remove('hidden');
     }
 };
 
+function resetZoom() {
+    currentZoom = 1;
+    translateX = 0;
+    translateY = 0;
+    updateZoomTransform();
+}
+
+function updateZoomTransform() {
+    const img = document.getElementById('documentViewerImage');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+    if (img) {
+        img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    }
+    if (zoomLevelEl) {
+        zoomLevelEl.textContent = Math.round(currentZoom * 100) + '%';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Zoom Controls
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomResetBtn = document.getElementById('zoomResetBtn');
+    const img = document.getElementById('documentViewerImage');
+    
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => { currentZoom = Math.min(currentZoom + 0.25, 4); updateZoomTransform(); });
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { currentZoom = Math.max(currentZoom - 0.25, 0.5); updateZoomTransform(); });
+    if (zoomResetBtn) zoomResetBtn.addEventListener('click', resetZoom);
+    
+    if (img) {
+        img.parentElement.addEventListener('wheel', (e) => {
+            if (img.classList.contains('hidden')) return;
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                currentZoom = Math.min(currentZoom + 0.1, 4);
+            } else {
+                currentZoom = Math.max(currentZoom - 0.1, 0.5);
+            }
+            updateZoomTransform();
+        });
+
+        // Drag to pan
+        img.parentElement.addEventListener('mousedown', (e) => {
+            if (img.classList.contains('hidden')) return;
+            isDragging = true;
+            img.parentElement.style.cursor = 'grabbing';
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateZoomTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (img) img.parentElement.style.cursor = 'default';
+        });
+    }
+
     fetchUnassignedTerminals();
     fetchMerchantData();
 

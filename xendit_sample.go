@@ -1,16 +1,8 @@
 package main
 
-import (
-	"fmt"
-	"log"
-
-	"github.com/xendit/xendit-go"
-	"github.com/xendit/xendit-go/invoice"
-)
-
 func main() {
 	// Initialize the SDK with your Secret API Key (Keep this secure!)
-	xendit.Opt.SecretKey = "XENDIT_SECRET_KEY"
+	/*xendit.Opt.SecretKey = "XENDIT_SECRET_KEY"
 
 	// Define the parameters for the user's wallet top-up
 	data := invoice.CreateParams{
@@ -30,4 +22,5 @@ func main() {
 	// Output the secure checkout URL for the user
 	fmt.Printf("Invoice created successfully!\n")
 	fmt.Printf("Direct the user to this URL to complete their top-up: %s\n", resp.InvoiceURL)
+	*/
 }

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 	smtp "unicard-go/backend/internal/pkg/smtpbody"
 	structs "unicard-go/backend/internal/pkg/structs"
@@ -190,9 +191,9 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 }
 
 type ApproveMerchantRequest struct {
-	CommissionRate    string `json:"commissionRate" validate:"required"`
-	TerminalSn        string `json:"terminalSn" validate:"required"`
-	DeviceName        string `json:"deviceName"`
+	CommissionRate string `json:"commissionRate" validate:"required"`
+	TerminalSn     string `json:"terminalSn" validate:"required"`
+	DeviceName     string `json:"deviceName"`
 }
 
 func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request) {
@@ -226,9 +227,9 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get merchant user_id, email, and owner_name for the notification email
-	var merchantUserID, merchantEmail, ownerName string
-	err = tx.QueryRow("SELECT user_id, business_email, owner_name FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &merchantEmail, &ownerName)
+	// Get merchant user_id, email, owner_name, and business_name for the notification email and welcome tx
+	var merchantUserID, merchantEmail, ownerName, businessName string
+	err = tx.QueryRow("SELECT user_id, business_email, owner_name, business_name FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &merchantEmail, &ownerName, &businessName)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
 		return
@@ -239,6 +240,8 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	_, err = tx.Exec(`
 		UPDATE merchants 
 		SET status = 'active',
+			document_status = 'approved',
+			message = 'Congratulations! Your UniCard Merchant Account is now fully active.',
 			commission_rate = 2.00,
 			approved_by = ?,
 			approved_at = CURRENT_TIMESTAMP
@@ -265,6 +268,24 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, device_name = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantID, req.DeviceName, businessAddress, req.TerminalSn)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to assign terminal"})
+		return
+	}
+
+	// Format business name safely for transaction ID (remove spaces, uppercase)
+	/*safeBusinessName := strings.ToUpper(strings.ReplaceAll(businessName, " ", ""))
+	if len(safeBusinessName) > 15 {
+		safeBusinessName = safeBusinessName[:15]
+	}*/
+
+	// Insert welcome transaction
+	welcomeTxnID := fmt.Sprintf("Welcome %s-%d", businessName, time.Now().UnixMilli())
+	_, err = tx.Exec(`
+		INSERT INTO transactions 
+		(transaction_id, merchant_id, transaction_type, amount, points_earned, service_fee, status, description) 
+		VALUES (?, ?, 'payment', NULL, NULL, NULL, 'completed', 'Welcome to UniCard! Your merchant account is now approved and ready to accept transactions.')`,
+		welcomeTxnID, merchantID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to create welcome transaction"})
 		return
 	}
 
@@ -338,7 +359,7 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = tx.Exec("UPDATE merchants SET status = 'rejected' WHERE merchant_id = ?", merchantID)
+	_, err = tx.Exec("UPDATE merchants SET status = 'rejected', document_status = 'rejected', message = ? WHERE merchant_id = ?", req.Reason, merchantID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to reject merchant"})
 		return
@@ -419,7 +440,7 @@ func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = tx.Exec("UPDATE merchants SET status = 'suspended' WHERE merchant_id = ?", merchantID)
+	_, err = tx.Exec("UPDATE merchants SET status = 'suspended', message = ? WHERE merchant_id = ?", req.Reason, merchantID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to suspend merchant"})
 		return
@@ -481,8 +502,8 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	defer tx.Rollback()
 
-	var merchantUserID string
-	err = tx.QueryRow("SELECT user_id FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID)
+	var merchantUserID, ownerName, merchantEmail string
+	err = tx.QueryRow("SELECT user_id, owner_name, business_email FROM merchants WHERE merchant_id = ?", merchantID).Scan(&merchantUserID, &ownerName, &merchantEmail)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
 		return
@@ -495,15 +516,15 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Delete from merchants
-	_, err = tx.Exec("DELETE FROM merchants WHERE merchant_id = ?", merchantID)
+	// Soft delete from merchants: Set status to 'deleted' and update message
+	_, err = tx.Exec("UPDATE merchants SET status = 'deleted', message = 'Your merchant account has been permanently deleted.' WHERE merchant_id = ?", merchantID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to delete merchant"})
 		return
 	}
 
-	// Delete from users
-	_, err = tx.Exec("DELETE FROM users WHERE user_id = ?", merchantUserID)
+	// Soft delete from users: Set status to 'inactive'
+	_, err = tx.Exec("UPDATE users SET status = 'inactive' WHERE user_id = ?", merchantUserID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to delete user"})
 		return
@@ -514,28 +535,59 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Send deletion email to merchant
+	go func(email, name string) {
+		smtpHost := os.Getenv("SMTP_HOST")
+		smtpPort := 587
+		smtpEmail := os.Getenv("SMTP_EMAIL")
+		smtpSender := os.Getenv("SMTP_SENDER")
+		smtpPass := os.Getenv("SMTP_PASSWORD")
+		if smtpHost == "" || smtpEmail == "" {
+			log.Println("SMTP credentials not configured, skipping deletion email")
+			return
+		}
+
+		m := gomail.NewMessage()
+		m.SetHeader("From", fmt.Sprintf("%s <%s>", smtpSender, smtpEmail))
+		m.SetHeader("To", email)
+		m.SetHeader("Subject", "Unicard Account Deleted")
+
+		htmlBody := fmt.Sprintf(smtp.MerchantDeletedEmail(), name)
+		m.SetBody("text/html", htmlBody)
+
+		d := gomail.NewDialer(smtpHost, smtpPort, smtpEmail, smtpPass)
+		if err := d.DialAndSend(m); err != nil {
+			log.Printf("Failed to send deletion email to %s: %v", email, err)
+		} else {
+			log.Printf("Deletion email sent successfully to %s", email)
+		}
+	}(merchantEmail, ownerName)
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant deleted successfully"})
 }
 
 type MerchantDetailsData struct {
-	MerchantID      string
-	UserID          string
-	BusinessName    string
-	BusinessType    string
-	RegistrationNum string
-	BusinessAddress string
-	OwnerName       string
-	BusinessEmail   string
-	BusinessPhone   string
-	Status          string
-	CommissionRate  float64
-	SettlementBank  string
-	SettlementName  string
-	SettlementAcct  string
-	CreatedAt       string
-	DtiDocument     string
-	BirDocument     string
-	OtherDocument   string
+	MerchantID       string
+	UserID           string
+	BusinessName     string
+	BusinessType     string
+	RegistrationNum  string
+	BusinessAddress  string
+	City             string
+	PostalCode       string
+	OwnerName        string
+	BusinessEmail    string
+	BusinessPhone    string
+	Status           string
+	CommissionRate   float64
+	SettlementBank   string
+	SettlementName   string
+	SettlementAcct   string
+	CreatedAt        string
+	BusinessDocument string
+	BirDocument      string
+	OtherDocument    string
+	DocumentStatus   string
 }
 
 type MerchantInfoViewData struct {
@@ -570,19 +622,19 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 
 	var m MerchantDetailsData
 	var commRate sql.NullFloat64
-	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc sql.NullString
+	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc, city, postal, docStatus sql.NullString
 
 	err := h.DB.QueryRow(`
 		SELECT merchant_id, user_id, business_name, business_type, business_registration_number, 
-		       business_address, owner_name, business_email, business_phone, status, 
+		       business_address, city, postal_code, owner_name, business_email, business_phone, status, 
 		       commission_rate, settlement_bank_name, settlement_account_name, 
 		       settlement_account_number, created_at,
-		       dti_document, bir_document, other_document
+		       business_document, bir_document, other_document, document_status
 		FROM merchants WHERE merchant_id = ?`, merchantID).Scan(
 		&m.MerchantID, &m.UserID, &m.BusinessName, &m.BusinessType, &regNum,
-		&m.BusinessAddress, &m.OwnerName, &m.BusinessEmail, &m.BusinessPhone, &m.Status,
+		&m.BusinessAddress, &city, &postal, &m.OwnerName, &m.BusinessEmail, &m.BusinessPhone, &m.Status,
 		&commRate, &setBank, &setName, &setAcct, &m.CreatedAt,
-		&dtiDoc, &birDoc, &otherDoc,
+		&dtiDoc, &birDoc, &otherDoc, &docStatus,
 	)
 
 	if err != nil {
@@ -604,6 +656,12 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 	if regNum.Valid {
 		m.RegistrationNum = regNum.String
 	}
+	if city.Valid {
+		m.City = city.String
+	}
+	if postal.Valid {
+		m.PostalCode = postal.String
+	}
 
 	if commRate.Valid {
 		m.CommissionRate = commRate.Float64
@@ -618,13 +676,16 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		m.SettlementAcct = setAcct.String
 	}
 	if dtiDoc.Valid {
-		m.DtiDocument = dtiDoc.String
+		m.BusinessDocument = dtiDoc.String
 	}
 	if birDoc.Valid {
 		m.BirDocument = birDoc.String
 	}
 	if otherDoc.Valid {
 		m.OtherDocument = otherDoc.String
+	}
+	if docStatus.Valid {
+		m.DocumentStatus = docStatus.String
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{

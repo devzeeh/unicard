@@ -204,6 +204,35 @@ document.addEventListener("DOMContentLoaded", () => {
         netAmtEl.textContent = `${sign}${formatCurrency(Math.abs(netValue))}`;
         netAmtEl.className = `font-bold text-lg ${colorClass}`;
 
+        const isSystemEvent = grossAmt === 0 && Number(tx.service_fee || 0) === 0;
+        
+        if (isSystemEvent) {
+            let sysType = "System Notification";
+            if (tx.transaction_id && tx.transaction_id.toLowerCase().startsWith("welcome")) {
+                sysType = "Account Approval";
+            } else if (tx.description && tx.description.toLowerCase().includes("username")) {
+                sysType = "Profile Update";
+            } else if (tx.description && tx.description.toLowerCase().includes("settlement")) {
+                sysType = "Bank Update";
+            } else if (tx.transaction_type) {
+                sysType = tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1);
+            }
+
+            document.getElementById("modalTxnType").textContent = sysType;
+            document.getElementById("modalTxnCardNumber").closest('.flex').classList.add("hidden");
+            document.getElementById("modalTxnStatus").closest('.flex').classList.add("hidden");
+            document.getElementById("modalTxnGross").closest('.flex').classList.add("hidden");
+            document.getElementById("modalTxnFee").closest('.flex').classList.add("hidden");
+            document.getElementById("modalTxnNet").closest('.flex').classList.add("hidden");
+        } else {
+            document.getElementById("modalTxnType").textContent = tx.transaction_type ? tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1) : "N/A";
+            document.getElementById("modalTxnCardNumber").closest('.flex').classList.remove("hidden");
+            document.getElementById("modalTxnStatus").closest('.flex').classList.remove("hidden");
+            document.getElementById("modalTxnGross").closest('.flex').classList.remove("hidden");
+            document.getElementById("modalTxnFee").closest('.flex').classList.remove("hidden");
+            document.getElementById("modalTxnNet").closest('.flex').classList.remove("hidden");
+        }
+
         txnModal.classList.remove('hidden');
         setTimeout(() => {
             txnModal.classList.add('opacity-100');
