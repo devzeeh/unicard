@@ -33,7 +33,7 @@ type BusinessDocument struct {
 }
 
 type BusinessBankDetails struct {
-	AccountHolderName string `json:"account_name"`
+	AccountHolderName string `json:"account_holder_name"`
 	BankName          string `json:"bank_name"`
 	AccountNumber     string `json:"account_number"`
 }
@@ -110,7 +110,6 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             -- Business Info
             COALESCE(m.business_name, ''), 
             COALESCE(m.business_type, ''), 
-            COALESCE(m.business_structure, ''),
             COALESCE(m.business_email, ''), 
             COALESCE(m.business_phone, ''), 
             COALESCE(m.business_address, ''),
@@ -122,7 +121,6 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
             COALESCE(m.settlement_bank_name, ''), 
             COALESCE(m.settlement_account_number, ''),
             -- Document Info
-            COALESCE(m.business_structure, ''),
 			COALESCE(m.business_document, ''),
             COALESCE(m.bir_document, ''),
             COALESCE(m.other_document, ''),
@@ -133,9 +131,9 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
         WHERE u.username = ?
     `, username).Scan(
 		&merchant.merchantID, &merchant.accountStatus, &merchant.createdAtStr, &merchant.businessName,
-		&merchant.businessType, &merchant.businessStructure, &merchant.businessEmail, &merchant.businessPhone,
+		&merchant.businessType, &merchant.businessEmail, &merchant.businessPhone,
 		&merchant.businessAddress, &merchant.city, &merchant.postalCode, &merchant.accName,
-		&merchant.bankName, &merchant.accNumber, &merchant.businessStructure, &merchant.businessDoc,
+		&merchant.bankName, &merchant.accNumber, &merchant.businessDoc,
 		&merchant.birDoc, &merchant.otherDoc, &merchant.docStatus, &merchant.docMessage,
 	)
 
@@ -237,6 +235,11 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 	var req BusinessBankDetails
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Invalid request payload"})
+		return
+	}
+
+	if strings.TrimSpace(req.BankName) == "" || strings.TrimSpace(req.AccountHolderName) == "" || strings.TrimSpace(req.AccountNumber) == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "All bank details fields are required"})
 		return
 	}
 

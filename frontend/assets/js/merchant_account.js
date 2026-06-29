@@ -57,96 +57,186 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Bank Details
                 if (document.getElementById('bankName')) document.getElementById('bankName').value = bank.bank_name || '';
                 if (document.getElementById('bankHolder')) document.getElementById('bankHolder').value = bank.account_holder_name || '';
-                if (document.getElementById('bankAccount')) document.getElementById('bankAccount').value = bank.account_number || '';
 
-                const isOk = data.account_status.toLowerCase() === 'active' || data.account_status.toLowerCase() === 'approved';
-                if (!isOk) {
-                    const actionContainer = document.getElementById('bankDetailsActionContainer');
-                    const editBtn = document.getElementById('editBankDetailsBtn');
-                    const saveBtn = document.getElementById('saveBankDetailsBtn');
-                    const cancelBtn = document.getElementById('bankDetailsCancelBtn');
-                    if (actionContainer) actionContainer.classList.remove('hidden');
+                let realAccountNumber = bank.account_number || '';
+                let maskedAccountNumber = realAccountNumber;
+                if (realAccountNumber.length > 4) {
+                    maskedAccountNumber = "**** **** **** " + realAccountNumber.slice(-4);
+                }
+                
+                const bankInput = document.getElementById('bankAccount');
+                if (bankInput) {
+                    bankInput.value = maskedAccountNumber;
+                    bankInput.dataset.realValue = realAccountNumber;
+                }
 
-                    const initialBankDetails = {
-                        bankName: bank.bank_name || '',
-                        bankHolder: bank.account_holder_name || '',
-                        bankAccount: bank.account_number || ''
-                    };
+                const actionContainer = document.getElementById('bankDetailsActionContainer');
+                const editBtn = document.getElementById('editBankDetailsBtn');
+                const saveBtn = document.getElementById('saveBankDetailsBtn');
+                const cancelBtn = document.getElementById('bankDetailsCancelBtn');
+                if (actionContainer) actionContainer.classList.remove('hidden');
 
-                    function checkEnableBankSave() {
-                        if (!saveBtn) return;
-                        const current = {
-                            bankName: document.getElementById('bankName').value,
-                            bankHolder: document.getElementById('bankHolder').value,
-                            bankAccount: document.getElementById('bankAccount').value
-                        };
-                        const isChanged = current.bankName !== initialBankDetails.bankName ||
-                                          current.bankHolder !== initialBankDetails.bankHolder ||
-                                          current.bankAccount !== initialBankDetails.bankAccount;
-                        if (isChanged) {
-                            saveBtn.disabled = false;
-                            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                const initialBankDetails = {
+                    bankName: bank.bank_name || '',
+                    bankHolder: bank.account_holder_name || '',
+                    bankAccount: bank.account_number || ''
+                };
+
+                // Toggle Account Number visibility
+                const toggleBtn = document.getElementById('toggleBankAccount');
+                const eyeOpen = document.getElementById('eyeIconOpen');
+                const eyeClosed = document.getElementById('eyeIconClosed');
+                let isAccountMasked = true;
+
+                if (toggleBtn && bankInput && eyeOpen && eyeClosed) {
+                    toggleBtn.addEventListener('click', () => {
+                        if (isAccountMasked) {
+                            // Show real number
+                            bankInput.value = bankInput.dataset.realValue || '';
+                            eyeOpen.classList.remove('hidden');
+                            eyeClosed.classList.add('hidden');
+                            isAccountMasked = false;
                         } else {
-                            saveBtn.disabled = true;
-                            saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                            // Mask the number
+                            let currentVal = bankInput.value;
+                            let masked = currentVal;
+                            if (currentVal.length > 4) {
+                                masked = "**** **** **** " + currentVal.slice(-4);
+                            }
+                            bankInput.value = masked;
+                            eyeOpen.classList.add('hidden');
+                            eyeClosed.classList.remove('hidden');
+                            isAccountMasked = true;
                         }
-                    }
+                    });
 
-                    if (editBtn) {
-                        editBtn.addEventListener('click', () => {
-                            ['bankName', 'bankHolder', 'bankAccount'].forEach(id => {
-                                const el = document.getElementById(id);
-                                if (el) {
-                                    el.removeAttribute('readonly');
-                                    el.removeAttribute('disabled');
-                                    el.classList.remove('bg-gray-50', 'text-gray-600', 'cursor-not-allowed');
-                                    el.classList.add('bg-white', 'text-gray-900', 'ring-2', 'ring-indigo-100', 'cursor-pointer');
-                                    el.addEventListener('input', checkEnableBankSave);
-                                    el.addEventListener('change', checkEnableBankSave);
-                                }
-                            });
-                            editBtn.classList.add('hidden');
-                            saveBtn.classList.remove('hidden');
-                            if (cancelBtn) cancelBtn.classList.remove('hidden');
+                    // Update realValue as they type when unmasked
+                    bankInput.addEventListener('input', (e) => {
+                        if (!isAccountMasked) {
+                            bankInput.dataset.realValue = e.target.value;
                             checkEnableBankSave();
-                        });
-                    }
-                    if (cancelBtn) {
-                        cancelBtn.addEventListener('click', () => window.location.reload());
-                    }
+                        }
+                    });
+                }
 
-                    if (saveBtn) {
-                        saveBtn.addEventListener('click', async () => {
-                            const newBank = {
-                                bank_name: document.getElementById('bankName').value,
-                                account_holder_name: document.getElementById('bankHolder').value,
-                                account_number: document.getElementById('bankAccount').value
-                            };
-                            saveBtn.textContent = 'Saving...';
-                            saveBtn.disabled = true;
-                            try {
-                                const res = await fetch(`/v1/merchant/${window.CURRENT_USERNAME}/update-bank`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(newBank)
-                                });
-                                const j = await res.json();
-                                if (j.success) {
-                                    alert('Bank details updated successfully!');
-                                    window.location.reload();
-                                } else {
-                                    alert('Failed: ' + j.message);
-                                    saveBtn.textContent = 'Save Changes';
-                                    saveBtn.disabled = false;
+                function checkEnableBankSave() {
+                    if (!saveBtn) return;
+                    const currentAccountVal = isAccountMasked ? bankInput.dataset.realValue : document.getElementById('bankAccount').value;
+                    const current = {
+                        bankName: document.getElementById('bankName').value,
+                        bankHolder: document.getElementById('bankHolder').value,
+                        bankAccount: currentAccountVal
+                    };
+                    const isChanged = current.bankName !== initialBankDetails.bankName ||
+                                      current.bankHolder !== initialBankDetails.bankHolder ||
+                                      current.bankAccount !== initialBankDetails.bankAccount;
+                    if (isChanged) {
+                        saveBtn.disabled = false;
+                        saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        saveBtn.disabled = true;
+                        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => {
+                        ['bankName', 'bankHolder', 'bankAccount'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.removeAttribute('readonly');
+                                el.removeAttribute('disabled');
+                                el.classList.remove('bg-gray-50', 'text-gray-600', 'cursor-not-allowed');
+                                el.classList.add('bg-white', 'text-gray-900', 'ring-2', 'ring-indigo-100');
+                                // Only cursor-pointer for non-text inputs, but here select needs it
+                                if (el.tagName === 'SELECT') el.classList.add('cursor-pointer');
+                                if (id !== 'bankAccount') {
+                                    el.addEventListener('input', checkEnableBankSave);
                                 }
-                            } catch (e) {
-                                console.error(e);
-                                alert('Network error');
+                                el.addEventListener('change', checkEnableBankSave);
+                            }
+                        });
+                        
+                        // Force unmask when editing begins
+                        if (isAccountMasked && toggleBtn) {
+                            toggleBtn.click();
+                        }
+
+                        editBtn.classList.add('hidden');
+                        saveBtn.classList.remove('hidden');
+                        if (cancelBtn) cancelBtn.classList.remove('hidden');
+                        checkEnableBankSave();
+                    });
+                }
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => window.location.reload());
+                }
+
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', async () => {
+                        // Reset errors
+                        const errorDiv = document.getElementById('bankDetailsError');
+                        if (errorDiv) errorDiv.classList.add('hidden');
+                        ['bankName', 'bankHolder', 'bankAccount'].forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.classList.remove('ring-red-500', 'border-red-500');
+                            }
+                        });
+
+                        const finalAccountNumber = isAccountMasked ? bankInput.dataset.realValue : document.getElementById('bankAccount').value;
+                        const newBank = {
+                            bank_name: document.getElementById('bankName').value,
+                            account_holder_name: document.getElementById('bankHolder').value,
+                            account_number: finalAccountNumber
+                        };
+                        
+                        let hasError = false;
+                        if (!newBank.bank_name) {
+                            document.getElementById('bankName').classList.add('ring-red-500', 'border-red-500');
+                            hasError = true;
+                        }
+                        if (!newBank.account_holder_name) {
+                            document.getElementById('bankHolder').classList.add('ring-red-500', 'border-red-500');
+                            hasError = true;
+                        }
+                        if (!newBank.account_number) {
+                            document.getElementById('bankAccount').classList.add('ring-red-500', 'border-red-500');
+                            hasError = true;
+                        }
+
+                        if (hasError) {
+                            if (errorDiv) {
+                                errorDiv.textContent = 'Please fill in all required fields marked with *';
+                                errorDiv.classList.remove('hidden');
+                            }
+                            return;
+                        }
+
+                        saveBtn.textContent = 'Saving...';
+                        saveBtn.disabled = true;
+                        try {
+                            const res = await fetch(`/v1/merchant/${window.CURRENT_USERNAME}/update-bank`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newBank)
+                            });
+                            const j = await res.json();
+                            if (j.success) {
+                                alert('Bank details updated successfully!');
+                                window.location.reload();
+                            } else {
+                                alert('Failed: ' + j.message);
                                 saveBtn.textContent = 'Save Changes';
                                 saveBtn.disabled = false;
                             }
-                        });
-                    }
+                        } catch (e) {
+                            console.error(e);
+                            alert('Network error');
+                            saveBtn.textContent = 'Save Changes';
+                            saveBtn.disabled = false;
+                        }
+                    });
                 }
 
                 // Documents
@@ -168,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const found = docs.find(d => d.document_type === ed.type);
                         
                         let docType = ed.type;
-                        let status = found ? found.status : 'Missing';
+                        let status = found ? (found.document_status || 'Pending') : 'Missing';
                         let message = found ? found.message : 'Please upload this document';
                         let docUrl = found ? found.document_url : '';
                         
@@ -435,16 +525,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     formContent.classList.remove('opacity-0');
                     formContent.classList.add('opacity-100');
                 }
-                const loadingSkeleton = document.getElementById('loadingSkeleton');
-                if (loadingSkeleton) {
-                    loadingSkeleton.style.display = 'none';
-                }
-
             } else {
                 console.error("Failed to fetch account data:", json.message);
             }
         } catch (error) {
             console.error("Error fetching account data:", error);
+        } finally {
+            const loadingSkeleton = document.getElementById('loadingSkeleton');
+            if (loadingSkeleton) {
+                loadingSkeleton.style.display = 'none';
+            }
         }
     };
 

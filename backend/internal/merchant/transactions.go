@@ -61,7 +61,7 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT 
 			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
-			COALESCE(transaction_type, ''), amount,
+			COALESCE(transaction_type, ''), COALESCE(amount, 0),
 			COALESCE(points_earned, 0), COALESCE(service_fee, 0),
 			COALESCE(net_merchant_payout, 0), processed_by,
 			COALESCE(status, ''), description, COALESCE(created_at, '')

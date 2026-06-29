@@ -43,7 +43,8 @@ type MerchantSummary struct {
 	AvailableBalance   decimal.Decimal       `json:"available_balance"`
 	MonthlyNetIncome   decimal.Decimal       `json:"monthly_net_income"`
 	SettlementBank     *string               `json:"settlement_bank"`
-	SettlementAccount  *string               `json:"settlement_account"`
+	SettlementAccount  *string               `json:"settlement_account_number"`
+	SettlementName     *string               `json:"settlement_account_name"`
 	RecentTransactions []MerchantTransaction `json:"recent_transactions"`
 }
 
@@ -83,16 +84,16 @@ func (h *Handler) GetMerchantRecentTransactions(ctx context.Context, merchantID 
 	log.Println("GetMerchantRecentTransactions running...")
 
 	rows, err := h.DB.QueryContext(ctx, `
-		SELECT 
+		SELECT
 			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
-			COALESCE(transaction_type, ''), amount,
+			COALESCE(transaction_type, ''), COALESCE(amount, 0),
 			COALESCE(points_earned, 0), COALESCE(service_fee, 0),
 			COALESCE(net_merchant_payout, 0), processed_by,
 			COALESCE(status, ''), description, COALESCE(created_at, '')
-		FROM transactions 
-		WHERE merchant_id = ? 
-		ORDER BY created_at DESC 
+		FROM transactions
+		WHERE merchant_id = ?
+		ORDER BY created_at DESC
 		LIMIT 10`,
 		merchantID)
 	if err != nil {

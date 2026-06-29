@@ -23,12 +23,6 @@ type IncomeHistory struct {
 }
 
 // IncomeStat represents the merchant's income statistics
-// TotalCollected  → Total money collected from customers (gross, before Unicard fee)
-// UniCardFee      → Unicard's platform cut deducted per transaction
-// TotalEarned     → What the merchant receives after Unicard's fee
-// TotalRefunded   → Money returned back to customers
-// ActualIncome    → What the merchant actually keeps after refunds (real bottom line)
-// IncomeStat represents the merchant's income statistics
 type IncomeStat struct {
 	NetRevenue       decimal.Decimal `json:"net_revenue"`        // What the merchant gets after platform fee
 	GrossRevenue     decimal.Decimal `json:"gross_revenue"`      // SUM(amount) payments
@@ -118,7 +112,7 @@ func (h *Handler) GetMerchantIncomeHistory(ctx context.Context, merchantID strin
 		SELECT 
 			COALESCE(created_at, ''), description,
 			transaction_id, COALESCE(card_number, ''),
-			COALESCE(transaction_type, ''), amount,
+			COALESCE(transaction_type, ''), COALESCE(amount, 0),
 			COALESCE(net_merchant_payout, 0), COALESCE(service_fee, 0),
 			processed_by, terminal_id
 		FROM transactions
