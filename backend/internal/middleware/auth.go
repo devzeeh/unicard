@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -13,12 +14,12 @@ type contextKey string
 
 const UserClaimsKey contextKey = "user_claims"
 
-// RequireAuth is a middleware that checks for a valid JWT in the HttpOnly cookie
-// and ensures the user has one of the allowed roles.
+// RequireAuth is a middleware that checks for a valid JWT in the Authorization header
+// or HttpOnly cookie and ensures the user has one of the allowed roles.
 func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			
+
 			// Helper to handle unauthorized/forbidden gracefully depending on endpoint type
 			handleAuthError := func(w http.ResponseWriter, r *http.Request, statusCode int, msg string) {
 				// Check if it's an API request (starts with /v1/ or /api/)
@@ -35,14 +36,29 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 
 			var claims *authentication.JWTClaims
 			var tokenValid bool
+			var tokenString string
 
-			// 1. Try to extract and validate Access Token
-			cookie, err := r.Cookie("jwt")
-			if err == nil {
-				parsedClaims, err := authentication.ValidateJWT(cookie.Value)
+			// Extract Access Token from Header OR Cookie
+			authHeader := r.Header.Get("Authorization")
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				// Extract from Authorization header (API / Thunder Client / cURL)
+				tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+			} else {
+				// Fallback: Check if token is in the Cookie (Web Browsers)
+				cookie, err := r.Cookie("jwt")
+				if err == nil {
+					tokenString = cookie.Value
+				}
+			}
+
+			// If we found a token in either place, validate it
+			if tokenString != "" {
+				parsedClaims, err := authentication.ValidateJWT(tokenString)
 				if err == nil && parsedClaims.Subject == "access" {
 					claims = parsedClaims
 					tokenValid = true
+				} else if err != nil {
+					log.Printf("DEBUG: JWT Validation failed: %v", err)
 				}
 			}
 
@@ -74,7 +90,7 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 								SameSite: http.SameSiteStrictMode,
 								Path:     "/",
 							})
-							
+
 							// Treat request as valid using the refresh claims
 							claims = refreshClaims
 							tokenValid = true
