@@ -40,7 +40,8 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	// Enable parseTime and set location so MySQL DATETIME/TIMESTAMP scan into time.Time
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Setup Templates
 	tpl, err = template.ParseGlob("./frontend/templates/*/*.html")
@@ -138,6 +139,7 @@ func main() {
 	mux.Handle("POST /v1/merchant/{username}/update-bank", requireMerchant(http.HandlerFunc(merchantHandler.UpdateBankDetails)))
 	mux.Handle("POST /v1/merchant/{username}/upload-document", requireMerchant(http.HandlerFunc(merchantHandler.UploadDocument)))
 	mux.Handle("POST /v1/merchant/{username}/withdraw", requireMerchant(http.HandlerFunc(merchantHandler.WithdrawHandler)))
+	mux.Handle("POST /v1/merchant/{username}/terminals/request", requireMerchant(http.HandlerFunc(merchantHandler.RequestTerminalHandler)))
 
 	// super admin endpoints
 	mux.Handle("GET /admin/{username}", requireAdmin(http.HandlerFunc(adminHanlder.AdminDashboardView)))
@@ -148,6 +150,10 @@ func main() {
 	mux.Handle("GET /v1/admin/{username}/terminals-data", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRegistryDataHandler)))
 	mux.Handle("GET /v1/admin/{username}/terminals/unassigned", requireAdmin(http.HandlerFunc(adminHanlder.GetUnassignedTerminalsHandler)))
 	mux.Handle("POST /v1/admin/{username}/terminals/add", requireAdmin(http.HandlerFunc(adminHanlder.AddTerminalHandler)))
+	mux.Handle("GET /admin/{username}/terminal-requests", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRequestsView)))
+	mux.Handle("GET /v1/admin/{username}/terminal-requests-data", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRequestsDataHandler)))
+	mux.Handle("POST /v1/admin/{username}/terminal-requests/{id}/approve", requireAdmin(http.HandlerFunc(adminHanlder.ApproveTerminalRequestHandler)))
+	mux.Handle("POST /v1/admin/{username}/terminal-requests/{id}/reject", requireAdmin(http.HandlerFunc(adminHanlder.RejectTerminalRequestHandler)))
 	mux.Handle("GET /admin/{username}/settings", requireAdmin(http.HandlerFunc(adminHanlder.SystemSettingsView)))
 	mux.Handle("GET /admin/{username}/transactions", requireAdmin(http.HandlerFunc(adminHanlder.TransactionsView)))
 	mux.Handle("GET /v1/admin/{username}/transactions", requireAdmin(http.HandlerFunc(adminHanlder.AllTransactionsJSONHandler)))

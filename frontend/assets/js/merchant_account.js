@@ -318,6 +318,56 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // Store actual selected files securely so native cancel doesn't erase them
                 const selectedFilesMap = new Map();
+
+                // Request Terminal Button
+                const requestBtn = document.getElementById('requestTerminalBtn');
+                const requestModal = document.getElementById('requestTerminalModal');
+                const requestForm = document.getElementById('requestTerminalForm');
+                const submitRequestBtn = document.getElementById('submitTerminalRequestBtn');
+                
+                if (requestBtn && requestModal) {
+                    requestBtn.addEventListener('click', () => {
+                        requestModal.classList.remove('hidden');
+                    });
+                }
+                
+                if (requestForm) {
+                    requestForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const serial = document.getElementById('requestTerminalSn').value;
+                        const notes = document.getElementById('requestTerminalNotes').value;
+                        
+                        submitRequestBtn.disabled = true;
+                        submitRequestBtn.textContent = 'Submitting...';
+                        
+                        try {
+                            const body = { 
+                                terminal_sn: serial ? serial.trim() : '',
+                                notes: notes ? notes.trim() : '' 
+                            };
+                            const res = await fetch(`/v1/merchant/${window.CURRENT_USERNAME}/terminals/request`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(body)
+                            });
+                            const j = await res.json();
+                            if (j.success) {
+                                alert('Terminal request submitted. Admin will review and assign it upon approval.');
+                                requestModal.classList.add('hidden');
+                                requestForm.reset();
+                                if (requestBtn) requestBtn.textContent = 'Requested';
+                            } else {
+                                alert('Failed: ' + (j.message || 'Unknown error'));
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert('Network error submitting request');
+                        } finally {
+                            submitRequestBtn.disabled = false;
+                            submitRequestBtn.textContent = 'Submit Request';
+                        }
+                    });
+                }
                 const globalDocBtn = document.getElementById('globalDocUploadBtn');
                 let isDocEditMode = false;
                 

@@ -243,6 +243,11 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, validBank := channelCodeMap[req.BankName]; !validBank {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Unsupported bank selected. Please choose a valid bank from the list."})
+		return
+	}
+
 	var merchantID string
 	err := h.DB.QueryRow("SELECT merchant_id FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID)
 	if err != nil {

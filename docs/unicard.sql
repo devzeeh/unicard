@@ -86,6 +86,20 @@ CREATE TABLE terminals (
     FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE
 ) COMMENT='Hardware node registry tracking deployed physical authentication nodes and network heartbeat states';
 
+-- Terminal requests table: merchants can request new or specific terminals; admin approves or rejects.
+CREATE TABLE terminal_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id VARCHAR(50) NOT NULL UNIQUE,
+    merchant_id VARCHAR(50) NOT NULL,
+    terminal_sn VARCHAR(50) NULL,
+    status ENUM('pending','approved','rejected') DEFAULT 'pending',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    handled_by VARCHAR(50) NULL,
+    handled_at TIMESTAMP NULL,
+    notes TEXT NULL,
+    FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE
+) COMMENT='Tracks merchant-initiated terminal assignment requests';
+
 
 -- =========================================================================
 -- UTILITY & USER TRANSACTION LOGS TABLES (HIGH GROWING DATASETS)

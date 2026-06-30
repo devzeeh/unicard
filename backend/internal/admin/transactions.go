@@ -29,18 +29,20 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 	txnQuery := `
 			SELECT 
 				t.transaction_id, 
-				COALESCE(t.terminal_id, ''), 
-				DATE(t.created_at) as date, 
-				TIME(t.created_at) as time, 
-				COALESCE(t.transaction_type, ''), 
-				t.amount, 
+				COALESCE(t.terminal_id, ''),
+				DATE(t.created_at) as date,
+				TIME(t.created_at) as time,
+				COALESCE(t.transaction_type, ''),
+				COALESCE(t.amount, 0.00),
 				COALESCE(t.status, ''),
 				COALESCE(t.description, ''),
 				COALESCE(m.business_name, ''),
 				COALESCE(m.merchant_id, ''),
 				COALESCE(t.points_earned, 0),
 				c.card_number,
-				COALESCE(u.name, 'Unknown Customer') as customer_name
+				COALESCE(u.name, 'Unknown Customer') as customer_name,
+				COALESCE(t.service_fee, 0)
+
 			FROM transactions t
 			LEFT JOIN cards c ON t.card_number = c.card_number 
 			LEFT JOIN users u ON c.user_id = u.user_id
@@ -56,11 +58,11 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 		Time          string          `json:"time"`
 		Description   string          `json:"description"`
 		Type          string          `json:"type"`
-		Amount        float64         `json:"amount"`
+		Amount        decimal.Decimal `json:"amount"`
 		Status        string          `json:"status"`
 		MerchantName  string          `json:"merchant_name"`
 		MerchantID    string          `json:"merchant_id"`
-		ServiceFee    float64         `json:"service_fee"`
+		ServiceFee    decimal.Decimal `json:"service_fee"`
 		PointsEarned  decimal.Decimal `json:"points_earned"`
 		Sender        string          `json:"sender"`
 		Receiver      string          `json:"receiver"`
@@ -80,8 +82,9 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 			var pointsEarned decimal.Decimal
 			var cardNumber *string
 			var customerName string
+			var serviceFee decimal.Decimal
 
-			err := rows.Scan(&t.TransactionID, &t.TerminalID, &t.Date, &t.Time, &t.Type, &t.Amount, &t.Status, &description, &businessName, &merchantId, &pointsEarned, &cardNumber, &customerName)
+			err := rows.Scan(&t.TransactionID, &t.TerminalID, &t.Date, &t.Time, &t.Type, &t.Amount, &t.Status, &description, &businessName, &merchantId, &pointsEarned, &cardNumber, &customerName, &serviceFee)
 			if err != nil {
 				fmt.Printf("Error scanning transaction row: %v\n", err)
 				continue
@@ -101,7 +104,7 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 				t.MerchantID = "N/A"
 			}
 
-			t.ServiceFee = 0.00
+			t.ServiceFee = serviceFee
 			t.PointsEarned = pointsEarned
 
 			// Calculate Source / Details

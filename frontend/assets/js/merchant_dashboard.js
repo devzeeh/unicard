@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (destBankNameEl) destBankNameEl.textContent = data.settlement_bank || "Not Configured";
 
                 const destAccNumEl = document.getElementById("destinationAccountNum");
-                if (destAccNumEl) destAccNumEl.textContent = data.settlement_account || "N/A";
+                if (destAccNumEl) destAccNumEl.textContent = data.settlement_account_number || "N/A";
 
                 // Update Overview Cards
                 const availableBalanceEl = document.getElementById("availableBalance");
@@ -103,6 +103,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         const sign = isPayment ? '+' : '-';
                         const amount = Number(tx.amount).toFixed(2);
                         const displayType = tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1);
+                        
+                        let statusBadge = '';
+                        const st = (tx.status || 'completed').toLowerCase();
+                        if (st === 'completed' || st === 'success') {
+                            statusBadge = `<span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Completed</span>`;
+                        } else if (st === 'pending') {
+                            statusBadge = `<span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">Pending</span>`;
+                        } else {
+                            statusBadge = `<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Failed</span>`;
+                        }
 
                         const tr = document.createElement('tr');
                         tr.className = 'hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100';
@@ -111,15 +121,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="font-medium text-gray-900">${formattedDate}</div>
                                 <div class="text-xs text-gray-500 mt-0.5">${timeStr}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                ${tx.description ? `<div class="font-medium text-gray-900">${tx.description}</div>` : ''}
-                                <div class="text-xs text-gray-500 ${tx.description ? 'mt-0.5' : ''}">ID: ${tx.transaction_id}</div>
+                            <td class="px-6 py-4 max-w-[200px]">
+                                ${tx.description ? `<div class="font-medium text-gray-900 truncate" title="${tx.description}">${tx.description}</div>` : ''}
+                                <div class="text-xs text-gray-500 truncate ${tx.description ? 'mt-0.5' : ''}" title="ID: ${tx.transaction_id}">ID: ${tx.transaction_id}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 ${displayType}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm ${amountColor} text-right font-medium">
                                 ${sign}₱${amount}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                                ${statusBadge}
                             </td>
                         `;
                         tr.onclick = function () {
@@ -283,15 +296,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (withdrawMaxBtn) {
         withdrawMaxBtn.addEventListener('click', () => {
-            withdrawAmountInput.value = window.MERCHANT_AVAILABLE_BALANCE || 0;
+            let bal = window.MERCHANT_AVAILABLE_BALANCE || 0;
+            withdrawAmountInput.value = Math.min(bal, 500000);
         });
     }
 
     if (submitWithdrawBtn) {
         submitWithdrawBtn.addEventListener('click', async () => {
             const amount = parseFloat(withdrawAmountInput.value);
-            if (isNaN(amount) || amount <= 0) {
-                withdrawErrorMsg.textContent = "Please enter a valid amount to withdraw.";
+            if (isNaN(amount) || amount < 500) {
+                withdrawErrorMsg.textContent = "Minimum withdrawal amount is ₱500.00.";
+                withdrawErrorMsg.classList.remove('hidden');
+                return;
+            }
+            if (amount > 500000) {
+                withdrawErrorMsg.textContent = "Maximum daily withdrawal limit is ₱500,000.00.";
                 withdrawErrorMsg.classList.remove('hidden');
                 return;
             }

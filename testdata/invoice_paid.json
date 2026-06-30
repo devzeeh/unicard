@@ -1,0 +1,26 @@
+{
+    "id": "5DTgHCryVMi6bxRSfaqnN0Uh9",
+    "amount": 515,
+    "status": "PAID",
+    "created": "2026-06-29T09:54:25.782Z",
+    "is_high": false,
+    "paid_at": "2026-06-29T09:55:32.748Z",
+    "updated": "2026-06-29T09:55:34.378Z",
+    "user_id": "tMBRkvgyuE02qaTmLcZpCl1Kx",
+    "currency": "PHP",
+    "payment_id": "qrpy_4fba1d77-39b5-48db-846e-73005978e252",
+    "description": "Unicard Top-Up",
+    "external_id": "TOP-UP-1329903257048599786",
+    "paid_amount": 515,
+    "payer_email": "sample@test.com",
+    "merchant_name": "devzeeh software",
+    "payment_method": "QR_CODE",
+    "payment_channel": "QRPH",
+    "payment_details": {
+        "source": "GCash",
+        "receipt_id": "873632"
+    },
+    "payment_method_id": "pm-d64ad688-f34d-4971-a324-52aa7cdeb9cf",
+    "failure_redirect_url": "http://localhost3001/u/mhissy/topup",
+    "success_redirect_url": "http://localhost3001/u/mhissy/dashboard"
+}

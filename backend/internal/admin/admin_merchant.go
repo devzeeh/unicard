@@ -193,7 +193,6 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 type ApproveMerchantRequest struct {
 	CommissionRate string `json:"commissionRate" validate:"required"`
 	TerminalSn     string `json:"terminalSn" validate:"required"`
-	DeviceName     string `json:"deviceName"`
 }
 
 func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request) {
@@ -265,10 +264,52 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	var businessAddress string
 	_ = tx.QueryRow("SELECT business_address FROM merchants WHERE merchant_id = ?", merchantID).Scan(&businessAddress)
 
-	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, device_name = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantID, req.DeviceName, businessAddress, req.TerminalSn)
+	// Determine which terminal to assign: admin-provided > pending merchant request > automatic unassigned terminal
+	assignTerminalSN := req.TerminalSn
+	var requestID string
+	if assignTerminalSN == "" {
+		// Check for pending terminal request
+		err = tx.QueryRow("SELECT request_id, terminal_sn FROM terminal_requests WHERE merchant_id = ? AND status = 'pending' ORDER BY requested_at DESC LIMIT 1", merchantID).Scan(&requestID, &assignTerminalSN)
+		if err != nil && err != sql.ErrNoRows {
+			jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to check terminal requests"})
+			return
+		}
+		// If still empty, try to pick an unassigned terminal
+		if assignTerminalSN == "" {
+			// find any unassigned inactive terminal
+			err = tx.QueryRow("SELECT terminal_sn FROM terminals WHERE merchant_id IS NULL AND status = 'inactive' LIMIT 1").Scan(&assignTerminalSN)
+			if err != nil && err != sql.ErrNoRows {
+				jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to find available terminal"})
+				return
+			}
+		}
+	}
+
+	if assignTerminalSN == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "No terminal selected or available"})
+		return
+	}
+
+	var terminalDeviceName string
+	err = tx.QueryRow("SELECT device_name FROM terminals WHERE terminal_sn = ?", assignTerminalSN).Scan(&terminalDeviceName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Selected terminal was not found"})
+			return
+		}
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to read terminal details"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE terminals SET merchant_id = ?, device_name = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?", merchantID, terminalDeviceName, businessAddress, assignTerminalSN)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to assign terminal"})
 		return
+	}
+
+	// If we used a pending request, mark it as approved
+	if requestID != "" {
+		_, _ = tx.Exec("UPDATE terminal_requests SET status = 'approved', handled_by = ?, handled_at = CURRENT_TIMESTAMP WHERE request_id = ?", adminUserID, requestID)
 	}
 
 	// Format business name safely for transaction ID (remove spaces, uppercase)
@@ -588,6 +629,11 @@ type MerchantDetailsData struct {
 	BirDocument      string
 	OtherDocument    string
 	DocumentStatus   string
+	Terminals        []structs.Terminal
+}
+
+type MerchantInfoResponse struct {
+	Merchant MerchantDetailsData `json:"merchant"`
 }
 
 type MerchantInfoViewData struct {
@@ -622,7 +668,9 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 
 	var m MerchantDetailsData
 	var commRate sql.NullFloat64
-	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc, city, postal, docStatus sql.NullString
+
+	// ADDED: Nullable types for address, phone, and type to prevent NULL crashes
+	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc, city, postal, docStatus, busAddress, busPhone, busType sql.NullString
 
 	err := h.DB.QueryRow(`
 		SELECT merchant_id, user_id, business_name, business_type, business_registration_number, 
@@ -631,8 +679,8 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		       settlement_account_number, created_at,
 		       business_document, bir_document, other_document, document_status
 		FROM merchants WHERE merchant_id = ?`, merchantID).Scan(
-		&m.MerchantID, &m.UserID, &m.BusinessName, &m.BusinessType, &regNum,
-		&m.BusinessAddress, &city, &postal, &m.OwnerName, &m.BusinessEmail, &m.BusinessPhone, &m.Status,
+		&m.MerchantID, &m.UserID, &m.BusinessName, &busType, &regNum,
+		&busAddress, &city, &postal, &m.OwnerName, &m.BusinessEmail, &busPhone, &m.Status,
 		&commRate, &setBank, &setName, &setAcct, &m.CreatedAt,
 		&dtiDoc, &birDoc, &otherDoc, &docStatus,
 	)
@@ -653,6 +701,16 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Safely map the nullable strings back to the main struct
+	if busType.Valid {
+		m.BusinessType = busType.String
+	}
+	if busAddress.Valid {
+		m.BusinessAddress = busAddress.String
+	}
+	if busPhone.Valid {
+		m.BusinessPhone = busPhone.String
+	}
 	if regNum.Valid {
 		m.RegistrationNum = regNum.String
 	}
@@ -662,7 +720,6 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 	if postal.Valid {
 		m.PostalCode = postal.String
 	}
-
 	if commRate.Valid {
 		m.CommissionRate = commRate.Float64
 	}
@@ -688,8 +745,32 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		m.DocumentStatus = docStatus.String
 	}
 
+	termQuery := `
+		SELECT terminal_id, terminal_sn, device_name, status
+		FROM terminals
+		WHERE merchant_id = ?
+	`
+
+	termRows, err := h.DB.Query(termQuery, merchantID)
+	if err != nil {
+		log.Println("Error querying merchant terminals:", err)
+		m.Terminals = []structs.Terminal{}
+	} else {
+		defer termRows.Close()
+		var terminals []structs.Terminal
+		for termRows.Next() {
+			var t structs.Terminal
+			if err := termRows.Scan(&t.TerminalID, &t.TerminalSN, &t.DeviceName, &t.Status); err != nil {
+				log.Println("Error scanning merchant terminal:", err)
+				continue
+			}
+			terminals = append(terminals, t)
+		}
+		m.Terminals = terminals
+	}
+
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
-		Data:    m,
+		Data:    MerchantInfoResponse{Merchant: m},
 	})
 }
