@@ -12,6 +12,14 @@ window.renderAssignedTerminals = function (terminals) {
     if (!terminals || terminals.length === 0) {
         return '<span class="text-gray-400 italic">No terminals</span>';
     }
+    
+    if (terminals.length > 2) {
+        const tooltip = terminals.map(t => t.device_name ? `${t.device_name} (${t.terminal_sn})` : t.terminal_sn).join('&#10;');
+        return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 cursor-help" title="${tooltip}">
+            ${terminals.length} Terminals Assigned
+        </span>`;
+    }
+
     return terminals.map(t => {
         return `<div class="mb-1 max-w-[200px]" title="${t.device_name || t.terminal_id}">
             <div class="text-sm text-gray-900 truncate">${t.device_name || t.terminal_id}</div>

@@ -33,7 +33,8 @@ function fetchMerchantData() {
         .then(res => res.json())
         .then(result => {
             if (result.success && result.data) {
-                populateMerchantUI(result.data);
+                const merchant = result.data.merchant || result.data;
+                populateMerchantUI(merchant);
             } else {
                 console.error("Failed to load merchant data:", result.message);
                 alert("Failed to load merchant data: " + (result.message || "Unknown error"));
@@ -122,6 +123,36 @@ function populateMerchantUI(merchant) {
         btnApprove.classList.add('hidden');
         btnReject.classList.add('hidden');
         btnDelete.classList.remove('hidden');
+    }
+
+    // Populate Assigned Terminals
+    const terminalsContainer = document.getElementById('assignedTerminalsContainer');
+    if (merchant.Terminals && merchant.Terminals.length > 0) {
+        terminalsContainer.innerHTML = merchant.Terminals.map(t => {
+            let badgeClass = 'bg-gray-100 text-gray-800';
+            if (t.status === 'active') badgeClass = 'bg-green-100 text-green-800';
+            else if (t.status === 'inactive') badgeClass = 'bg-yellow-100 text-yellow-800';
+            else if (t.status === 'defective') badgeClass = 'bg-red-100 text-red-800';
+            
+            return `
+            <div class="flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-white transition duration-150">
+                <div>
+                    <p class="text-sm font-bold text-gray-900">${t.device_name || t.terminal_id}</p>
+                    <p class="text-xs text-gray-500 font-mono mt-1">SN: ${t.terminal_sn}</p>
+                </div>
+                <span class="px-3 py-1 text-xs font-semibold rounded-full capitalize shadow-sm ${badgeClass}">
+                    ${t.status || 'Unknown'}
+                </span>
+            </div>
+        `}).join('');
+    } else {
+        terminalsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <p class="text-sm text-gray-500 font-medium">No terminals assigned</p>
+                <p class="text-xs text-gray-400 mt-1">This merchant doesn't have any terminals yet.</p>
+            </div>
+        `;
     }
 }
 
@@ -394,12 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const merchantId = document.getElementById('approveMerchantId').value;
             const commissionRate = document.getElementById('approveCommissionRate').value;
             const terminalSn = document.getElementById('approveTerminalSn').value;
-            const deviceName = document.getElementById('approveDeviceName').value;
 
             const payload = {
                 commissionRate,
-                terminalSn,
-                deviceName
+                terminalSn
             };
 
             const alertBox = document.getElementById('approveFormAlert');

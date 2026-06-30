@@ -54,6 +54,15 @@
                     </a>
                 </li>
                 <li>
+                    <a href="/admin/{{.Username}}/terminal-requests"
+                        class="group flex items-center px-4 py-3.5 text-sm font-semibold {{if eq .Page "terminal_requests"}}text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 transform scale-[1.02]{{else}}text-gray-600 hover:bg-gray-50/80 hover:text-gray-900 hover:scale-[1.01]{{end}} rounded-xl transition-all duration-300">
+                        <svg class="w-5 h-5 mr-3 {{if eq .Page "terminal_requests"}}text-white{{else}}text-gray-400 group-hover:text-blue-500{{end}} transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Terminal Requests</span>
+                    </a>
+                </li>
+                <li>
                     <a href="/admin/{{.Username}}/transactions"
                         class="group flex items-center px-4 py-3.5 text-sm font-semibold {{if eq .Page "transactions"}}text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 transform scale-[1.02]{{else}}text-gray-600 hover:bg-gray-50/80 hover:text-gray-900 hover:scale-[1.01]{{end}} rounded-xl transition-all duration-300">
                         <svg class="w-5 h-5 mr-3 {{if eq .Page "transactions"}}text-white{{else}}text-gray-400 group-hover:text-blue-500{{end}} transition-colors duration-300" fill="none" stroke="currentColor"

@@ -29,7 +29,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 
 	// Compute UniCard's Absolute Gross Revenue
 	// (Transaction Service Fees)
-	query := `SELECT COALESCE(SUM(service_fee), 0.00) FROM transactions WHERE transaction_type = 'payment'`
+	query := `SELECT COALESCE(SUM(service_fee), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
 	row := h.DB.QueryRow(query)
 
 	var grossRevenue float64
@@ -47,7 +47,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	// (Service fees from successful payments MINUS service fees lost to refunds/reversals)
 	query = `SELECT COALESCE(SUM(
 			CASE 
-				WHEN transaction_type = 'payment' THEN service_fee 
+				WHEN transaction_type IN ('payment', 'topup', 'withdrawal') THEN service_fee 
 				WHEN transaction_type IN ('refund', 'reversal') THEN -service_fee 
 				ELSE 0 
 			END

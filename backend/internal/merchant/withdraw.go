@@ -18,6 +18,31 @@ import (
 	"github.com/xendit/xendit-go/v7/payout"
 )
 
+var channelCodeMap = map[string]string{
+	"Asia United Bank (AUB)":                          "PH_AUB",
+	"BDO Network Bank":                                "PH_ONB",
+	"BDO Unibank":                                     "PH_BDO",
+	"Bank of the Philippine Islands (BPI)":            "PH_BPI",
+	"CIMB Bank Philippines Inc":                       "PH_CIMB",
+	"Development Bank of the Philippines":             "PH_DBP",
+	"East West Banking Corporation":                   "PH_EWB",
+	"East West RURAL BANK OR KOMO":                    "PH_EWR",
+	"GoTyme Bank":                                     "PH_GOTYME",
+	"Land Bank of the Philippines":                    "PH_LBP",
+	"Maya Bank, Inc.":                                 "PH_MAYA",
+	"Metropolitan Bank and Trust Company (Metrobank)": "PH_MET",
+	"Philippine National Bank (PNB)":                  "PH_PNB",
+	"Philippine Savings Bank (PSBANK)":                "PH_PSB",
+	"Seabank Philippines, Inc.":                       "PH_SEA",
+	"Security Bank Corporation":                       "PH_SEC",
+	"Union Bank of the Philippines (UBP)":             "PH_UBP",
+	"Union Digital Bank":                              "PH_UDP",
+	"GCash":                                           "PH_GCASH",
+	"GrabPay":                                         "PH_GRABPAY",
+	"PayMaya":                                         "PH_PAYMAYA",
+	"ShopeePay":                                       "PH_SHOPEE",
+}
+
 type BankDetails struct {
 	merchantID            string
 	settlementBank        *string
@@ -106,6 +131,39 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Amount < 500 {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Minimum withdrawal amount is ₱500.00.",
+		})
+		return
+	}
+
+	// Check daily maximum withdrawal limit of 500,000
+	var dailyWithdrawn float64
+	err = h.DB.QueryRow(`
+		SELECT COALESCE(SUM(amount), 0) 
+		FROM transactions 
+		WHERE merchant_id = ? AND transaction_type = 'withdrawal' AND DATE(created_at) = CURDATE()
+	`, bank.merchantID).Scan(&dailyWithdrawn)
+	
+	if err != nil {
+		log.Println("Error fetching daily withdrawn amount:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Error verifying withdrawal limits",
+		})
+		return
+	}
+
+	if dailyWithdrawn+req.Amount > 500000 {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: fmt.Sprintf("Amount exceeds daily withdrawal limit of ₱500,000.00. You can only withdraw up to ₱%.2f more today.", 500000-dailyWithdrawn),
+		})
+		return
+	}
+
 	withdrawAmount := decimal.NewFromFloat(req.Amount)
 	if withdrawAmount.GreaterThan(stats.AvailableBalance) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
@@ -134,11 +192,22 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	channelProps := payout.NewDigitalPayoutChannelProperties(*bank.settlementAccount)
 	channelProps.SetAccountHolderName(*bank.settlementAccountName)
 
+	// Map bank name to Xendit channel code
+	bankName := strings.TrimSpace(*bank.settlementBank)
+	channelCode, exists := channelCodeMap[bankName]
+	if !exists {
+		channelCode = "PH_" + strings.ReplaceAll(bankName, " ", "")
+	}
+
+	// Calculate fees and final payout
+	serviceFee := float32(10.00)
+	payoutAmount := float32(req.Amount) - serviceFee
+
 	createPayoutReq := payout.NewCreatePayoutRequest(
 		txnID,
-		"PH_"+strings.ToUpper(*bank.settlementBank), // Channel code e.g. "PH_MAYA"
+		channelCode,
 		*channelProps,
-		float32(req.Amount),
+		payoutAmount,
 		"PHP",
 	)
 	createPayoutReq.SetDescription(description)
@@ -152,6 +221,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to create Xendit payout: %v", payoutErr.Error())
 		log.Printf("Data sent to Xendit: %+v", createPayoutReq)
 		log.Printf("Xendit Detailed Error: %v", payoutErr.Error())
+		log.Printf("Channel Code is: %s", channelCode)
 
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -162,10 +232,10 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 
 	insertTxnQuery := `
 		INSERT INTO transactions (
-			transaction_id, merchant_id, transaction_type, amount, status, description, card_number
-		) VALUES (?, ?, 'withdrawal', ?, 'pending', ?, NULL)
+			transaction_id, merchant_id, transaction_type, amount, status, description, card_number, service_fee
+		) VALUES (?, ?, 'withdrawal', ?, 'pending', ?, NULL, ?)
 	`
-	_, err = h.DB.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description)
+	_, err = h.DB.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
 	if err != nil {
 		log.Println("Error inserting withdrawal transaction:", err)
 		// We could potentially try to cancel the disbursement here, or have a manual reconciliation process.
