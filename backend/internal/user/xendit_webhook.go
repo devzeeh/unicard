@@ -6,30 +6,32 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/shopspring/decimal"
 )
 
 // XenditWebhookPayload represents the expected payload from Xendit Invoice webhook
 type XenditWebhookPayload struct {
-	ID                     string  `json:"id"`
-	ExternalID             string  `json:"external_id"`
-	UserID                 string  `json:"user_id"`
-	IsHigh                 bool    `json:"is_high"`
-	PaymentMethod          string  `json:"payment_method"`
-	Status                 string  `json:"status"`
-	MerchantName           string  `json:"merchant_name"`
-	Amount                 float64 `json:"amount"`
-	PaidAmount             float64 `json:"paid_amount"`
-	BankCode               string  `json:"bank_code"`
-	PaidAt                 string  `json:"paid_at"`
-	PayerEmail             string  `json:"payer_email"`
-	Description            string  `json:"description"`
-	AdjustedReceivedAmount float64 `json:"adjusted_received_amount"`
-	FeesPaidAmount         float64 `json:"fees_paid_amount"`
-	Updated                string  `json:"updated"`
-	Created                string  `json:"created"`
-	Currency               string  `json:"currency"`
-	PaymentChannel         string  `json:"payment_channel"`
-	PaymentDestination     string  `json:"payment_destination"`
+	ID                     string          `json:"id"`
+	ExternalID             string          `json:"external_id"`
+	UserID                 string          `json:"user_id"`
+	IsHigh                 bool            `json:"is_high"`
+	PaymentMethod          string          `json:"payment_method"`
+	Status                 string          `json:"status"`
+	MerchantName           string          `json:"merchant_name"`
+	Amount                 decimal.Decimal `json:"amount"`
+	PaidAmount             decimal.Decimal `json:"paid_amount"`
+	BankCode               string          `json:"bank_code"`
+	PaidAt                 string          `json:"paid_at"`
+	PayerEmail             string          `json:"payer_email"`
+	Description            string          `json:"description"`
+	AdjustedReceivedAmount decimal.Decimal `json:"adjusted_received_amount"`
+	FeesPaidAmount         decimal.Decimal `json:"fees_paid_amount"`
+	Updated                string          `json:"updated"`
+	Created                string          `json:"created"`
+	Currency               string          `json:"currency"`
+	PaymentChannel         string          `json:"payment_channel"`
+	PaymentDestination     string          `json:"payment_destination"`
 }
 
 // XenditWebhook handles incoming webhook notifications from Xendit for invoice payments.
@@ -77,12 +79,13 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		defer tx.Rollback()
 
+		var topUp XenditWebhookPayload
 		var cardNumber string
-		var amount float64
+		//var amount float64
 		var currentStatus string
 
 		// Fetch the top-up record
-		err = tx.QueryRow(`SELECT card_number, amount, status FROM top_ups WHERE topup_id = ?`, externalID).Scan(&cardNumber, &amount, &currentStatus)
+		err = tx.QueryRow(`SELECT card_number, amount, status FROM top_ups WHERE topup_id = ?`, externalID).Scan(&cardNumber, &topUp.Amount, &currentStatus)
 		if err != nil {
 			log.Println("Failed to find top-up record or invalid external_id:", err)
 			w.WriteHeader(http.StatusOK) // Ignore if not found
@@ -97,7 +100,7 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update the User's Balance
-		if _, err := tx.Exec(`UPDATE cards SET balance = balance + ? WHERE card_number = ?`, amount, cardNumber); err != nil {
+		if _, err := tx.Exec(`UPDATE cards SET balance = balance + ? WHERE card_number = ?`, topUp.Amount, cardNumber); err != nil {
 			log.Println("Failed to update card balance:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -112,7 +115,7 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 
 		// Mark the transaction ledger as completed. We find the related pending transaction by card_number, amount, and status.
 		// We use LIMIT 1 to ensure we only update one pending transaction if there are duplicates.
-		if _, err := tx.Exec(`UPDATE transactions SET status = 'completed', description = 'Successful topup via Xendit' WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, amount); err != nil {
+		if _, err := tx.Exec(`UPDATE transactions SET status = 'completed', description = 'Successful topup via Xendit' WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, topUp.Amount); err != nil {
 			log.Println("Failed to update transactions status:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -124,7 +127,7 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("Successfully loaded ₱%.2f onto card %s via Xendit", amount, cardNumber)
+		log.Printf("Successfully loaded ₱%s onto card %s via Xendit", topUp.Amount, cardNumber)
 
 	// log if payment failed, expired, or canceled
 	case "EXPIRED", "FAILED", "PENDING", "CANCELED":
@@ -132,7 +135,7 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 		if payload.Status == "EXPIRED" || payload.Status == "FAILED" || payload.Status == "CANCELED" {
 			// Update the database records to failed so users see it as failed
 			_, _ = h.DB.Exec(`UPDATE top_ups SET status = 'failed' WHERE topup_id = ? AND status = 'pending'`, payload.ExternalID)
-			
+
 			var cardNumber string
 			var amount float64
 			if err := h.DB.QueryRow(`SELECT card_number, amount FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount); err == nil {

@@ -6,17 +6,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/shopspring/decimal"
 )
 
 // XenditPayoutWebhookPayload represents the expected payload from Xendit Payout webhook
 type XenditPayoutWebhookPayload struct {
 	Event string `json:"event"`
 	Data  struct {
-		ReferenceID string  `json:"reference_id"`
-		Status      string  `json:"status"` // SUCCEEDED, FAILED
-		ChannelCode string  `json:"channel_code"`
-		Amount      float64 `json:"amount"`
-		FailureCode string  `json:"failure_code,omitempty"`
+		ReferenceID string          `json:"reference_id"`
+		Status      string          `json:"status"` // SUCCEEDED, FAILED
+		ChannelCode string          `json:"channel_code"`
+		Amount      decimal.Decimal `json:"amount"`
+		FailureCode string          `json:"failure_code,omitempty"`
 	} `json:"data"`
 }
 
@@ -57,7 +59,7 @@ func (h *Handler) XenditDisbursementWebhook(w http.ResponseWriter, r *http.Reque
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Successfully disbursed ₱%.2f for transaction %s", payload.Data.Amount, externalID)
+		log.Printf("Successfully disbursed ₱%s for transaction %s", payload.Data.Amount, externalID)
 
 	case "payout.failed":
 		_, err := h.DB.Exec(`UPDATE transactions SET status = 'failed' WHERE transaction_id = ? AND transaction_type = 'withdrawal' AND status = 'pending'`, externalID)

@@ -8,7 +8,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/shopspring/decimal v1.4.0
-	github.com/xendit/xendit-go v1.0.25
 	github.com/xendit/xendit-go/v7 v7.0.0
 	golang.org/x/crypto v0.53.0
 	golang.org/x/time v0.15.0
