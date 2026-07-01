@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"net/http"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+
+	"github.com/shopspring/decimal"
 )
 
 // AdminCard represents a card entry in the admin database
 type AdminCard struct {
-	UserID     sql.NullString `json:"user_id" db:"user_id"`
-	CardUID    string         `json:"card_uid" db:"card_uid"`
-	CardNumber string         `json:"card_number" db:"card_number"`
-	CardType   string         `json:"card_type" db:"card_type"`
-	Balance    float64        `json:"initial_amount" db:"balance"`
-	ExpiryDate string         `json:"expiry_date" db:"expiry_date"`
-	Status     string         `json:"status" db:"status"`
-	CreatedAt  string         `json:"created_at" db:"created_at"`
+	UserID     sql.NullString  `json:"user_id" db:"user_id"`
+	CardUID    string          `json:"card_uid" db:"card_uid"`
+	CardNumber string          `json:"card_number" db:"card_number"`
+	CardType   string          `json:"card_type" db:"card_type"`
+	Balance    decimal.Decimal `json:"initial_amount" db:"balance"`
+	ExpiryDate string          `json:"expiry_date" db:"expiry_date"`
+	Status     string          `json:"status" db:"status"`
+	CreatedAt  string          `json:"created_at" db:"created_at"`
 }
 
 // AdminCardInventoryStats contains statistics about cards
@@ -47,14 +49,14 @@ func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Reques
 
 	// Fetch Stats
 	var stats AdminCardInventoryStats
-	h.DB.QueryRow("SELECT COUNT(*) FROM cards").Scan(&stats.Total)
-	h.DB.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Active'").Scan(&stats.Active)
-	h.DB.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Inactive'").Scan(&stats.Inactive)
-	h.DB.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Blocked'").Scan(&stats.Blocked)
-	h.DB.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Lost'").Scan(&stats.Lost)
+	h.Store.QueryRow("SELECT COUNT(*) FROM cards").Scan(&stats.Total)
+	h.Store.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Active'").Scan(&stats.Active)
+	h.Store.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Inactive'").Scan(&stats.Inactive)
+	h.Store.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Blocked'").Scan(&stats.Blocked)
+	h.Store.QueryRow("SELECT COUNT(*) FROM cards WHERE status = 'Lost'").Scan(&stats.Lost)
 
 	// Fetch Cards
-	rows, err := h.DB.Query(`
+	rows, err := h.Store.Query(`
 		SELECT user_id, card_uid, card_number, card_type, balance, status, expiry_date, created_at
 		FROM cards
 		ORDER BY created_at DESC
@@ -113,7 +115,7 @@ func (h *Handler) BlockCardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.DB.Exec(`
+	result, err := h.Store.Exec(`
 		UPDATE cards
 		SET status = 'Blocked'
 		WHERE card_number = ? OR card_uid = ?

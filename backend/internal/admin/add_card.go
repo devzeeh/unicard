@@ -17,6 +17,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const cardType = "regular" // Lowercase to match your database ENUM
+
 // AddCardsView renders the addCards.html template after checking the admin session.
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("AddCardsView running...")
@@ -70,8 +72,8 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Auto-generate data
 	cardNumber := h.generateCardNumber()
-	cardType := "regular"                                          // Lowercase to match your database ENUM
-	expiryDate := time.Now().AddDate(2, 0, 0).Format("2006-01-02") // 2 years from now unlinked
+	// Set card to be unlinked for 2 years
+	expiryDate := time.Now().AddDate(2, 0, 0).Format("2006-01-02") 
 
 	// Check for existing UID
 	uidExists, err := h.cardUIDExist(cardUID)
@@ -97,7 +99,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
         VALUES (?, ?, ?, ?, ?, 'inactive')
     `
 
-	_, err = h.DB.Exec(
+	_, err = h.Store.Exec(
 		query,
 		cardUID,
 		cardNumber,
@@ -127,7 +129,7 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) cardUIDExist(uid string) (bool, error) {
 	var existingUID string
 	query := "SELECT card_uid FROM cards WHERE card_uid = ?"
-	err := h.DB.QueryRow(query, uid).Scan(&existingUID)
+	err := h.Store.QueryRow(query, uid).Scan(&existingUID)
 	if err == sql.ErrNoRows {
 		return false, nil
 	} else if err != nil {

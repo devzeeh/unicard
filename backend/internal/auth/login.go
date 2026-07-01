@@ -83,7 +83,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	)
 
 	stmt := "SELECT id, username, password_hash, role FROM users WHERE email = ? OR username = ? OR phone_number = ?"
-	err = h.DB.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userName, &hash, &role)
+	err = h.Store.QueryRow(stmt, loginReq.Identifier, loginReq.Identifier, loginReq.Identifier).Scan(&ID, &userName, &hash, &role)
 
 	// User not found
 	if err != nil {

@@ -36,6 +36,15 @@ type TerminalRequestsResponse struct {
 	TotalPages  int         `json:"total_pages,omitempty"`
 }
 
+type ApproveTerminalRequestPayload struct {
+	AssignTerminalSN string `json:"assign_terminal_sn"`
+	Notes            string `json:"notes"`
+}
+
+type RejectTerminalRequestPayload struct {
+	Reason string `json:"reason"`
+}
+
 func (h *Handler) TerminalRequestsView(w http.ResponseWriter, r *http.Request) {
 	log.Println("TerminalRequestsView running...")
 	data := AdminPageData{
@@ -68,7 +77,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	// Check if table exists first
 	checkTableQuery := `SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'unicard' AND TABLE_NAME = 'terminal_requests' LIMIT 1`
 	var tableExists int
-	err := h.DB.QueryRow(checkTableQuery).Scan(&tableExists)
+	err := h.Store.QueryRow(checkTableQuery).Scan(&tableExists)
 	if err != nil {
 		log.Printf("Table check error: %v", err)
 		// Return empty list if table doesn't exist
@@ -111,7 +120,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	// Count total items
 	countQuery := `SELECT COUNT(*) ` + baseQuery + whereClause
 	var totalItems int
-	if err := h.DB.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
+	if err := h.Store.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
 		log.Printf("Count query error: %v | Query: %s | Args: %v", err, countQuery, args)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -131,7 +140,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 
 	args = append(args, limit, offset)
 
-	rows, err := h.DB.Query(dataQuery, args...)
+	rows, err := h.Store.Query(dataQuery, args...)
 	if err != nil {
 		log.Printf("Data query error: %v | Query: %s | Args: %v", err, dataQuery, args)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
@@ -219,11 +228,6 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	jsonwrite.WriteJSON(w, http.StatusOK, response)
 }
 
-type ApproveTerminalRequestPayload struct {
-	AssignTerminalSN string `json:"assign_terminal_sn"`
-	Notes            string `json:"notes"`
-}
-
 func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("ApproveTerminalRequestHandler running...")
 	adminUserID := r.PathValue("username")
@@ -247,7 +251,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	}
 
 	// Start transaction
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"success": false,
@@ -295,7 +299,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	if assignTerminalSN == "" && terminalSN != nil {
 		assignTerminalSN = *terminalSN
 	}
-	
+
 	if assignTerminalSN == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
 			"success": false,
@@ -350,7 +354,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 		// Get merchant address for location details
 		var businessAddress, city string
 		err := tx.QueryRow(`SELECT business_address, city FROM merchants WHERE merchant_id = ?`, merchantID).Scan(&businessAddress, &city)
-		
+
 		locationDetails := ""
 		if err == nil {
 			if city != "" {
@@ -359,7 +363,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 				locationDetails = businessAddress
 			}
 		}
-		
+
 		_, err = tx.Exec(
 			`UPDATE terminals SET merchant_id = ?, location_details = ?, status = 'active' WHERE terminal_sn = ?`,
 			merchantID,
@@ -396,10 +400,6 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
-type RejectTerminalRequestPayload struct {
-	Reason string `json:"reason"`
-}
-
 func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("RejectTerminalRequestHandler running...")
 	adminUserID := r.PathValue("username")
@@ -424,7 +424,7 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 
 	// Check current status
 	var currentStatus string
-	err := h.DB.QueryRow(
+	err := h.Store.QueryRow(
 		`SELECT status FROM terminal_requests WHERE request_id = ?`,
 		requestID,
 	).Scan(&currentStatus)
@@ -458,7 +458,7 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 		reason = "Rejected by admin"
 	}
 
-	_, err = h.DB.Exec(
+	_, err = h.Store.Exec(
 		`UPDATE terminal_requests SET status = 'rejected', handled_by = ?, handled_at = CURRENT_TIMESTAMP, notes = ? WHERE request_id = ?`,
 		adminUserID,
 		reason,

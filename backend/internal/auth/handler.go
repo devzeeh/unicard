@@ -1,20 +1,20 @@
 package authentication
 
 import (
-	"database/sql"
 	"html/template"
+	"unicard-go/backend/internal/pkg/database"
 )
 
 // The struct is shared across the files in this package
 type Handler struct {
-	DB  *sql.DB            // Database connection
-	Tpl *template.Template // HTML templates
+	Store database.Store     // Database store
+	Tpl   *template.Template // HTML templates
 }
 
 // Optional: A constructor to make initialization cleaner
-func NewHandler(db *sql.DB, tpl *template.Template) *Handler {
+func NewHandler(store database.Store, tpl *template.Template) *Handler {
 	return &Handler{
-		DB:  db,
-		Tpl: tpl,
+		Store: store,
+		Tpl:   tpl,
 	}
 }

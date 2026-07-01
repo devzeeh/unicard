@@ -72,7 +72,7 @@ func (h *Handler) AdminSignupHandler(w http.ResponseWriter, r *http.Request) {
     (user_id, username, name, email, password_hash, role, status) 
     VALUES (?, ?, ?, ?, ?, 'super_admin', 'active')`
 	
-	_, err = h.DB.ExecContext(ctx, insertQuery, userIDStr, req.Username, req.Name, req.Email, hashedPassword)
+	_, err = h.Store.ExecContext(ctx, insertQuery, userIDStr, req.Username, req.Name, req.Email, hashedPassword)
 	if err != nil {
 		log.Printf("Error creating admin user: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

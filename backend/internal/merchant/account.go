@@ -108,7 +108,7 @@ func (h *Handler) MerchantAccountDataHandler(w http.ResponseWriter, r *http.Requ
 	var merchant MerchantDetails
 
 	// Execute the full JOIN query
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
         SELECT 
             m.merchant_id, 
             COALESCE(m.status, ''), 
@@ -274,7 +274,7 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 	// get the merchant ID and existing account number from the database
 	var merchantID string
 	var existingAccNumber string
-	err := h.DB.QueryRow("SELECT merchant_id, settlement_account_number FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID, &existingAccNumber)
+	err := h.Store.QueryRow("SELECT merchant_id, settlement_account_number FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID, &existingAccNumber)
 	if err != nil {
 		log.Println("Error finding merchant for update:", err)
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
@@ -286,7 +286,7 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 		req.AccountNumber = existingAccNumber
 	}
 
-	_, err = h.DB.Exec("UPDATE merchants SET settlement_bank_name=?, settlement_account_name=?, settlement_account_number=? WHERE merchant_id = ?", req.BankName, req.AccountHolderName, req.AccountNumber, merchantID)
+	_, err = h.Store.Exec("UPDATE merchants SET settlement_bank_name=?, settlement_account_name=?, settlement_account_number=? WHERE merchant_id = ?", req.BankName, req.AccountHolderName, req.AccountNumber, merchantID)
 
 	if err != nil {
 		log.Println("Update error:", err)
@@ -296,7 +296,7 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 
 	// Insert a system transaction to log the update
 	sysTxnID := fmt.Sprintf("SYS-SETTLE-%d", time.Now().UnixMilli())
-	_, _ = h.DB.Exec(`
+	_, _ = h.Store.Exec(`
 		INSERT INTO transactions 
 		(transaction_id, merchant_id, transaction_type, amount, points_earned, service_fee, status, description) 
 		VALUES (?, ?, 'payment', NULL, NULL, NULL, 'completed', 'Settlement bank details were updated by the merchant.')`,
@@ -387,7 +387,7 @@ func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		SELECT %s FROM merchants
 		WHERE user_id = (SELECT user_id FROM users WHERE username=?)`,
 		column)
-	if err := h.DB.QueryRow(qOld, username).Scan(&oldDbPath); err == nil && oldDbPath != nil {
+	if err := h.Store.QueryRow(qOld, username).Scan(&oldDbPath); err == nil && oldDbPath != nil {
 		oldFile := strings.TrimPrefix(*oldDbPath, "/")
 		if oldFile != "" {
 			if err := os.Remove(oldFile); err != nil {
@@ -401,7 +401,7 @@ func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		UPDATE merchants SET %s=?, document_status='Pending'
 		WHERE user_id = (SELECT user_id FROM users WHERE username=?)`,
 		column)
-	_, err = h.DB.Exec(query, dbPath, username)
+	_, err = h.Store.Exec(query, dbPath, username)
 	if err != nil {
 		log.Println("DB update error:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to update DB"})

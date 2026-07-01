@@ -100,7 +100,7 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	exists, err := account.IsEmailExist(h.DB, req.Email)
+	exists, err := account.IsEmailExist(h.Store.DB(), req.Email)
 	if err != nil {
 		log.Println("Error checking email existence:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -120,7 +120,7 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 
 	// Fetch the user's name
 	var fullName string
-	err = h.DB.QueryRowContext(ctx, "SELECT name FROM users WHERE email = ?", req.Email).Scan(&fullName)
+	err = h.Store.QueryRowContext(ctx, "SELECT name FROM users WHERE email = ?", req.Email).Scan(&fullName)
 	if err != nil {
 		fullName = "there" // Fallback if name is not found
 	}
@@ -273,7 +273,7 @@ func validatePassword(password string) error {
 // Update Password Handler
 func (h *Handler) updatePassword(email, hashedPassword string) error {
 	query := "UPDATE users SET password_hash = ? WHERE email = ?"
-	_, err := h.DB.Exec(query, hashedPassword, email)
+	_, err := h.Store.Exec(query, hashedPassword, email)
 	if err != nil {
 		log.Printf("failed to update password: %v", err)
 		return err

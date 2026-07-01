@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
@@ -11,15 +10,14 @@ import (
 	authentication "unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/middleware"
+	"unicard-go/backend/internal/pkg/database"
 	"unicard-go/backend/internal/user"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
 var (
 	tpl *template.Template
-	db  *sql.DB
 )
 
 func main() {
@@ -35,13 +33,6 @@ func main() {
 	// read .env VALUES
 	port := os.Getenv("PORT")
 	serverAddress := os.Getenv("SERVER_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	// Enable parseTime and set location so MySQL DATETIME/TIMESTAMP scan into time.Time
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Setup Templates
 	tpl, err = template.ParseGlob("./frontend/templates/*/*.html")
@@ -49,23 +40,20 @@ func main() {
 		log.Fatalf("Failed to load templates: %v. Check your folder path.", err)
 	}
 
-	// Setup Database
-	db, err = sql.Open("mysql", dsn)
+	// Setup Database using the new database package
+	db, err := database.Connect()
 	if err != nil {
-		panic(err.Error())
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	// Always verify connection
-	if err := db.Ping(); err != nil {
-		panic("Database connection failed: " + err.Error())
-	}
+	store := database.NewStore(db)
 
 	// Initialize the Handler from the auth package
-	authHandler := authentication.NewHandler(db, tpl)
-	adminHanlder := admin.NewHandler(db, tpl)
-	userHandler := user.NewHandler(db, tpl)
-	merchantHandler := merchant.NewHandler(db, tpl)
+	authHandler := authentication.NewHandler(store, tpl)
+	adminHanlder := admin.NewHandler(store, tpl)
+	userHandler := user.NewHandler(store, tpl)
+	merchantHandler := merchant.NewHandler(store, tpl)
 
 	// Setup Router
 	mux := http.NewServeMux()

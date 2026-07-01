@@ -4,24 +4,37 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"github.com/shopspring/decimal"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
+
+	"github.com/shopspring/decimal"
 )
+
+type Merchant struct {
+	ID   string
+	Name string
+}
+
+type SimRequest struct {
+	CardNumber string          `json:"card_number"`
+	Type       string          `json:"type"`
+	Amount     decimal.Decimal `json:"amount"`
+	MerchantID string          `json:"merchant_id"`
+	Balance    decimal.Decimal `json:"balance"`
+	Status     string          `json:"status"`
+	UserID     *string         `json:"user_id"`
+}
 
 // TerminalSimView renders the terminal simulation page
 func (h *Handler) TerminalSimView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Terminal Simulation view is running...")
 
-	type Merchant struct {
-		ID   string
-		Name string
-	}
 	var merchants []Merchant
 
-	rows, err := h.DB.Query("SELECT merchant_id, business_name FROM merchants")
+	rows, err := h.Store.Query("SELECT merchant_id, business_name FROM merchants")
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -45,13 +58,6 @@ func (h *Handler) TerminalSimView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TerminalSimTransactionHandler is running...")
 
-	type SimRequest struct {
-		CardNumber string  `json:"card_number"`
-		Type       string  `json:"type"`
-		Amount     float64 `json:"amount"`
-		MerchantID string  `json:"merchant_id"`
-	}
-
 	var req SimRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
@@ -61,7 +67,7 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if req.CardNumber == "" || req.Amount <= 0 || req.Type == "" {
+	if req.CardNumber == "" || req.Amount.LessThanOrEqual(decimal.Zero) || req.Type == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Missing required fields",
@@ -69,16 +75,13 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// 1. Check if card exists, is active, and linked to a user
-	var balance float64
-	var status string
-	var userID sql.NullString
+	// Check if card exists, is active, and linked to a user
 
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT balance, status, user_id 
 		FROM cards 
 		WHERE card_number = ?
-	`, req.CardNumber).Scan(&balance, &status, &userID)
+	`, req.CardNumber).Scan(&req.Balance, &req.Status, &req.UserID)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -95,7 +98,7 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if status != "active" {
+	if req.Status != "active" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Card is not active",
@@ -103,7 +106,7 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if !userID.Valid || userID.String == "" {
+	if req.UserID == nil || *req.UserID == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Card is not linked to any user",
@@ -111,29 +114,31 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// 2. Check balance
-	if req.Type != "Refund" && balance < req.Amount {
-		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+	// Check balance
+	if req.Type != "Refund" && req.Balance.LessThan(req.Amount) {
+		log.Printf("Insufficient Balance : %s, req Amount: %s", req.Balance, req.Amount)
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: fmt.Sprintf("Insufficient balance. Current balance: %.2f", balance),
+			Message: "Insufficient balance",
 		})
 		return
 	}
 
-	// 2.5 Get merchant commission rate
-	var commissionRate float64
-	err = h.DB.QueryRow("SELECT commission_rate FROM merchants WHERE merchant_id = ?", req.MerchantID).Scan(&commissionRate)
+	// Get merchant commission rate
+	var commissionRate decimal.Decimal
+	err = h.Store.QueryRow("SELECT commission_rate FROM merchants WHERE merchant_id = ?", req.MerchantID).Scan(&commissionRate)
 	if err != nil {
-		commissionRate = 2.00 // default fallback
+		commissionRate = decimal.NewFromFloat(2) // default fallback
 	}
 
-	serviceFee := req.Amount * (commissionRate / 100.0)
+	// Calculate service fee
+	serviceFee := req.Amount.Mul(commissionRate.Div(decimal.NewFromFloat(100)))
 
-	amountDec := decimal.NewFromFloat(req.Amount)
-	loyaltyPoints := amountDec.Mul(decimal.NewFromFloat(0.002))
+	// Calculate loyalty points
+	loyaltyPoints := req.Amount.Mul(decimal.NewFromFloat(0.002))
 
-	// 3. Process Transaction (Start TX)
-	tx, err := h.DB.Begin()
+	// Process Transaction (Start TX)
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -162,14 +167,14 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 
 	// Get a dummy terminal ID
 	var terminalID string
-	err = h.DB.QueryRow("SELECT terminal_id FROM terminals LIMIT 1").Scan(&terminalID)
+	err = h.Store.QueryRow("SELECT terminal_id FROM terminals LIMIT 1").Scan(&terminalID)
 	if err != nil {
 		terminalID = "TRM-SIM-001" // Fallback if no terminals exist
 	}
 
 	// Get a dummy processed_by user ID
 	var processedBy string
-	err = h.DB.QueryRow("SELECT user_id FROM users LIMIT 1").Scan(&processedBy)
+	err = h.Store.QueryRow("SELECT user_id FROM users LIMIT 1").Scan(&processedBy)
 	if err != nil {
 		processedBy = "USR-SIM-001" // Fallback if no users exist
 	}

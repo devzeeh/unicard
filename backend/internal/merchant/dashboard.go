@@ -66,7 +66,7 @@ func (h *Handler) GetMerchantAccountInfo(ctx context.Context, merchantID string)
 	log.Println("GetMerchantAccountInfo running...")
 
 	var accountStatus, accountRole string
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
 		SELECT u.status, u.role
 		FROM users u
 		JOIN merchants m ON u.user_id = m.user_id
@@ -83,7 +83,7 @@ func (h *Handler) GetMerchantAccountInfo(ctx context.Context, merchantID string)
 func (h *Handler) GetMerchantRecentTransactions(ctx context.Context, merchantID string) ([]MerchantTransaction, error) {
 	log.Println("GetMerchantRecentTransactions running...")
 
-	rows, err := h.DB.QueryContext(ctx, `
+	rows, err := h.Store.QueryContext(ctx, `
 		SELECT
 			transaction_id, COALESCE(card_number, ''),
 			merchant_id, terminal_id,
@@ -146,7 +146,7 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 	// Resolve merchant_id from username
 	var merchantID string
 	var settlementBank, settlementAccount *string
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
 		SELECT m.merchant_id, m.settlement_bank_name, m.settlement_account_number
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
@@ -175,7 +175,7 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 
 	// Count ALL transactions regardless of type
 	var totalTransactions int
-	err = h.DB.QueryRowContext(ctx, `
+	err = h.Store.QueryRowContext(ctx, `
 		SELECT COUNT(*) 
 		FROM transactions 
 		WHERE merchant_id = ?`,
@@ -189,9 +189,9 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Revenue summary — payments only
+	// Revenue summary â€” payments only
 	var totalRevenue, totalServiceFee, totalIncome decimal.Decimal
-	err = h.DB.QueryRowContext(ctx, `
+	err = h.Store.QueryRowContext(ctx, `
 		SELECT 
 			COALESCE(SUM(amount), 0), 
 			COALESCE(SUM(service_fee), 0), 
@@ -216,7 +216,7 @@ func (h *Handler) MerchantDashboardDataHandler(w http.ResponseWriter, r *http.Re
 
 	// Refunds total
 	var totalRefunds decimal.Decimal
-	err = h.DB.QueryRowContext(ctx, `
+	err = h.Store.QueryRowContext(ctx, `
 		SELECT COALESCE(SUM(amount), 0)
 		FROM transactions
 		WHERE merchant_id = ?

@@ -49,7 +49,7 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 			LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
 			ORDER BY t.created_at DESC
 		`
-	rows, err := h.DB.Query(txnQuery)
+	rows, err := h.Store.Query(txnQuery)
 
 	type TxnResponse struct {
 		TransactionID string          `json:"transaction_id"`

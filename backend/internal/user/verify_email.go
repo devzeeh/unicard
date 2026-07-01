@@ -18,7 +18,7 @@ func (h *Handler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	var username, pendingEmail string
 
 	// Find the user with this token
-	err := h.DB.QueryRowContext(ctx, "SELECT username, pending_email FROM users WHERE email_verification_token = ?", token).Scan(&username, &pendingEmail)
+	err := h.Store.QueryRowContext(ctx, "SELECT username, pending_email FROM users WHERE email_verification_token = ?", token).Scan(&username, &pendingEmail)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Invalid or expired token", http.StatusBadRequest)
@@ -35,7 +35,7 @@ func (h *Handler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update the user's email and clear the pending_email and token
-	_, err = h.DB.ExecContext(ctx, "UPDATE users SET email = ?, pending_email = NULL, email_verification_token = NULL WHERE username = ?", pendingEmail, username)
+	_, err = h.Store.ExecContext(ctx, "UPDATE users SET email = ?, pending_email = NULL, email_verification_token = NULL WHERE username = ?", pendingEmail, username)
 	if err != nil {
 		log.Printf("VerifyEmail update error: %v", err)
 		http.Error(w, "Failed to verify email", http.StatusInternalServerError)

@@ -82,7 +82,7 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch card number and email securely from DB instead of trusting the frontend
 	var cardNumber, email string
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT c.card_number, u.email 
 		FROM cards c 
 		JOIN users u ON c.user_id = u.user_id 
@@ -108,10 +108,9 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 
 	// Generate Unique IDs
 	topupID := fmt.Sprintf("TOPUP-%d", time.Now().UnixNano())
-	transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
 
 	// Start Database Transaction to insert PENDING records
-	tx, dbErr := h.DB.Begin()
+	tx, dbErr := h.Store.Begin()
 	if dbErr != nil {
 		log.Println("Failed to start transaction:", dbErr)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -129,18 +128,6 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to record pending top-up",
-		})
-		return
-	}
-
-	// Insert into Spending Ledger (transactions table) with status = 'pending'
-	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	if _, err := tx.Exec(queryTx, transactionID, cardNumber, "xendit", "xendit", "topup", topupAmount, feeAmount, "xendit", "Pending topup via Xendit", "pending"); err != nil {
-		tx.Rollback()
-		log.Println("Failed to record pending transaction:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Failed to record pending transaction",
 		})
 		return
 	}
@@ -179,10 +166,10 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	})
 	data.SetPayerEmail(email)
 	data.SetDescription(fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber))
-	data.SetPaymentMethods([]string{"CREDIT_CARD", "GCASH", "PAYMAYA", "GRABPAY",
+	data.SetPaymentMethods([]string{"CREDIT_CARD", "UBP_DIRECT_DEBIT", "BPI_DIRECT_DEBIT", "GCASH", "PAYMAYA", "GRABPAY",
 		"SHOPEEPAY", "QRPH", "7ELEVEN"})
 	data.SetCurrency("PHP")
-	data.SetInvoiceDuration(float32(5 * 60)) // 5 minutes invoice expiration
+	data.SetInvoiceDuration(float32(1 * 60)) // 1 minutes invoice expiration
 	data.SetSuccessRedirectUrl(domain + "/u/" + username + "/dashboard")
 	data.SetFailureRedirectUrl(domain + "/u/" + username + "/topup")
 
@@ -234,7 +221,7 @@ func (h *Handler) SaveTopUpToDatabase(w http.ResponseWriter, r *http.Request) {
 	transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
 
 	// Start the Database Transaction
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		log.Println("Failed to start transaction:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

@@ -81,14 +81,14 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	if req.Amount.LessThanOrEqual(decimal.Zero) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Withdrawal amount must be greater than ₱0.00",
+			Message: "Withdrawal amount must be greater than â‚±0.00",
 		})
 		return
 	}
 
 	// Fetch Merchant Info (ID, Settlement Details)
 	var bank BankDetails
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT m.merchant_id, m.settlement_bank_name, m.settlement_account_name, m.settlement_account_number
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
@@ -134,14 +134,14 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	if req.Amount.LessThan(decimal.NewFromFloat(500)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Minimum withdrawal amount is ₱500.00.",
+			Message: "Minimum withdrawal amount is â‚±500.00.",
 		})
 		return
 	}
 
 	// Check daily maximum withdrawal limit of 500,000
 	var dailyWithdrawn decimal.Decimal
-	err = h.DB.QueryRow(`
+	err = h.Store.QueryRow(`
 		SELECT COALESCE(SUM(amount), 0) 
 		FROM transactions 
 		WHERE merchant_id = ? AND transaction_type = 'withdrawal' AND DATE(created_at) = CURDATE()
@@ -160,7 +160,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	if dailyWithdrawn.Add(req.Amount).GreaterThan(decimal.NewFromFloat(5000000)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: fmt.Sprintf("Amount exceeds daily withdrawal limit of ₱500,000.00. You can only withdraw up to ₱%s more today.", (decimal.NewFromFloat(500000)).Sub(dailyWithdrawn)),
+			Message: fmt.Sprintf("Amount exceeds daily withdrawal limit of â‚±500,000.00. You can only withdraw up to â‚±%s more today.", (decimal.NewFromFloat(500000)).Sub(dailyWithdrawn)),
 		})
 		return
 	}
@@ -236,7 +236,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 			transaction_id, merchant_id, transaction_type, amount, status, description, card_number, service_fee
 		) VALUES (?, ?, 'withdrawal', ?, 'pending', ?, NULL, ?)
 	`
-	_, err = h.DB.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
+	_, err = h.Store.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
 	if err != nil {
 		log.Println("Error inserting withdrawal transaction:", err)
 		// We could potentially try to cancel the disbursement here, or have a manual reconciliation process.

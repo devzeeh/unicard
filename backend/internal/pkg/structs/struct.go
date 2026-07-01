@@ -4,11 +4,11 @@ import "github.com/shopspring/decimal"
 
 // CardData struct represents the data required to create a new card
 type CardData struct {
-	CardUID    string  `json:"card_uid" db:"card_uid" validate:"required"`
-	CardNumber string  `json:"cardNumber" db:"card_number"`
-	CardHolder string  `json:"cardHolder" db:"user_id"`
-	CardType   string  `json:"cardType" db:"card_type"`
-	Balance    float64 `json:"initial_amount" db:"balance" validate:"required,min=0"`
+	CardUID    string          `json:"card_uid" db:"card_uid" validate:"required"`
+	CardNumber string          `json:"cardNumber" db:"card_number"`
+	CardHolder string          `json:"cardHolder" db:"user_id"`
+	CardType   string          `json:"cardType" db:"card_type"`
+	Balance    decimal.Decimal `json:"initial_amount" db:"balance" validate:"required,min=0"`
 }
 
 // List of all merchants
@@ -27,25 +27,25 @@ type Merchant struct {
 
 // AdminDashboardData struct represents the data to be displayed on the admin dashboard
 type AdminDashboardData struct {
-	GrossRevenue       float64    `json:"grossRevenue"`
-	NetRevenue         float64    `json:"netRevenue"`
-	TotalUsers         int        `json:"totalUsers"`
-	TotalCards         int        `json:"totalCards"`
-	TotalMerchants     int        `json:"totalMerchants"`
-	PendingMerchants   int        `json:"pendingMerchants"`
-	SuspendedMerchants int        `json:"suspendedMerchants"`
-	RejectedMerchants  int        `json:"rejectedMerchants"`
-	TotalTerminals     int        `json:"totalTerminals"`
-	ActiveTerminals    int        `json:"activeTerminals"`
-	InactiveTerminals  int        `json:"inactiveTerminals"`
-	Merchants          []Merchant `json:"merchants"`
+	GrossRevenue       decimal.Decimal `json:"grossRevenue"`
+	NetRevenue         decimal.Decimal `json:"netRevenue"`
+	TotalUsers         int             `json:"totalUsers"`
+	TotalCards         int             `json:"totalCards"`
+	TotalMerchants     int             `json:"totalMerchants"`
+	PendingMerchants   int             `json:"pendingMerchants"`
+	SuspendedMerchants int             `json:"suspendedMerchants"`
+	RejectedMerchants  int             `json:"rejectedMerchants"`
+	TotalTerminals     int             `json:"totalTerminals"`
+	ActiveTerminals    int             `json:"activeTerminals"`
+	InactiveTerminals  int             `json:"inactiveTerminals"`
+	Merchants          []Merchant      `json:"merchants"`
 }
 
 // Terminal represents a hardware device in the terminal registry
 type Terminal struct {
-	TerminalID    string `json:"terminal_id"`
-	TerminalSN    string `json:"terminal_sn"`
-	AssignedMerch string `json:"assigned_merchant"`
+	TerminalID      string `json:"terminal_id"`
+	TerminalSN      string `json:"terminal_sn"`
+	AssignedMerch   string `json:"assigned_merchant"`
 	DeviceName      string `json:"device_name"`
 	LocationDetails string `json:"location_details"`
 	Status          string `json:"status"`
@@ -53,20 +53,20 @@ type Terminal struct {
 
 // Transaction struct represents a user's transaction for the dashboard view
 type Transaction struct {
-	Date        string  `db:"date" json:"date"`
-	Description string  `db:"description" json:"description"`
-	Type        string  `db:"transaction_type" json:"type"`
-	Amount      float64 `db:"transaction_amount" json:"amount"`
+	Date        string          `db:"date" json:"date"`
+	Description string          `db:"description" json:"description"`
+	Type        string          `db:"transaction_type" json:"type"`
+	Amount      decimal.Decimal `db:"transaction_amount" json:"amount"`
 }
 
 // DashboardUser info struct for the user dashboard view
 type DashboardUser struct {
-	ID                 int           `db:"id" json:"id,omitempty"`
-	UserID             string        `db:"user_id" json:"user_id,omitempty"`
-	Username           string        `db:"username" json:"username"`
-	Name               string        `db:"name" json:"name"`
+	ID                 int             `db:"id" json:"id,omitempty"`
+	UserID             string          `db:"user_id" json:"user_id,omitempty"`
+	Username           string          `db:"username" json:"username"`
+	Name               string          `db:"name" json:"name"`
 	Balance            float64         `db:"balance" json:"balance"`
 	LoyaltyPoints      decimal.Decimal `db:"loyalty_points" json:"loyalty_points"`
 	AccountType        string          `db:"account_type" json:"account_type"`
-	RecentTransactions []Transaction `json:"transactions"` // Add recent transactions to the dashboard response
+	RecentTransactions []Transaction   `json:"transactions"` // Add recent transactions to the dashboard response
 }

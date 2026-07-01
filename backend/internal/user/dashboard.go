@@ -105,7 +105,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			ON u.user_id = c.user_id
 		WHERE u.username = ?
 	`
-	err := h.DB.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
+	err := h.Store.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
@@ -153,7 +153,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
     WHERE u.username = ? 
     ORDER BY t.created_at DESC LIMIT 5
 `
-	rows, err := h.DB.Query(txnQuery, userID)
+	rows, err := h.Store.Query(txnQuery, userID)
 	var transactions []Transaction
 	if err != nil {
 		fmt.Printf("Error fetching transactions: %v\n", err)

@@ -31,7 +31,7 @@ func (h *Handler) UpdateCardStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID string
-	err := h.DB.QueryRow("SELECT user_id FROM users WHERE username = ?", username).Scan(&userID)
+	err := h.Store.QueryRow("SELECT user_id FROM users WHERE username = ?", username).Scan(&userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -43,7 +43,7 @@ func (h *Handler) UpdateCardStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.DB.Exec("UPDATE cards SET status = ? WHERE user_id = ?", req.Status, userID)
+	_, err = h.Store.Exec("UPDATE cards SET status = ? WHERE user_id = ?", req.Status, userID)
 	if err != nil {
 		http.Error(w, "Failed to update card status", http.StatusInternalServerError)
 		return

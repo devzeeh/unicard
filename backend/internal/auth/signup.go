@@ -1,8 +1,7 @@
 package authentication
 
 import (
-	//"database/sql"
-
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -125,7 +124,7 @@ func (h *Handler) SignupSendOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check Email
-	exists, err := account.IsEmailExist(h.DB, req.Email)
+	exists, err := account.IsEmailExist(h.Store.DB(), req.Email)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -235,7 +234,7 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var status string
-	err := h.DB.QueryRow("SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&status)
+	err := h.Store.QueryRow("SELECT status FROM cards WHERE card_number = ?", req.CardNumber).Scan(&status)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
@@ -384,63 +383,45 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Begin transaction: insert user + activate card atomically
-	tx, err := h.DB.BeginTx(ctx, nil)
-	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error starting transaction.",
-		})
-		return
-	}
-	defer tx.Rollback() // no-op if tx.Commit() is called
+	err = h.Store.ExecTx(ctx, func(tx *sql.Tx) error {
+		// Insert User
+		insertQuery := `INSERT INTO users 
+		(user_id, username, name, email, phone_number, password_hash, role, status, created_at) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		_, err := tx.ExecContext(ctx, insertQuery,
+			user.UserID, user.Username, user.Name, user.Email, user.Phone,
+			user.Password, user.Role, user.Status, user.CreatedAt,
+		)
+		if err != nil {
+			log.Printf("Error inserting user: %v", err)
+			return fmt.Errorf("system error creating account")
+		}
+		log.Printf("User record inserted: %v", user.Name)
 
-	// Insert User
-	insertQuery := `INSERT INTO users 
-    (user_id, username, name, email, phone_number, password_hash, role, status, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err = tx.ExecContext(ctx, insertQuery,
-		user.UserID, user.Username, user.Name, user.Email, user.Phone,
-		user.Password, user.Role, user.Status, user.CreatedAt,
-	)
-	if err != nil {
-		log.Printf("Error inserting user: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error creating account. Please try again.",
-		})
-		return
-	}
-	log.Printf("User record inserted: %v", user.Name)
+		// Activate Card and Link User Details
+		updateCardQuery := `
+			UPDATE cards 
+			SET status = 'active', 
+				user_id = ?, 
+				card_type = 'regular',
+				linked_at = CURRENT_TIMESTAMP,
+				updated_at = CURRENT_TIMESTAMP,
+				expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 5 YEAR) 
+			WHERE card_number = ?`
 
-	// Activate Card and Link User Details
-	// Set expiry date to 5 years from now in expiry_date column
-	updateCardQuery := `
-        UPDATE cards 
-        SET status = 'active', 
-            user_id = ?, 
-			card_type = 'regular',
-			linked_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP,
-			expiry_date = DATE_ADD(CURRENT_DATE, INTERVAL 5 YEAR) 
-        WHERE card_number = ?`
+		_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.CardNumber)
+		if err != nil {
+			log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)
+			return fmt.Errorf("system error activating card")
+		}
 
-	_, err = tx.ExecContext(ctx, updateCardQuery, user.UserID, user.CardNumber)
+		return nil
+	})
 
 	if err != nil {
-		log.Printf("Error activating card for card_number %s: %v", user.CardNumber, err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
-			Message: "System error activating card.",
-		})
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "System error finalizing account creation.",
+			Message: "System error finalizing account creation. Please try again.",
 		})
 		return
 	}

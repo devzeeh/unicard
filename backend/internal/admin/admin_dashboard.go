@@ -5,6 +5,8 @@ import (
 	"net/http"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 	structs "unicard-go/backend/internal/pkg/structs"
+
+	"github.com/shopspring/decimal"
 )
 
 type AdminPageData struct {
@@ -30,9 +32,9 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	// Compute UniCard's Absolute Gross Revenue
 	// (Transaction Service Fees)
 	query := `SELECT COALESCE(SUM(service_fee), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
-	row := h.DB.QueryRow(query)
+	row := h.Store.QueryRow(query)
 
-	var grossRevenue float64
+	var grossRevenue decimal.Decimal
 	if err := row.Scan(&grossRevenue); err != nil {
 		log.Println("Error scanning gross revenue:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -53,9 +55,9 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 			END
         ), 0.00) FROM transactions`
 
-	row = h.DB.QueryRow(query)
+	row = h.Store.QueryRow(query)
 
-	var netRevenue float64
+	var netRevenue decimal.Decimal
 	if err := row.Scan(&netRevenue); err != nil {
 		log.Println("Error scanning net revenue:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -68,7 +70,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 
 	// Display the number of users
 	// Counting only 'active' customers (excluding suspended or inactive accounts)
-	row = h.DB.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'customer'") // status = 'active'
+	row = h.Store.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'customer'") // status = 'active'
 
 	var totalUsers int
 	if err := row.Scan(&totalUsers); err != nil {
@@ -83,7 +85,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 
 	// Display the number of cards
 	// Counting only 'active' cards to show actual circulatory supply
-	row = h.DB.QueryRow("SELECT COUNT(*) FROM cards") // WHERE status = 'active'
+	row = h.Store.QueryRow("SELECT COUNT(*) FROM cards") // WHERE status = 'active'
 
 	var totalCards int
 	if err := row.Scan(&totalCards); err != nil {
@@ -97,7 +99,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	log.Println("Total cards row:", totalCards)
 
 	// Display the number of merchants and breakdown
-	row = h.DB.QueryRow(`
+	row = h.Store.QueryRow(`
 		SELECT 
 			COUNT(*),
 			COALESCE(SUM(CASE WHEN status = 'pending_approval' THEN 1 ELSE 0 END), 0),
@@ -118,7 +120,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	log.Println("Total merchants:", totalMerchants, "Pending:", pendingMerchants)
 
 	// Display the number of terminals and breakdown
-	row = h.DB.QueryRow(`
+	row = h.Store.QueryRow(`
 		SELECT 
 			COUNT(*),
 			COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0),
@@ -139,7 +141,7 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 
 	// Fetch recent merchants for the table (limit 5)
 	merchantQuery := "SELECT merchant_id, business_name, business_type, owner_name, business_email, business_phone, status, created_at FROM merchants ORDER BY created_at DESC LIMIT 5"
-	rows, err := h.DB.Query(merchantQuery)
+	rows, err := h.Store.Query(merchantQuery)
 	if err != nil {
 		log.Println("Error querying merchants:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

@@ -53,16 +53,16 @@ func (h *Handler) XenditDisbursementWebhook(w http.ResponseWriter, r *http.Reque
 	// Payout events: payout.succeeded, payout.failed
 	switch payload.Event {
 	case "payout.succeeded":
-		_, err := h.DB.Exec(`UPDATE transactions SET status = 'completed' WHERE transaction_id = ? AND transaction_type = 'withdrawal' AND status = 'pending'`, externalID)
+		_, err := h.Store.Exec(`UPDATE transactions SET status = 'completed' WHERE transaction_id = ? AND transaction_type = 'withdrawal' AND status = 'pending'`, externalID)
 		if err != nil {
 			log.Println("Failed to update withdrawal transaction to completed:", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Printf("Successfully disbursed ₱%s for transaction %s", payload.Data.Amount, externalID)
+		log.Printf("Successfully disbursed â‚±%s for transaction %s", payload.Data.Amount, externalID)
 
 	case "payout.failed":
-		_, err := h.DB.Exec(`UPDATE transactions SET status = 'failed' WHERE transaction_id = ? AND transaction_type = 'withdrawal' AND status = 'pending'`, externalID)
+		_, err := h.Store.Exec(`UPDATE transactions SET status = 'failed' WHERE transaction_id = ? AND transaction_type = 'withdrawal' AND status = 'pending'`, externalID)
 		if err != nil {
 			log.Println("Failed to update withdrawal transaction to failed:", err)
 			w.WriteHeader(http.StatusInternalServerError)
