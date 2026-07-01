@@ -130,10 +130,10 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
 		Value:    accessToken,
-		Expires:  time.Now().Add(1 * time.Minute), // 15 minutes expiration
+		Expires:  time.Now().Add(15 * time.Minute), // 15 minutes expiration
 		HttpOnly: true,
 		Secure:   true, // Important for SameSite=StrictMode
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
 
@@ -141,10 +141,10 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour), // 7 days expiration
+		Expires:  time.Now().Add(24 * time.Hour), // 24 hours expiration
 		HttpOnly: true,
 		Secure:   true, // Important for SameSite=StrictMode
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
 

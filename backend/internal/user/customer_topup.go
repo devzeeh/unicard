@@ -182,6 +182,7 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	data.SetPaymentMethods([]string{"CREDIT_CARD", "GCASH", "PAYMAYA", "GRABPAY",
 		"SHOPEEPAY", "QRPH", "7ELEVEN"})
 	data.SetCurrency("PHP")
+	data.SetInvoiceDuration(float32(5 * 60)) // 5 minutes invoice expiration
 	data.SetSuccessRedirectUrl(domain + "/u/" + username + "/dashboard")
 	data.SetFailureRedirectUrl(domain + "/u/" + username + "/topup")
 

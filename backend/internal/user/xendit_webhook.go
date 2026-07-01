@@ -130,17 +130,32 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Successfully loaded ₱%s onto card %s via Xendit", topUp.Amount, cardNumber)
 
 	// log if payment failed, expired, or canceled
-	case "EXPIRED", "FAILED", "PENDING", "CANCELED":
-		log.Printf("Payment failed or pending for external ID: %s, status: %s", payload.ExternalID, payload.Status)
-		if payload.Status == "EXPIRED" || payload.Status == "FAILED" || payload.Status == "CANCELED" {
-			// Update the database records to failed so users see it as failed
-			_, _ = h.DB.Exec(`UPDATE top_ups SET status = 'failed' WHERE topup_id = ? AND status = 'pending'`, payload.ExternalID)
+	case "EXPIRED", "FAILED", "PENDING", "CANCELLED":
+		log.Printf("Payment Status for external ID: %s, status: %s", payload.ExternalID, payload.Status)
+		// Update the database records to failed so users see it as failed
+		_, _ = h.DB.Exec(`UPDATE top_ups SET status = ? WHERE topup_id = ?`, payload.Status, payload.ExternalID)
 
-			var cardNumber string
-			var amount float64
-			if err := h.DB.QueryRow(`SELECT card_number, amount FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount); err == nil {
-				_, _ = h.DB.Exec(`UPDATE transactions SET status = 'failed', description = 'Failed topup via Xendit' WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, amount)
-			}
+		var description string
+		switch payload.Status {
+		case "EXPIRED":
+			description = "topup via Xendit"
+		case "FAILED":
+			description = "topup failed via Xendit"
+		case "PENDING":
+			description = "topup pending via Xendit"
+		case "CANCELLED":
+			description = "topup cancelled via Xendit"
+		}
+
+		var cardNumber string
+		var amount float64
+		if err := h.DB.QueryRow(`SELECT card_number, amount FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount); err == nil {
+			_, _ = h.DB.Exec(`UPDATE transactions SET status = ?,
+			description = ?,
+			WHERE card_number = ? AND transaction_type = 'topup' 
+			AND status = 'pending' AND amount = ? 
+			ORDER BY created_at DESC LIMIT 1`,
+				payload.Status, description, cardNumber, amount)
 		}
 	}
 

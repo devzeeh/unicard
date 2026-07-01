@@ -78,7 +78,7 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 								Expires:  time.Now().Add(15 * time.Minute),
 								HttpOnly: true,
 								Secure:   true,
-								SameSite: http.SameSiteStrictMode,
+								SameSite: http.SameSiteLaxMode,
 								Path:     "/",
 							})
 							http.SetCookie(w, &http.Cookie{
@@ -87,7 +87,7 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 								Expires:  time.Now().Add(7 * 24 * time.Hour),
 								HttpOnly: true,
 								Secure:   true,
-								SameSite: http.SameSiteStrictMode,
+								SameSite: http.SameSiteLaxMode,
 								Path:     "/",
 							})
 
