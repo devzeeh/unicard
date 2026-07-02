@@ -14,6 +14,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // AddMerchantRequest represents the payload for adding a new merchant
@@ -52,7 +54,7 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		log.Printf("Error starting tx: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -105,18 +107,19 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	defer termStmt.Close()
 
 	for i, req := range reqs {
+		caser := cases.Title(language.English)
 		// Clean and format string fields
-		req.BusinessName = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessName)))
-		req.BusinessAddress = strings.Title(strings.ToLower(strings.TrimSpace(req.BusinessAddress)))
-		req.OwnerName = strings.Title(strings.ToLower(strings.TrimSpace(req.OwnerName)))
-		req.SettlementName = strings.Title(strings.ToLower(strings.TrimSpace(req.SettlementName)))
-		
+		req.BusinessName = caser.String(strings.ToLower(strings.TrimSpace(req.BusinessName)))
+		req.BusinessAddress = caser.String(strings.ToLower(strings.TrimSpace(req.BusinessAddress)))
+		req.OwnerName = caser.String(strings.ToLower(strings.TrimSpace(req.OwnerName)))
+		req.SettlementName = caser.String(strings.ToLower(strings.TrimSpace(req.SettlementName)))
+
 		// Some fields don't need title case but should be trimmed
 		req.BusinessEmail = strings.ToLower(strings.TrimSpace(req.BusinessEmail))
 		req.BusinessPhone = strings.TrimSpace(req.BusinessPhone)
 		req.TerminalSN = strings.TrimSpace(req.TerminalSN)
 		req.DeviceName = strings.TrimSpace(req.DeviceName)
-		
+
 		reqs[i] = req // update back to slice
 
 		err := Validate.Struct(req)

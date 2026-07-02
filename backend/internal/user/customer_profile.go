@@ -42,7 +42,7 @@ type ProfileUpdateRequest struct {
 // (e.g. preventing the new password from being the same as the current one).
 func (h *Handler) verifyCurrentPassword(ctx context.Context, username, password string) (string, error) {
 	var currentHash string
-	err := h.DB.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE username = ?", username).Scan(&currentHash)
+	err := h.Store.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE username = ?", username).Scan(&currentHash)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrPasswordLookupFailed, err)
 	}
@@ -85,7 +85,7 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PATCH — at least one field required
+	// PATCH â€” at least one field required
 	if req.FullName == "" && req.Email == "" && req.Phone == "" && req.Username == "" {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
@@ -101,7 +101,7 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 	var currentEmail, currentName string
 	emailChanged := false
 	if req.Email != "" {
-		err := h.DB.QueryRowContext(ctx, "SELECT email, name FROM users WHERE username = ?", username).Scan(&currentEmail, &currentName)
+		err := h.Store.QueryRowContext(ctx, "SELECT email, name FROM users WHERE username = ?", username).Scan(&currentEmail, &currentName)
 		if err != nil && err != sql.ErrNoRows {
 			log.Printf("Failed to get current user data: %v", err)
 		} else if req.Email != currentEmail {
@@ -180,7 +180,7 @@ func (h *Handler) ProfileEdit(w http.ResponseWriter, r *http.Request) {
 
 	query := "UPDATE users SET " + strings.Join(fields, ", ") + " WHERE username = ?"
 
-	_, err := h.DB.ExecContext(ctx, query, args...)
+	_, err := h.Store.ExecContext(ctx, query, args...)
 	if err != nil {
 		log.Printf("ProfileEdit DB error: %v | query: %s | args: %v", err, query, args)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -324,7 +324,7 @@ func (h *Handler) ProfileChangePassword(w http.ResponseWriter, r *http.Request) 
 
 	// Save new password hash
 	query := "UPDATE users SET password_hash = ? WHERE username = ?"
-	_, err = h.DB.ExecContext(ctx, query, hashedPassword, username)
+	_, err = h.Store.ExecContext(ctx, query, hashedPassword, username)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,

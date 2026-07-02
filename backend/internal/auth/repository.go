@@ -10,7 +10,7 @@ import (
 func (h *Handler) isUserIDExist(userID int64) (bool, error) {
 	var tmpId int64
 	query := "SELECT user_id FROM users WHERE user_id = ?"
-	err := h.DB.QueryRow(query, userID).Scan(&tmpId)
+	err := h.Store.QueryRow(query, userID).Scan(&tmpId)
 
 	if err == sql.ErrNoRows {
 		return false, nil // Doesn't exist!
@@ -28,7 +28,7 @@ func (h *Handler) GetInitialBalance(cardNumber string) (float64, error) {
 	var initialBalance float64 // to hold the initial balance
 
 	query := "SELECT balance FROM cards WHERE card_number = ?"
-	err := h.DB.QueryRow(query, cardNumber).Scan(&initialBalance)
+	err := h.Store.QueryRow(query, cardNumber).Scan(&initialBalance)
 	if err != nil {
 		log.Printf("GetInitialBalance error for card %s: %v", cardNumber, err)
 		return 0, err
@@ -46,7 +46,7 @@ func (h *Handler) isPhoneExist(phone string) (bool, error) {
 
 	// Check query
 	query := "SELECT phone_number FROM users WHERE phone_number = ?"
-	err := h.DB.QueryRow(query, phone).Scan(&existingPhone)
+	err := h.Store.QueryRow(query, phone).Scan(&existingPhone)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}

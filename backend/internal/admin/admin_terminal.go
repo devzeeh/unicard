@@ -14,6 +14,18 @@ import (
 	structs "unicard-go/backend/internal/pkg/structs"
 )
 
+// AddTerminalRequest payload
+type AddTerminalRequest struct {
+	TerminalSN string `json:"terminalSn" validate:"required"`
+	DeviceName string `json:"deviceName" validate:"required"`
+}
+
+type UnassignedTerminalData struct {
+	TerminalSN string `json:"terminal_sn"`
+	DeviceName string `json:"device_name"`
+	Status     string `json:"status"`
+}
+
 func (h *Handler) TerminalRegistryView(w http.ResponseWriter, r *http.Request) {
 	log.Println("TerminalRegistryView running...")
 	data := AdminPageData{
@@ -68,7 +80,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	// Count total items
 	countQuery := `SELECT COUNT(*) ` + baseQuery + whereClause
 	var totalItems int
-	if err := h.DB.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
+	if err := h.Store.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
 		log.Println("Error counting terminals:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -87,7 +99,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 
 	args = append(args, limit, offset)
 
-	rows, err := h.DB.Query(query, args...)
+	rows, err := h.Store.Query(query, args...)
 	if err != nil {
 		log.Println("Error querying terminals:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -112,8 +124,8 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	var activeCount, inactiveCount int
-	h.DB.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('active', 'online')`).Scan(&activeCount)
-	h.DB.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('inactive', 'offline')`).Scan(&inactiveCount)
+	h.Store.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('active', 'online')`).Scan(&activeCount)
+	h.Store.QueryRow(`SELECT COUNT(*) FROM terminals WHERE status IN ('inactive', 'offline')`).Scan(&inactiveCount)
 
 	type PaginatedTerminalResponse struct {
 		Terminals     []structs.Terminal `json:"terminals"`
@@ -139,12 +151,6 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 		Data:    terminalData,
 	})
 	log.Println("TerminalRegistryDataHandler finished")
-}
-
-// AddTerminalRequest payload
-type AddTerminalRequest struct {
-	TerminalSN string `json:"terminalSn" validate:"required"`
-	DeviceName string `json:"deviceName" validate:"required"`
 }
 
 // AddTerminalHandler registers a new standalone terminal
@@ -173,7 +179,7 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into DB with NULL merchant_id
 	query := `INSERT INTO terminals (terminal_id, terminal_sn, merchant_id, device_name, status) VALUES (?, ?, NULL, ?, 'inactive')`
-	_, err := h.DB.Exec(query, terminalID, req.TerminalSN, req.DeviceName)
+	_, err := h.Store.Exec(query, terminalID, req.TerminalSN, req.DeviceName)
 	if err != nil {
 		log.Printf("Error inserting standalone terminal: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -189,14 +195,8 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-type UnassignedTerminalData struct {
-	TerminalSN string `json:"terminal_sn"`
-	DeviceName string `json:"device_name"`
-	Status     string `json:"status"`
-}
-
 func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.DB.Query(`
+	rows, err := h.Store.Query(`
 		SELECT terminal_sn, device_name, status 
 		FROM terminals 
 		WHERE merchant_id IS NULL AND status = 'inactive'

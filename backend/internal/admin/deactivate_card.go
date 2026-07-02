@@ -97,7 +97,7 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 // --- Helper functions ---
 
 func (h *Handler) deactivateCardIfActive(cardNumber, cardHolder, cardType string) (bool, error) {
-	result, err := h.DB.Exec(`
+	result, err := h.Store.Exec(`
 		UPDATE cards
 		SET status = 'Blocked'
 		WHERE card_number = ?

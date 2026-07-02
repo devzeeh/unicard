@@ -51,7 +51,7 @@ type BankDetails struct {
 }
 
 type WithdrawRequest struct {
-	Amount float64 `json:"amount"`
+	Amount decimal.Decimal `json:"amount"`
 }
 
 // WithdrawHandler handles the merchant's request to withdraw their available balance.
@@ -78,17 +78,17 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Amount <= 0 {
+	if req.Amount.LessThanOrEqual(decimal.Zero) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Withdrawal amount must be greater than zero",
+			Message: "Withdrawal amount must be greater than â‚±0.00",
 		})
 		return
 	}
 
 	// Fetch Merchant Info (ID, Settlement Details)
 	var bank BankDetails
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT m.merchant_id, m.settlement_bank_name, m.settlement_account_name, m.settlement_account_number
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
@@ -131,17 +131,17 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Amount < 500 {
+	if req.Amount.LessThan(decimal.NewFromFloat(500)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Minimum withdrawal amount is ₱500.00.",
+			Message: "Minimum withdrawal amount is â‚±500.00.",
 		})
 		return
 	}
 
 	// Check daily maximum withdrawal limit of 500,000
-	var dailyWithdrawn float64
-	err = h.DB.QueryRow(`
+	var dailyWithdrawn decimal.Decimal
+	err = h.Store.QueryRow(`
 		SELECT COALESCE(SUM(amount), 0) 
 		FROM transactions 
 		WHERE merchant_id = ? AND transaction_type = 'withdrawal' AND DATE(created_at) = CURDATE()
@@ -156,16 +156,17 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dailyWithdrawn+req.Amount > 500000 {
+	// if amount is greater than daily withdrawn amount it throw an error "Amount exceeds daily withdrawal limit"
+	if dailyWithdrawn.Add(req.Amount).GreaterThan(decimal.NewFromFloat(5000000)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: fmt.Sprintf("Amount exceeds daily withdrawal limit of ₱500,000.00. You can only withdraw up to ₱%.2f more today.", 500000-dailyWithdrawn),
+			Message: fmt.Sprintf("Amount exceeds daily withdrawal limit of â‚±500,000.00. You can only withdraw up to â‚±%s more today.", (decimal.NewFromFloat(500000)).Sub(dailyWithdrawn)),
 		})
 		return
 	}
 
-	withdrawAmount := decimal.NewFromFloat(req.Amount)
-	if withdrawAmount.GreaterThan(stats.AvailableBalance) {
+	// if amount is greater than available balance it throw an error "Insufficient available balance"
+	if req.Amount.GreaterThan(stats.AvailableBalance) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: fmt.Sprintf("Insufficient available balance. You can only withdraw up to %.2f", stats.AvailableBalance.InexactFloat64()),
@@ -196,18 +197,18 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	bankName := strings.TrimSpace(*bank.settlementBank)
 	channelCode, exists := channelCodeMap[bankName]
 	if !exists {
-		channelCode = "PH_" + strings.ReplaceAll(bankName, " ", "")
+		channelCode = "PH_" + strings.ReplaceAll(bankName, "", "")
 	}
 
 	// Calculate fees and final payout
-	serviceFee := float32(10.00)
-	payoutAmount := float32(req.Amount) - serviceFee
+	serviceFee := decimal.NewFromFloat(15.00)
+	payoutAmount := req.Amount.Sub(serviceFee).InexactFloat64()
 
 	createPayoutReq := payout.NewCreatePayoutRequest(
 		txnID,
 		channelCode,
 		*channelProps,
-		payoutAmount,
+		float32(payoutAmount),
 		"PHP",
 	)
 	createPayoutReq.SetDescription(description)
@@ -235,7 +236,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 			transaction_id, merchant_id, transaction_type, amount, status, description, card_number, service_fee
 		) VALUES (?, ?, 'withdrawal', ?, 'pending', ?, NULL, ?)
 	`
-	_, err = h.DB.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
+	_, err = h.Store.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
 	if err != nil {
 		log.Println("Error inserting withdrawal transaction:", err)
 		// We could potentially try to cancel the disbursement here, or have a manual reconciliation process.

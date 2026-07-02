@@ -37,7 +37,7 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Resolve merchant_id from username
 	var merchantID string
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
 		SELECT m.merchant_id 
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
@@ -89,7 +89,7 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	
 	query += ` LIMIT 100`
 
-	rows, err := h.DB.QueryContext(ctx, query, args...)
+	rows, err := h.Store.QueryContext(ctx, query, args...)
 	if err != nil {
 		log.Println("Error fetching transactions:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

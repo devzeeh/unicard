@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -10,14 +11,15 @@ import (
 	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 
-	"github.com/xendit/xendit-go"
-	"github.com/xendit/xendit-go/invoice"
+	"github.com/shopspring/decimal"
+	xendit "github.com/xendit/xendit-go/v7"
+	"github.com/xendit/xendit-go/v7/invoice"
 )
 
 // struct for topup request only, for api call not for saving in db
 type TopUpRequest struct {
-	CardNumber string  `json:"card_number"`
-	Amount     float64 `json:"amount"`
+	CardNumber string          `json:"card_number"`
+	Amount     decimal.Decimal `json:"amount"`
 }
 
 // struct for topup record, for saving in db and for webhook callback processing
@@ -25,12 +27,12 @@ type TopUpRequest struct {
 // the external_id is encoded in the external_id field of the xendit invoice
 // this is necessary because xendit v1 doesn't have a metadata field
 type TopUpRecord struct {
-	TopupID        string  `json:"topup_id" db:"topup_id"`
-	CardNumber     string  `json:"card_number" db:"card_number"`
-	Amount         float64 `json:"amount" db:"amount"`
-	ConvenienceFee float64 `json:"convenience_fee" db:"convenience_fee"`
-	GatewayCost    float64 `json:"gateway_cost" db:"gateway_cost"`
-	PaymentMethod  string  `json:"payment_method" db:"payment_method"`
+	TopupID        string          `json:"topup_id" db:"topup_id"`
+	CardNumber     string          `json:"card_number" db:"card_number"`
+	Amount         decimal.Decimal `json:"amount" db:"amount"`
+	ConvenienceFee decimal.Decimal `json:"convenience_fee" db:"convenience_fee"`
+	GatewayCost    decimal.Decimal `json:"gateway_cost" db:"gateway_cost"`
+	PaymentMethod  string          `json:"payment_method" db:"payment_method"`
 }
 
 // TopUpView displays the top-up page for a user
@@ -65,7 +67,7 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if amount is at least 50 pesos
-	if req.Amount < 50 {
+	if req.Amount.LessThan(decimal.NewFromFloat(50.0)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Minimum topup amount is 50 PHP",
@@ -73,9 +75,14 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set fee amount and total amount
+	topupAmount := req.Amount
+	feeAmount := decimal.NewFromFloat(15.00)
+	totalAmount := topupAmount.Add(feeAmount).InexactFloat64()
+
 	// Fetch card number and email securely from DB instead of trusting the frontend
 	var cardNumber, email string
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT c.card_number, u.email 
 		FROM cards c 
 		JOIN users u ON c.user_id = u.user_id 
@@ -92,27 +99,18 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// set fee amount and total amount
-	topupAmount := req.Amount
-	feeAmount := 15.00
-	totalAmount := topupAmount + feeAmount
-
 	// set domain
-	domain := "http://" + os.Getenv("SERVER_PORT") + os.Getenv("PORT")
+	domain := "http://" + os.Getenv("SERVER_PORT") + ":" + os.Getenv("PORT")
 	// Fallback if domain is malformed
 	if domain == "http://" {
 		domain = "http://127.0.0.1:3000"
 	}
 
-	// set xendit secret key
-	xendit.Opt.SecretKey = os.Getenv("XENDIT_SECRET_KEY")
-
 	// Generate Unique IDs
 	topupID := fmt.Sprintf("TOPUP-%d", time.Now().UnixNano())
-	transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
 
 	// Start Database Transaction to insert PENDING records
-	tx, dbErr := h.DB.Begin()
+	tx, dbErr := h.Store.Begin()
 	if dbErr != nil {
 		log.Println("Failed to start transaction:", dbErr)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -134,18 +132,6 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert into Spending Ledger (transactions table) with status = 'pending'
-	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	if _, err := tx.Exec(queryTx, transactionID, cardNumber, "xendit", "xendit", "topup", topupAmount, feeAmount, "xendit", "Pending topup via Xendit", "pending"); err != nil {
-		tx.Rollback()
-		log.Println("Failed to record pending transaction:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Failed to record pending transaction",
-		})
-		return
-	}
-
 	// Commit the pending records
 	if err := tx.Commit(); err != nil {
 		log.Println("Failed to finalize pending records:", err)
@@ -156,29 +142,44 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set xendit secret key
+	xenditClient := xendit.NewClient(os.Getenv("XENDIT_SECRET_KEY"))
+
 	// The Xendit ExternalID will cleanly map to our topup_id
 	externalID := topupID
 
 	// create xendit invoice struct with parameters
-	data := invoice.CreateParams{
-		ExternalID:         externalID,
-		Amount:             totalAmount,
-		PayerEmail:         email,
-		Description:        fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber),
-		SuccessRedirectURL: domain + "/u/" + username + "/dashboard",
-		FailureRedirectURL: domain + "/u/" + username + "/topup",
-		PaymentMethods: []string{"CREDIT_CARD", "GCASH", "PAYMAYA", "GRABPAY",
-			"SHOPEEPAY", "QRPH", "7ELEVEN", "CEBUANA", "ECPAY",
-			"BANK_TRANSFER"},
-		Currency: "PHP",
-	}
+
+	data := *invoice.NewCreateInvoiceRequest(externalID, totalAmount)
+	data.SetItems([]invoice.InvoiceItem{
+		{
+			Name:     "Unicard Top-Up",
+			Price:    float32(topupAmount.InexactFloat64()),
+			Quantity: 1,
+		},
+	})
+	data.SetFees([]invoice.InvoiceFee{
+		{
+			Type:  "Convenience Fee",
+			Value: float32(feeAmount.InexactFloat64()),
+		},
+	})
+	data.SetPayerEmail(email)
+	data.SetDescription(fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber))
+	data.SetPaymentMethods([]string{"CREDIT_CARD", "UBP_DIRECT_DEBIT", "BPI_DIRECT_DEBIT", "GCASH", "PAYMAYA", "GRABPAY",
+		"SHOPEEPAY", "QRPH", "7ELEVEN"})
+	data.SetCurrency("PHP")
+	data.SetInvoiceDuration(float32(1 * 60)) // 1 minutes invoice expiration
+	data.SetSuccessRedirectUrl(domain + "/u/" + username + "/dashboard")
+	data.SetFailureRedirectUrl(domain + "/u/" + username + "/topup")
 
 	// creating the checkout session
-	resp, xErr := invoice.Create(&data)
+	resp, _, xenditErr := xenditClient.InvoiceApi.CreateInvoice(context.Background()).
+		CreateInvoiceRequest(data).
+		Execute()
 
-	// Handle error if session creation fails
-	if xErr != nil {
-		log.Println("Failed to create checkout session:", xErr)
+	if xenditErr != nil {
+		log.Println("Failed to create checkout session:", xenditErr)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
 			Message: "Failed to create checkout session",
@@ -191,11 +192,15 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Checkout session created successfully",
-		Data:    map[string]string{"url": resp.InvoiceURL},
+		Data:    map[string]string{"url": resp.GetInvoiceUrl()},
 	})
 
+	// log the response from xendit. Can be useful for debugging only
+	out, _ := json.MarshalIndent(resp, "", "  ")
+	fmt.Fprintf(os.Stdout, "Response from `InvoiceApi.CreateInvoice`: %s\n", string(out))
+
 	// log the checkout session url
-	log.Println("Checkout session created successfully:", resp.InvoiceURL)
+	log.Println("Checkout session created successfully:", resp.GetInvoiceUrl())
 }
 
 // save topup tp database
@@ -216,7 +221,7 @@ func (h *Handler) SaveTopUpToDatabase(w http.ResponseWriter, r *http.Request) {
 	transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
 
 	// Start the Database Transaction
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		log.Println("Failed to start transaction:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

@@ -58,7 +58,7 @@ func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete from the database
-	result, err := h.DB.Exec("DELETE FROM cards WHERE card_number = ?", cardNumber)
+	result, err := h.Store.Exec("DELETE FROM cards WHERE card_number = ?", cardNumber)
 	if err != nil {
 		fmt.Println("Error deleting card from DB:", err)
 		jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{

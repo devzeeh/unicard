@@ -56,7 +56,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			WHERE u.username = ?
 			ORDER BY t.created_at DESC
 		`
-	rows, err := h.DB.Query(txnQuery, username)
+	rows, err := h.Store.Query(txnQuery, username)
 
 	type TxnResponse struct {
 		TransactionID string          `json:"transaction_id"`

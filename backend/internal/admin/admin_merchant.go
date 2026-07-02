@@ -77,7 +77,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	// Count total items
 	countQuery := `SELECT COUNT(*) ` + baseQuery + whereClause
 	var totalItems int
-	if err := h.DB.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
+	if err := h.Store.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
 		log.Println("Error counting merchants:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -101,7 +101,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 
 	args = append(args, limit, offset)
 
-	rows, err := h.DB.Query(query, args...)
+	rows, err := h.Store.Query(query, args...)
 	if err != nil {
 		log.Println("Error querying merchants:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -143,7 +143,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 			JOIN merchants m ON t.merchant_id = m.merchant_id 
 			WHERE m.merchant_id IN (%s)`, strings.Join(placeholders, ","))
 
-		termRows, err := h.DB.Query(termQuery, termArgs...)
+		termRows, err := h.Store.Query(termQuery, termArgs...)
 		if err == nil {
 			defer termRows.Close()
 			termMap := make(map[string][]structs.Terminal)
@@ -211,7 +211,7 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Begin TX
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
 		return
@@ -386,7 +386,7 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
 		return
@@ -467,7 +467,7 @@ func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
 		return
@@ -536,7 +536,7 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tx, err := h.DB.Begin()
+	tx, err := h.Store.Begin()
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
 		return
@@ -672,7 +672,7 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 	// ADDED: Nullable types for address, phone, and type to prevent NULL crashes
 	var setBank, setName, setAcct, regNum, dtiDoc, birDoc, otherDoc, city, postal, docStatus, busAddress, busPhone, busType sql.NullString
 
-	err := h.DB.QueryRow(`
+	err := h.Store.QueryRow(`
 		SELECT merchant_id, user_id, business_name, business_type, business_registration_number, 
 		       business_address, city, postal_code, owner_name, business_email, business_phone, status, 
 		       commission_rate, settlement_bank_name, settlement_account_name, 
@@ -751,7 +751,7 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		WHERE merchant_id = ?
 	`
 
-	termRows, err := h.DB.Query(termQuery, merchantID)
+	termRows, err := h.Store.Query(termQuery, merchantID)
 	if err != nil {
 		log.Println("Error querying merchant terminals:", err)
 		m.Terminals = []structs.Terminal{}

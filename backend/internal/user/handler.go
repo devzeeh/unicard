@@ -1,16 +1,16 @@
 package user
 
 import (
-	"database/sql"
 	"html/template"
+	"unicard-go/backend/internal/pkg/database"
 )
 
 type Handler struct {
-	DB  *sql.DB
-	Tpl *template.Template
+	Store database.Store
+	Tpl   *template.Template
 }
 
 
-func NewHandler(db *sql.DB, tpl *template.Template) *Handler {
-	return &Handler{DB: db, Tpl: tpl}
+func NewHandler(store database.Store, tpl *template.Template) *Handler {
+	return &Handler{Store: store, Tpl: tpl}
 }

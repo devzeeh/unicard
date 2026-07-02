@@ -30,7 +30,7 @@ func (h *Handler) RequestTerminalHandler(w http.ResponseWriter, r *http.Request)
 
 	// resolve merchant_id
 	var merchantID string
-	err := h.DB.QueryRow("SELECT merchant_id FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username = ?)", username).Scan(&merchantID)
+	err := h.Store.QueryRow("SELECT merchant_id FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username = ?)", username).Scan(&merchantID)
 	if err != nil {
 		log.Println("Error finding merchant for terminal request:", err)
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
@@ -40,7 +40,7 @@ func (h *Handler) RequestTerminalHandler(w http.ResponseWriter, r *http.Request)
 	// generate request id
 	requestID := fmt.Sprintf("TRQ-%d", time.Now().UnixNano()/1000000)
 
-	_, err = h.DB.Exec("INSERT INTO terminal_requests (request_id, merchant_id, terminal_sn, status, requested_at, notes) VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP, ?)", requestID, merchantID, payload.TerminalSN, payload.Notes)
+	_, err = h.Store.Exec("INSERT INTO terminal_requests (request_id, merchant_id, terminal_sn, status, requested_at, notes) VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP, ?)", requestID, merchantID, payload.TerminalSN, payload.Notes)
 	if err != nil {
 		log.Println("Failed to create terminal request:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to create terminal request"})

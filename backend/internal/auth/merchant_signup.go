@@ -117,7 +117,7 @@ func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Check if email already exists
-	exists, err := account.IsEmailExist(h.DB, req.BusinessEmail)
+	exists, err := account.IsEmailExist(h.Store.DB(), req.BusinessEmail)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,
@@ -146,7 +146,7 @@ func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Begin transaction
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, nil)
+	tx, err := h.Store.BeginTx(ctx, nil)
 	if err != nil {
 		log.Printf("Error starting transaction: %v", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

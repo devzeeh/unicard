@@ -47,7 +47,7 @@ func (h *Handler) GetMerchantIncomeStats(ctx context.Context, merchantID string)
 	var totalCollected, unicardFee, totalEarned, totalRefunded, earnedThisMonth, 
 	refundedThisMonth, totalWithdrawn, withdrawnThisMonth decimal.Decimal
 
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
     SELECT 
         COALESCE(SUM(CASE WHEN transaction_type = 'payment' THEN amount ELSE 0 END), 0),
         COALESCE(SUM(CASE WHEN transaction_type = 'payment' THEN service_fee ELSE 0 END), 0),
@@ -108,7 +108,7 @@ func (h *Handler) GetMerchantIncomeStats(ctx context.Context, merchantID string)
 func (h *Handler) GetMerchantIncomeHistory(ctx context.Context, merchantID string) ([]IncomeHistory, error) {
 	log.Println("GetMerchantIncomeHistory running...")
 
-	rows, err := h.DB.QueryContext(ctx, `
+	rows, err := h.Store.QueryContext(ctx, `
 		SELECT 
 			COALESCE(created_at, ''), description,
 			transaction_id, COALESCE(card_number, ''),
@@ -163,7 +163,7 @@ func (h *Handler) IncomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Resolve merchant_id from username
 	var merchantID string
-	err := h.DB.QueryRowContext(ctx, `
+	err := h.Store.QueryRowContext(ctx, `
 		SELECT m.merchant_id 
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
