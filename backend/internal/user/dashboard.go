@@ -42,6 +42,7 @@ type DashboardUser struct {
 	CardNumber         string          `json:"card_number"`
 	CardExpiry         string          `json:"card_expiry"`
 	CardStatus         string          `json:"card_status"`
+	UserStatus         string          `json:"user_status"`
 	RecentTransactions []Transaction   `json:"recent_transactions"` // Add recent transactions to the dashboard response
 }
 
@@ -99,13 +100,15 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			COALESCE(c.loyalty_points, 0),
 			COALESCE(c.card_number, ''),
 			COALESCE(c.expiry_date, ''),
-			COALESCE(c.status, '')
+			COALESCE(c.status, ''),
+			COALESCE(u.status, '')
 		FROM users u
 		LEFT JOIN cards c 
 			ON u.user_id = c.user_id
 		WHERE u.username = ?
 	`
-	err := h.Store.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus)
+	var userStatus string
+	err := h.Store.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus, &userStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			fmt.Printf("User %s not found in DB\n", userID)
@@ -223,6 +226,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		CardNumber:         cardNumber,
 		CardExpiry:         expiryStr,
 		CardStatus:         cardStatus,
+		UserStatus:         userStatus,
 		RecentTransactions: transactions,
 	}
 

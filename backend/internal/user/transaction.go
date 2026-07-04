@@ -39,8 +39,7 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			SELECT 
 				t.transaction_id, 
 				COALESCE(t.terminal_id, ''), 
-				DATE(t.created_at) as date, 
-				TIME(t.created_at) as time, 
+				t.created_at, 
 				COALESCE(t.transaction_type, ''), 
 				t.amount, 
 				COALESCE(t.status, ''),
@@ -86,11 +85,17 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 			var pointsEarned decimal.Decimal
 			var cardNumber string
 
-			err := rows.Scan(&t.TransactionID, &t.TerminalID, &t.Date, &t.Time, &t.Type, &t.Amount, &t.Status, &description, &businessName, &merchantId, &pointsEarned, &cardNumber)
+			var createdAt string
+
+			err := rows.Scan(&t.TransactionID, &t.TerminalID, &createdAt, &t.Type, &t.Amount, &t.Status, &description, &businessName, &merchantId, &pointsEarned, &cardNumber)
 			if err != nil {
 				fmt.Printf("Error scanning transaction row: %v\n", err)
 				continue
 			}
+
+			t.Date = formatDate(createdAt)
+			t.Time = formatTime(createdAt)
+
 			t.Description = description
 
 			if businessName != "" {
