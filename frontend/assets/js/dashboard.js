@@ -278,6 +278,15 @@ document.addEventListener("DOMContentLoaded", function () {
                             const amount = Number(tx.amount).toFixed(2);
                             const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
 
+                            let statusHtml = "";
+                            if (tx.status) {
+                                const statusVal = tx.status.toLowerCase();
+                                const statusColor = statusVal === "completed" ? "bg-green-100 text-green-800" :
+                                    statusVal === "pending" ? "bg-yellow-100 text-yellow-800" :
+                                    "bg-red-100 text-red-800";
+                                statusHtml = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${statusColor}">${tx.status}</span>`;
+                            }
+
                             tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
                             tr.onclick = function () {
                                 openTxnModal(tx);
@@ -297,6 +306,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
                                     ${sign}₱${amount}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    ${statusHtml}
                                 </td>
                             `;
                             transactionsBody.appendChild(tr);

@@ -72,6 +72,26 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function requestReplacementAPI(onSuccess) {
+        if (!userId) return;
+        fetch(`/v1/user/${encodeURIComponent(userId)}/card/replace`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+        .then(res => {
+            if (res.ok && res.data.success) {
+                onSuccess();
+            } else {
+                alert(res.data.message || "Failed to request replacement. Please try again.");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error requesting replacement.");
+        });
+    }
+
     // --- Card Toggle & Copy Logic ---
     const toggleCardBtn = document.getElementById("toggle-card-btn");
     const copyCardBtn = document.getElementById("copy-card-btn");
@@ -242,8 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (confirmReplacementButton) {
         confirmReplacementButton.addEventListener('click', () => {
-            // "Request Replacement will turn the card into status 'lost'"
-            updateCardStatusAPI('lost', () => {
+            requestReplacementAPI(() => {
                 reportButton.disabled = true;
                 reportButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg> Card Blocked';
                 reportButton.classList.add('opacity-50', 'cursor-not-allowed');
@@ -252,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 replacementButton.textContent = 'Replacement Requested';
                 replacementButton.classList.add('opacity-50', 'cursor-not-allowed');
                 
-                setCardStatus("Lost");
+                setCardStatus("Blocked");
                 closeModal(replacementModal, replacementModalContent);
             });
         });

@@ -97,6 +97,7 @@ func main() {
 	mux.Handle("GET /u/{username}/dashboard", requireCustomer(http.HandlerFunc(userHandler.DashboardView)))
 	mux.Handle("GET /u/{username}/card", requireCustomer(http.HandlerFunc(userHandler.CardView)))
 	mux.Handle("POST /v1/user/{username}/card/status", requireCustomer(http.HandlerFunc(userHandler.UpdateCardStatus)))
+	mux.Handle("POST /v1/user/{username}/card/replace", requireCustomer(http.HandlerFunc(userHandler.RequestReplacement)))
 	mux.Handle("GET /u/{username}/settings", requireCustomer(http.HandlerFunc(userHandler.SettingsView)))
 	mux.Handle("GET /u/{username}/topup", requireCustomer(http.HandlerFunc(userHandler.TopUpView)))
 	// Your frontend calls this to get the Xendit URL
@@ -176,9 +177,36 @@ func main() {
 		mux.ServeHTTP(w, r)
 	})
 
+	// Wrap with CORS middleware
+	handler := corsMiddleware(customHandler)
+
 	// Start Server
 	fmt.Println("Server started on: http://" + serverAddress + ":" + port)
-	if err := http.ListenAndServe(serverAddress+":"+port, customHandler); err != nil {
+	if err := http.ListenAndServe(serverAddress+":"+port, handler); err != nil {
 		log.Fatal(err)
 	}
+}
+func corsMiddleware(next http.Handler) http.Handler {
+	allowedOrigins := map[string]bool{
+		os.Getenv("CORS_ALLOWED_ORIGINS"): true, // Load from .env
+		//"http://localhost:5173":           true, // Vue dev
+		//"http://localhost:3001":           true, // Go dev
+		//"https://unicard.app":   		   true, // production
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

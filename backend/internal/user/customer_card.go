@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
+	jsonwrite "unicard-go/backend/internal/pkg/handler"
 )
 
 func (h *Handler) CardView(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +23,7 @@ func (h *Handler) CardView(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateCardStatus(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
-	
+
 	var req struct {
 		Status string `json:"status"`
 	}
@@ -51,4 +53,86 @@ func (h *Handler) UpdateCardStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"success": true}`))
+}
+
+func (h *Handler) RequestReplacement(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("username")
+
+	var userID string
+	err := h.Store.QueryRow("SELECT user_id FROM users WHERE username = ?", username).Scan(&userID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusNotFound, jsonwrite.APIResponse{
+			Success: false,
+			Message: "User not found",
+		})
+		return
+	}
+
+	var balance float64
+	var cardNumber string
+	err = h.Store.QueryRow("SELECT balance, card_number FROM cards WHERE user_id = ?", userID).Scan(&balance, &cardNumber)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusNotFound, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Card not found",
+		})
+		return
+	}
+
+	if balance < 150.0 {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Insufficient balance. Replacement fee is 150 PHP.",
+		})
+		return
+	}
+
+	// Deduct balance and set card to locked (represented as 'blocked')
+	// Using ExecTx if available, or just manual Begin
+	tx, err := h.Store.Begin()
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Database error",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE cards SET balance = balance - 150.0, status = 'blocked' WHERE user_id = ?", userID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to update card",
+		})
+		return
+	}
+
+	// Insert transaction record for the fee
+	txnID := fmt.Sprintf("REP-%s-%d", cardNumber, time.Now().Unix())
+	_, err = tx.Exec(`
+		INSERT INTO transactions (transaction_id, card_number, transaction_type, amount, status, description)
+		VALUES (?, ?, 'payment', 150.0, 'completed', 'Card Replacement Fee')
+	`, txnID, cardNumber)
+
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to record transaction",
+		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Failed to commit transaction",
+		})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Card replacement requested successfully. Card is now locked.",
+	})
 }
