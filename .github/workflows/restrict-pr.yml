@@ -10,27 +10,41 @@ jobs:
     steps:
       - name: Validate PR Source and Target
         env:
-          TARGET_BRANCH: ${{ github.base_ref }} # papunta ang PR
-          SOURCE_BRANCH: ${{ github.head_ref }} # Kungaling ang PR
+          TARGET_BRANCH: ${{ github.base_ref }}
+          SOURCE_BRANCH: ${{ github.head_ref }}
         run: |
-          echo "validate ang PR mula '$SOURCE_BRANCH' papuntang '$TARGET_BRANCH'..."
+          echo "Validating PR from '$SOURCE_BRANCH' into '$TARGET_BRANCH'..."
 
-          # RULE 1: Protection for 'main' branch
           if [[ "$TARGET_BRANCH" == "main" ]]; then
             if [[ "$SOURCE_BRANCH" != "development" && "$SOURCE_BRANCH" != *"-alpha"* && "$SOURCE_BRANCH" != *"-beta"* && "$SOURCE_BRANCH" != *"-rc"* ]]; then
-              echo "ERROR: Bawal dumiretso sa main mula sa $SOURCE_BRANCH!"
-              echo "Allowed lang ay 'development', '-alpha', '-beta', o '-rc'."
+              echo "ERROR: Direct merges into 'main' are not allowed from '$SOURCE_BRANCH'."
+              echo "Only 'development', '-alpha', '-beta', or '-rc' branches are permitted."
               exit 1
             fi
           fi
 
-          # RULE 2: Protection for 'alpha', 'beta', at 'rc' branches
           if [[ "$TARGET_BRANCH" == *"-alpha"* || "$TARGET_BRANCH" == *"-beta"* || "$TARGET_BRANCH" == *"-rc"* ]]; then
             if [[ "$SOURCE_BRANCH" != "development" && "$SOURCE_BRANCH" != *"-alpha"* && "$SOURCE_BRANCH" != *"-beta"* && "$SOURCE_BRANCH" != *"-rc"* ]]; then
-              echo "ERROR: Bawal ipasok ang feature/ branch ($SOURCE_BRANCH) diretso sa $TARGET_BRANCH!"
-              echo "Ang mga testing branches ay tumatanggap lang ng code galing sa 'development' o sa testing branches."
+              echo "ERROR: '$SOURCE_BRANCH' cannot merge directly into '$TARGET_BRANCH'."
+              echo "Testing branches only accept merges from 'development' or other testing branches."
               exit 1
             fi
           fi
 
-          echo "Pumasa sa validation! Tama ang flow ng PR mo."
+          echo "Validation passed! PR flow is correct."
+
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run tests
+        run: go test ./... -v -race -cover
