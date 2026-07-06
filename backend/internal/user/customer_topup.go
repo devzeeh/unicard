@@ -35,6 +35,9 @@ type TopUpRecord struct {
 	PaymentMethod  string          `json:"payment_method" db:"payment_method"`
 }
 
+// declare conveniece fee as constant
+const ConvenienceFee = 15.00
+
 // TopUpView displays the top-up page for a user
 func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TopUp view is running...")
@@ -76,8 +79,11 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set fee amount and total amount
+	// total of the topup
 	topupAmount := req.Amount
-	feeAmount := decimal.NewFromFloat(15.00)
+	//convenience fee for now is fixed at 15 pesos
+	feeAmount := decimal.NewFromFloat(ConvenienceFee)
+	// total amount to be charged to the user's payment method
 	totalAmount := topupAmount.Add(feeAmount).InexactFloat64()
 
 	// Fetch card number and email securely from DB instead of trusting the frontend

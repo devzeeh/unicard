@@ -26,3 +26,8 @@ UniCard is a closed-loop contactless payment system for retail and public transp
 # Workflow Directives
 * When asked to build a feature, start by scaffolding the directory structure or proposing the database schema before writing the implementation logic.
 * If a bug occurs, analyze the provided terminal or browser console error logs before proposing a fix.
+
+## Additional Context
+* Make sure that the project is always up to date with the latest version of the framework.
+
+> note: Don't over-engineer the system. Keep it simple and efficient.
