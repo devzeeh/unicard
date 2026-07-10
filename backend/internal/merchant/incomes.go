@@ -49,33 +49,33 @@ func (h *Handler) GetMerchantIncomeStats(ctx context.Context, merchantID string)
 
 	err := h.Store.QueryRowContext(ctx, `
     SELECT 
-        COALESCE(SUM(CASE WHEN transaction_type = 'payment' THEN amount ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'payment' THEN service_fee ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'payment' THEN net_merchant_payout ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'refund' THEN amount ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN amount ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN service_fee ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed' THEN net_merchant_payout ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'refund' AND status = 'completed' THEN amount ELSE 0 END), 0),
         
         -- Earned this month
-        COALESCE(SUM(CASE WHEN transaction_type = 'payment' 
+        COALESCE(SUM(CASE WHEN transaction_type = 'payment' AND status = 'completed'
             AND MONTH(created_at) = MONTH(NOW()) 
             AND YEAR(created_at) = YEAR(NOW()) 
             THEN net_merchant_payout ELSE 0 END), 0),
             
         -- Refunded this month
-        COALESCE(SUM(CASE WHEN transaction_type = 'refund' 
+        COALESCE(SUM(CASE WHEN transaction_type = 'refund' AND status = 'completed'
             AND MONTH(created_at) = MONTH(NOW()) 
             AND YEAR(created_at) = YEAR(NOW()) 
             THEN amount ELSE 0 END), 0),
 
-		-- Calculate all-time withdrawals
-            COALESCE(SUM(CASE WHEN transaction_type = 'withdrawal' THEN amount ELSE 0 END), 0),
+		-- Calculate all-time withdrawals (DEDUCT BOTH COMPLETED AND PENDING)
+            COALESCE(SUM(CASE WHEN transaction_type = 'withdrawal' AND status IN ('completed', 'pending') THEN amount ELSE 0 END), 0),
 
-		-- Monthly withdrawals (if needed in the future)
-		 	COALESCE(SUM(CASE WHEN transaction_type = 'withdrawal'
+		-- Monthly withdrawals
+		 	COALESCE(SUM(CASE WHEN transaction_type = 'withdrawal' AND status IN ('completed', 'pending')
 			AND MONTH(created_at) = MONTH(NOW()) 
 			AND YEAR(created_at) = YEAR(NOW()) 
 			THEN amount ELSE 0 END), 0)
     FROM transactions
-    WHERE merchant_id = ? AND status = 'completed'
+    WHERE merchant_id = ?
 `, merchantID).Scan(
 		&totalCollected,
 		&unicardFee,

@@ -37,7 +37,9 @@
 
                 <!-- Profile Dropdown (Right) -->
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name" class="ml-1"><span class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
+                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
+                            class="ml-1"><span
+                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
@@ -103,7 +105,7 @@
                                     <label for="amount" class="block text-sm font-medium text-black">Amount
                                         (PHP)</label>
                                     <div class="mt-1 relative">
-                                        <input type="number" name="amount" id="amount" min="50" step="0.01"
+                                        <input type="number" name="amount" id="amount" min="50" max="2000" step="0.01"
                                             class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold"
                                             placeholder="0.00" required>
                                     </div>
@@ -150,26 +152,105 @@
 
                                 <!-- Payment Method -->
                                 <div class="mt-8">
-                                    <h3 class="text-lg font-medium text-black">Select Payment Method</h3>
-                                    <div class="mt-4 space-y-4">
-                                        <!-- Xendit (E-Wallets & Cards) -->
-                                        <label for="payment-xendit"
-                                            class="flex items-center p-4 border border-gray-300 rounded-lg has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 cursor-pointer hover:bg-gray-100 transition-colors">
-                                            <input type="radio" id="payment-xendit" name="payment_method" value="xendit"
-                                                class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                            <div class="ml-3 flex justify-between items-center w-full">
-                                                <span class="text-sm font-medium text-gray-900">Online Payment
-                                                    (E-Wallets & Cards)</span>
-                                                <div class="flex space-x-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                                        class="w-6 h-6 text-gray-500">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
-                                                    </svg>
-                                                </div>
-                                            </div>
+                                    <div class="flex items-center mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                        </svg>
+                                        <h3 class="text-lg font-bold text-gray-900">Payment method</h3>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mb-4">Choose a local payment channel before creating
+                                        the checkout session.</p>
+
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                                        <!-- QR Ph -->
+                                        <label for="payment-qrph"
+                                            class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition-all">
+                                            <input type="radio" id="payment-qrph" name="payment_method" value="QRPH"
+                                                class="peer sr-only">
+                                            <span
+                                                class="absolute top-2 right-2 hidden peer-checked:block text-blue-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="currentColor" class="w-5 h-5">
+                                                    <path fill-rule="evenodd"
+                                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </span>
+                                            <img src="/assets/images/qr-ph.cvnghHJ6.svg" alt="QR Ph"
+                                                class="h-8 object-contain mb-2 mt-1">
+                                            <span class="text-sm font-semibold text-gray-900">QR Ph</span>
                                         </label>
+
+                                        <!-- Maya -->
+                                        <label for="payment-maya"
+                                            class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition-all">
+                                            <input type="radio" id="payment-maya" name="payment_method" value="PAYMAYA"
+                                                class="peer sr-only">
+                                            <span
+                                                class="absolute top-2 right-2 hidden peer-checked:block text-blue-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="currentColor" class="w-5 h-5">
+                                                    <path fill-rule="evenodd"
+                                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </span>
+                                            <img src="/assets/images/maya.t5uYzbl2.svg" alt="Maya"
+                                                class="h-8 object-contain mb-2 mt-1">
+                                            <span class="text-sm font-semibold text-gray-900">Maya</span>
+                                        </label>
+
+                                        <!-- GCash -->
+                                        <label for="payment-gcash"
+                                            class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition-all">
+                                            <input type="radio" id="payment-gcash" name="payment_method" value="GCASH"
+                                                class="peer sr-only">
+                                            <span
+                                                class="absolute top-2 right-2 hidden peer-checked:block text-blue-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="currentColor" class="w-5 h-5">
+                                                    <path fill-rule="evenodd"
+                                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </span>
+                                            <img src="/assets/images/gcash.DuBgXCNz.svg" alt="GCash"
+                                                class="h-8 object-contain mb-2 mt-1">
+                                            <span class="text-sm font-semibold text-gray-900">GCash</span>
+                                        </label>
+
+                                        <!-- GrabPay -->
+                                        <label for="payment-grabpay"
+                                            class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 transition-all">
+                                            <input type="radio" id="payment-grabpay" name="payment_method"
+                                                value="GRABPAY" class="peer sr-only">
+                                            <span
+                                                class="absolute top-2 right-2 hidden peer-checked:block text-blue-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                    fill="currentColor" class="w-5 h-5">
+                                                    <path fill-rule="evenodd"
+                                                        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </span>
+                                            <img src="/assets/images/grabpay.DVm7IXVm.svg" alt="GrabPay"
+                                                class="h-8 object-contain mb-2 mt-1">
+                                            <span class="text-sm font-semibold text-gray-900">GrabPay</span>
+                                        </label>
+                                    </div>
+
+                                    <div
+                                        class="mt-4 p-4 bg-blue-50 text-blue-800 text-sm rounded-lg flex items-start border border-blue-100">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor"
+                                            class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        <span>You may be redirected to the payment provider. Access is granted after
+                                            payment confirmation.</span>
                                     </div>
                                 </div>
 
@@ -198,7 +279,8 @@
                                         class="text-[10px] uppercase tracking-widest text-indigo-200 mb-1 opacity-80 relative z-10">
                                         Current Balance</p>
                                     <p class="text-3xl font-bold tracking-tight relative z-10 flex items-center h-9">
-                                        ₱<span id="user-balance" class="ml-1"><span class="inline-block h-8 w-24 bg-white/20 animate-pulse rounded"></span></span>
+                                        ₱<span id="user-balance" class="ml-1"><span
+                                                class="inline-block h-8 w-24 bg-white/20 animate-pulse rounded"></span></span>
                                     </p>
                                 </div>
 
@@ -216,7 +298,8 @@
                                         <p class="text-sm font-medium text-gray-600">Loyalty Points</p>
                                     </div>
                                     <p class="text-lg font-bold text-gray-900 flex items-center h-7">
-                                        <span id="user-loyalty-points"><span class="inline-block h-6 w-16 bg-gray-200 animate-pulse rounded"></span></span>
+                                        <span id="user-loyalty-points"><span
+                                                class="inline-block h-6 w-16 bg-gray-200 animate-pulse rounded"></span></span>
                                     </p>
                                 </div>
                             </div>
@@ -240,7 +323,8 @@
                 <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>

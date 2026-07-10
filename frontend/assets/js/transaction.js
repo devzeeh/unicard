@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchTxn = document.getElementById("searchTxn");
     const filterType = document.getElementById("filterType");
     const filterStatus = document.getElementById("filterStatus");
-    const sortOrder = document.getElementById("sortOrder");
     const pageStart = document.getElementById("pageStart");
     const pageEnd = document.getElementById("pageEnd");
     const totalItems = document.getElementById("totalItems");
@@ -20,7 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (searchTxn) searchTxn.addEventListener("input", () => { currentPage = 1; renderTransactions(); });
     if (filterType) filterType.addEventListener("change", () => { currentPage = 1; renderTransactions(); });
     if (filterStatus) filterStatus.addEventListener("change", () => { currentPage = 1; renderTransactions(); });
-    if (sortOrder) sortOrder.addEventListener("change", () => { currentPage = 1; renderTransactions(); });
     if (prevPageBtn) prevPageBtn.addEventListener("click", () => { if (currentPage > 1) { currentPage--; renderTransactions(); } });
     if (nextPageBtn) nextPageBtn.addEventListener("click", () => { currentPage++; renderTransactions(); });
 
@@ -87,13 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
             filtered = filtered.filter(tx => tx.status && tx.status.toLowerCase() === statusVal);
         }
 
-        // Apply Sort
-        const sortVal = sortOrder ? sortOrder.value : "desc";
-        filtered.sort((a, b) => {
-            const dateA = new Date(a.date + " " + a.time).getTime() || 0;
-            const dateB = new Date(b.date + " " + b.time).getTime() || 0;
-            return sortVal === "asc" ? dateA - dateB : dateB - dateA;
-        });
 
         // Pagination setup
         const total = filtered.length;
