@@ -134,36 +134,21 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 
 	// log if payment failed, expired, or canceled
-	case "EXPIRED", "FAILED", "PENDING", "CANCELLED":
+	case "PENDING":
+		_, _ = h.Store.Exec(`UPDATE top_ups SET status = ? WHERE topup_id = ?`, strings.ToLower(payload.Status), payload.ExternalID)
+
+	case "EXPIRED", "FAILED", "CANCELLED":
 		log.Printf("Payment Status for external ID: %s, status: %s", payload.ExternalID, payload.Status)
-		// Update the database records to failed so users see it as failed
-		_, _ = h.Store.Exec(`UPDATE top_ups SET status = ? WHERE topup_id = ?`, payload.Status, payload.ExternalID)
+		// Update the database records to failed/expired so users see it in top_up history
+		_, _ = h.Store.Exec(`UPDATE top_ups SET status = ? WHERE topup_id = ?`, strings.ToLower(payload.Status), payload.ExternalID)
 
-		var description string
-		switch payload.Status {
-		case "EXPIRED":
-			description = "topup expired"
-		case "FAILED":
-			description = "topup failed"
-		case "PENDING":
-			description = "topup pending"
-		case "CANCELLED":
-			description = "topup cancelled"
-		}
-
+		// Remove the pending transaction from the transactions ledger so it doesn't clutter the history
 		var cardNumber string
 		var amount float64
-		var convenienceFee float64
-		if err := h.Store.QueryRow(`SELECT card_number, amount, convenience_fee FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount, &convenienceFee); err == nil {
-			res, err := h.Store.Exec(`UPDATE transactions SET status = ?, description = ? WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, strings.ToLower(payload.Status), description, cardNumber, amount)
-			
-			if err == nil {
-				rowsAffected, _ := res.RowsAffected()
-				if rowsAffected == 0 {
-					transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
-					queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-					_, _ = h.Store.Exec(queryTx, transactionID, cardNumber, "xendit", "xendit", "topup", amount, convenienceFee, "xendit", description, strings.ToLower(payload.Status))
-				}
+		if err := h.Store.QueryRow(`SELECT card_number, amount FROM top_ups WHERE topup_id = ?`, payload.ExternalID).Scan(&cardNumber, &amount); err == nil {
+			_, errDelete := h.Store.Exec(`DELETE FROM transactions WHERE card_number = ? AND transaction_type = 'topup' AND status = 'pending' AND amount = ? ORDER BY created_at DESC LIMIT 1`, cardNumber, amount)
+			if errDelete != nil {
+				log.Println("Error deleting pending transaction:", errDelete)
 			}
 		}
 	}

@@ -18,8 +18,9 @@ import (
 
 // struct for topup request only, for api call not for saving in db
 type TopUpRequest struct {
-	CardNumber string          `json:"card_number"`
-	Amount     decimal.Decimal `json:"amount"`
+	CardNumber    string          `json:"card_number"`
+	Amount        decimal.Decimal `json:"amount"`
+	PaymentMethod string          `json:"payment_method"`
 }
 
 // struct for topup record, for saving in db and for webhook callback processing
@@ -73,7 +74,15 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	if req.Amount.LessThan(decimal.NewFromFloat(50.0)) {
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
 			Success: false,
-			Message: "Minimum topup amount is 50 PHP",
+			Message: "Amount must be at least 50.00",
+		})
+		return
+	}
+
+	if req.Amount.GreaterThan(decimal.NewFromFloat(2000.0)) {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Amount cannot exceed 2,000.00",
 		})
 		return
 	}
@@ -148,6 +157,14 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var paymentMethods []string
+	if req.PaymentMethod != "" {
+		paymentMethods = []string{req.PaymentMethod}
+	} else {
+		paymentMethods = []string{"CREDIT_CARD", "UBP_DIRECT_DEBIT", "BPI_DIRECT_DEBIT", "QRPH", "GCASH",
+			"PAYMAYA", "GRABPAY", "SHOPEEPAY", "7ELEVEN"}
+	}
+
 	// set xendit secret key
 	xenditClient := xendit.NewClient(os.Getenv("XENDIT_SECRET_KEY"))
 
@@ -155,7 +172,6 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	externalID := topupID
 
 	// create xendit invoice struct with parameters
-
 	data := *invoice.NewCreateInvoiceRequest(externalID, totalAmount)
 	data.SetItems([]invoice.InvoiceItem{
 		{
@@ -172,10 +188,9 @@ func (h *Handler) CreateXenditInvoice(w http.ResponseWriter, r *http.Request) {
 	})
 	data.SetPayerEmail(email)
 	data.SetDescription(fmt.Sprintf("Unicard Top-Up (Card: %s)", cardNumber))
-	data.SetPaymentMethods([]string{"CREDIT_CARD", "UBP_DIRECT_DEBIT", "BPI_DIRECT_DEBIT", "GCASH", "PAYMAYA", "GRABPAY",
-		"SHOPEEPAY", "QRPH", "7ELEVEN"})
+	data.SetPaymentMethods(paymentMethods)
 	data.SetCurrency("PHP")
-	data.SetInvoiceDuration(float32(1 * 60)) // 1 minutes invoice expiration
+	data.SetInvoiceDuration(float32(15 * 60)) // 15 minutes invoice expiration
 	data.SetSuccessRedirectUrl(domain + "/u/" + username + "/dashboard")
 	data.SetFailureRedirectUrl(domain + "/u/" + username + "/topup")
 
@@ -263,9 +278,9 @@ func (h *Handler) SaveTopUpToDatabase(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into Spending Ledger (transactions table)
 	// *Note: Adjust 'category' if your enum doesn't include 'top_up'
-	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	// "xendit" as the merchant_id since this is an internal load, not a retail/Fare purchase
-	if _, err := tx.Exec(queryTx, transactionID, req.CardNumber, sql.NullString{}, sql.NullString{}, "topup", req.Amount, req.ConvenienceFee, sql.NullString{}); err != nil {
+	if _, err := tx.Exec(queryTx, transactionID, req.CardNumber, sql.NullString{}, sql.NullString{}, "topup", req.Amount, req.ConvenienceFee, sql.NullString{}, "pending", "Topup initiated"); err != nil {
 		log.Println("Failed to record global transaction:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,

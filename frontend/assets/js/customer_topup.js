@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (amountText === '') {
             isValid = false;
-            if (errorDiv) errorDiv.classList.add('hidden');
+            if (errorDiv && errorDiv.textContent !== 'Please enter a valid amount (minimum ₱50.00) before selecting a payment method.') {
+                errorDiv.classList.add('hidden');
+            }
         } else if (amountText.startsWith('-')) {
             isValid = false;
             if (errorDiv) {
@@ -40,6 +42,12 @@ document.addEventListener("DOMContentLoaded", function () {
             isValid = false;
             if (errorDiv) {
                 errorDiv.textContent = 'Minimum top-up amount is ₱50.00.';
+                errorDiv.classList.remove('hidden');
+            }
+        } else if (amount > 2000) {
+            isValid = false;
+            if (errorDiv) {
+                errorDiv.textContent = 'Maximum top-up amount is ₱2,000.00.';
                 errorDiv.classList.remove('hidden');
             }
         } else {
@@ -55,6 +63,28 @@ document.addEventListener("DOMContentLoaded", function () {
             breakdownContainer.classList.add('hidden');
         }
 
+        // Update quick amount buttons highlight
+        if (quickBtns) {
+            quickBtns.forEach(btn => {
+                if (!isNaN(amount) && parseFloat(btn.innerText) === amount) {
+                    btn.classList.remove('text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
+                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700');
+                } else {
+                    btn.classList.add('text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
+                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700');
+                }
+            });
+        }
+
+        // Error indicator for input field
+        if (!isValid && amountText !== '') {
+            amountInput.classList.remove('border-gray-300', 'focus:ring-blue-500');
+            amountInput.classList.add('border-red-500', 'focus:ring-red-500');
+        } else {
+            amountInput.classList.remove('border-red-500', 'focus:ring-red-500');
+            amountInput.classList.add('border-gray-300', 'focus:ring-blue-500');
+        }
+
         submitBtn.disabled = !(isValid && method);
     };
 
@@ -68,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const amount = parseFloat(amountText);
             const method = document.querySelector('input[name="payment_method"]:checked');
 
-            if (!method || method.value !== 'xendit' || isNaN(amount) || amount < 50) {
+            if (!method || isNaN(amount) || amount < 50 || amount > 2000) {
                 return;
             }
 
@@ -96,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ amount })
+                    body: JSON.stringify({ amount, payment_method: method.value })
                 });
 
                 if (!response.ok) {
@@ -131,4 +161,26 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    // Enforce entering amount before payment method
+    const paymentLabels = document.querySelectorAll('label[for^="payment-"]');
+    paymentLabels.forEach(label => {
+        label.addEventListener('click', (e) => {
+            const amountText = amountInput.value.trim();
+            const amount = parseFloat(amountText);
+            
+            if (amountText === '' || isNaN(amount) || amount < 50 || amount > 2000) {
+                e.preventDefault(); // Stop the click from selecting the radio
+                
+                if (errorDiv) {
+                    errorDiv.textContent = 'Please enter a valid amount (₱50.00 - ₱2,000.00) before selecting a payment method.';
+                    errorDiv.classList.remove('hidden');
+                }
+                amountInput.classList.remove('border-gray-300', 'focus:ring-blue-500');
+                amountInput.classList.add('border-red-500', 'focus:ring-red-500');
+                amountInput.focus();
+                amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
 });
