@@ -75,7 +75,7 @@ function populateMerchantUI(merchant) {
 
     renderDoc(merchant.BusinessDocument, 'businessDocumentLink');
     renderDoc(merchant.BirDocument, 'birDocumentLink');
-    renderDoc(merchant.OtherDocument, 'otherDocumentLink');
+    renderDoc(merchant.ValidId, 'validIdLink');
 
     const statusEl = document.getElementById('merchantStatus');
     const statusLower = merchant.Status.toLowerCase();
@@ -102,6 +102,7 @@ function populateMerchantUI(merchant) {
     const btnReject = document.getElementById('btnRejectMerchant');
     const btnSuspend = document.getElementById('btnSuspendMerchant');
     const btnDelete = document.getElementById('btnDeleteMerchant');
+    const btnApproveDocs = document.getElementById('btnApproveDocsMerchant');
 
     // Always show action buttons so delete is always available
     actionButtons.classList.remove('hidden');
@@ -113,16 +114,24 @@ function populateMerchantUI(merchant) {
         btnApprove.classList.add('hidden');
         btnReject.classList.add('hidden');
         btnDelete.classList.remove('hidden');
+        
+        if (merchant.DocumentStatus && merchant.DocumentStatus.toLowerCase() === 'pending') {
+            btnApproveDocs.classList.remove('hidden');
+        } else {
+            btnApproveDocs.classList.add('hidden');
+        }
     } else if (statusLower === 'pending_approval' || statusLower === 'pending approval' || (statusLower === 'rejected' && merchant.DocumentStatus && merchant.DocumentStatus.toLowerCase() === 'pending')) {
         btnSuspend.classList.add('hidden');
         btnApprove.classList.remove('hidden');
         btnReject.classList.remove('hidden');
         btnDelete.classList.remove('hidden');
+        btnApproveDocs.classList.add('hidden');
     } else {
         btnSuspend.classList.add('hidden');
         btnApprove.classList.add('hidden');
         btnReject.classList.add('hidden');
         btnDelete.classList.remove('hidden');
+        btnApproveDocs.classList.add('hidden');
     }
 
     // Populate Assigned Terminals
@@ -461,6 +470,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 alertBox.textContent = "Network error. Please try again.";
             });
         });
+    }
+
+    const btnApproveDocs = document.getElementById('btnApproveDocsMerchant');
+    if (btnApproveDocs) {
+        btnApproveDocs.onclick = async () => {
+            if (!confirm('Are you sure you want to approve the newly uploaded documents?')) return;
+            
+            btnApproveDocs.disabled = true;
+            btnApproveDocs.textContent = 'Approving...';
+            btnApproveDocs.classList.add('opacity-50');
+
+            try {
+                const res = await fetch(`/v1/admin/${window.CURRENT_USERNAME}/merchants/${merchant.MerchantID}/approve-documents`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Failed to approve documents');
+                    btnApproveDocs.disabled = false;
+                    btnApproveDocs.textContent = 'Approve New Documents';
+                    btnApproveDocs.classList.remove('opacity-50');
+                }
+            } catch (err) {
+                console.error("Error approving documents:", err);
+                alert("An error occurred while approving documents.");
+                btnApproveDocs.disabled = false;
+                btnApproveDocs.textContent = 'Approve New Documents';
+                btnApproveDocs.classList.remove('opacity-50');
+            }
+        };
     }
 
     const btnDelete = document.getElementById('btnDeleteMerchant');

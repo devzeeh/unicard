@@ -526,7 +526,27 @@ func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}(merchantEmail, ownerName, req.Reason)
 
-	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant suspended successfully"})
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
+		Success: true,
+		Message: "Merchant suspended successfully",
+	})
+}
+
+// ApproveMerchantDocumentsHandler approves newly uploaded documents for an already active merchant
+func (h *Handler) ApproveMerchantDocumentsHandler(w http.ResponseWriter, r *http.Request) {
+	merchantID := r.PathValue("id")
+	if merchantID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant ID is required"})
+		return
+	}
+
+	_, err := h.Store.Exec("UPDATE merchants SET document_status = 'approved', message = 'Your newly uploaded documents have been approved.' WHERE merchant_id = ?", merchantID)
+	if err != nil {
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Database error"})
+		return
+	}
+
+	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Documents approved successfully"})
 }
 
 func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) {
@@ -627,7 +647,7 @@ type MerchantDetailsData struct {
 	CreatedAt        string
 	BusinessDocument string
 	BirDocument      string
-	OtherDocument    string
+	ValidId          string
 	DocumentStatus   string
 	Terminals        []structs.Terminal
 }
@@ -677,7 +697,7 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		       business_address, city, postal_code, owner_name, business_email, business_phone, status, 
 		       commission_rate, settlement_bank_name, settlement_account_name, 
 		       settlement_account_number, created_at,
-		       business_document, bir_document, other_document, document_status
+		       business_document, bir_document, valid_id, document_status
 		FROM merchants WHERE merchant_id = ?`, merchantID).Scan(
 		&m.MerchantID, &m.UserID, &m.BusinessName, &busType, &regNum,
 		&busAddress, &city, &postal, &m.OwnerName, &m.BusinessEmail, &busPhone, &m.Status,
@@ -739,7 +759,7 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 		m.BirDocument = birDoc.String
 	}
 	if otherDoc.Valid {
-		m.OtherDocument = otherDoc.String
+		m.ValidId = otherDoc.String
 	}
 	if docStatus.Valid {
 		m.DocumentStatus = docStatus.String
