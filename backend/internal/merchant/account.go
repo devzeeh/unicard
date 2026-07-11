@@ -14,7 +14,7 @@ import (
 )
 
 // set the max file size to 8MB
-const maxUploadSize = 8 << 20
+const maxUploadSize = 5 << 20
 
 // Struct to hold data for the merchant account page
 type BusinessDetails struct {
@@ -273,7 +273,7 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 
 	// get the merchant ID and existing account number from the database
 	var merchantID string
-	var existingAccNumber string
+	var existingAccNumber *string
 	err := h.Store.QueryRow("SELECT merchant_id, settlement_account_number FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID, &existingAccNumber)
 	if err != nil {
 		log.Println("Error finding merchant for update:", err)
@@ -282,8 +282,8 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prevent overwriting with masked account number
-	if strings.Contains(req.AccountNumber, "****") {
-		req.AccountNumber = existingAccNumber
+	if existingAccNumber != nil && strings.Contains(req.AccountNumber, "****") {
+		req.AccountNumber = *existingAccNumber
 	}
 
 	_, err = h.Store.Exec("UPDATE merchants SET settlement_bank_name=?, settlement_account_name=?, settlement_account_number=? WHERE merchant_id = ?", req.BankName, req.AccountHolderName, req.AccountNumber, merchantID)
@@ -348,28 +348,28 @@ func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ensure uploads directory exists
-	uploadDir := "storage/documents"
-	os.MkdirAll(uploadDir, os.ModePerm)
-
 	// Save file with auto-generated filename to eliminate raw filename
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	filePath := filepath.Join(uploadDir, filename)
-	dst, err := os.Create(filePath)
+	
+	if h.Storage == nil {
+		log.Println("Storage service not initialized")
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Storage configuration error"})
+		return
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		log.Println("File seek error:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Internal server error"})
+		return
+	}
+
+	// Upload to Cloudflare R2
+	dbPath, err := h.Storage.UploadFile(r.Context(), file, filename, handler.Header.Get("Content-Type"))
 	if err != nil {
-		log.Println("File create error:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Internal server error"})
+		log.Println("File upload error:", err)
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to upload file"})
 		return
 	}
-	defer dst.Close()
-
-	if _, err := io.Copy(dst, file); err != nil {
-		log.Println("File copy error:", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Internal server error"})
-		return
-	}
-
-	dbPath := "/" + strings.ReplaceAll(filePath, "\\", "/")
 
 	column := "business_document"
 	switch docType {
@@ -390,10 +390,22 @@ func (h *Handler) UploadDocument(w http.ResponseWriter, r *http.Request) {
 	if err := h.Store.QueryRow(qOld, username).Scan(&oldDbPath); err == nil && oldDbPath != nil {
 		oldFile := strings.TrimPrefix(*oldDbPath, "/")
 		if oldFile != "" {
-			if err := os.Remove(oldFile); err != nil {
-				log.Println("Error removing old file:", err)
+			if strings.HasPrefix(oldFile, "storage/documents/") {
+				// It's in R2 (proxy path)
+				key := strings.TrimPrefix(oldFile, "storage/")
+				if err := h.Storage.DeleteFile(r.Context(), key); err != nil {
+					log.Println("Error removing old file from R2:", err)
+				} else {
+					log.Println("Old file removed from R2:", key)
+				}
+			} else if !strings.HasPrefix(oldFile, "http") {
+				// Legacy local file cleanup
+				if err := os.Remove(oldFile); err != nil {
+					log.Println("Error removing old local file:", err)
+				} else {
+					log.Println("Old local file removed:", oldFile)
+				}
 			}
-			log.Println("Old file removed:", oldFile)
 		}
 	}
 
