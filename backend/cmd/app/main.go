@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"unicard-go/backend/internal/admin"
 	authentication "unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/middleware"
 	"unicard-go/backend/internal/pkg/database"
+	"unicard-go/backend/internal/pkg/storage"
 	"unicard-go/backend/internal/user"
 
 	"github.com/joho/godotenv"
@@ -49,11 +52,17 @@ func main() {
 
 	store := database.NewStore(db)
 
+	// Initialize R2 Storage
+	r2Storage, err := storage.NewR2Storage()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize R2 storage (uploads may fail): %v", err)
+	}
+
 	// Initialize the Handler from the auth package
-	authHandler := authentication.NewHandler(store, tpl)
+	authHandler := authentication.NewHandler(store, tpl, r2Storage)
 	adminHanlder := admin.NewHandler(store, tpl)
 	userHandler := user.NewHandler(store, tpl)
-	merchantHandler := merchant.NewHandler(store, tpl)
+	merchantHandler := merchant.NewHandler(store, tpl, r2Storage)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -62,9 +71,29 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./frontend/assets"))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", fileServer))
 
-	// Serve storage directory for uploaded documents and images (locally stored)
-	storageServer := http.FileServer(http.Dir("./storage"))
-	mux.Handle("/storage/", http.StripPrefix("/storage/", storageServer))
+	// Serve storage directory for uploaded documents and images via proxy to R2
+	if r2Storage != nil {
+		mux.HandleFunc("/storage/", func(w http.ResponseWriter, r *http.Request) {
+			key := strings.TrimPrefix(r.URL.Path, "/storage/")
+			body, contentType, err := r2Storage.DownloadFile(r.Context(), key)
+			if err != nil {
+				log.Printf("Error downloading file from R2 (%s): %v", key, err)
+				http.Error(w, "File not found", http.StatusNotFound)
+				return
+			}
+			defer body.Close()
+			w.Header().Set("Content-Type", contentType)
+			
+			// Optional: add cache headers to prevent re-fetching the image constantly
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			
+			io.Copy(w, body)
+		})
+	} else {
+		// Fallback to local storage if R2 fails
+		storageServer := http.FileServer(http.Dir("./storage"))
+		mux.Handle("/storage/", http.StripPrefix("/storage/", storageServer))
+	}
 
 	// general endpoints
 	mux.HandleFunc("GET /login", authHandler.LoginView)
@@ -150,6 +179,7 @@ func main() {
 	mux.Handle("GET /admin/{username}/merchants/{id}", requireAdmin(http.HandlerFunc(adminHanlder.MerchantInfoView)))
 	mux.Handle("GET /v1/admin/{username}/merchants/{id}/data", requireAdmin(http.HandlerFunc(adminHanlder.MerchantInfoDataHandler)))
 	mux.Handle("POST /v1/admin/{username}/merchants/{id}/approve", requireAdmin(http.HandlerFunc(adminHanlder.ApproveMerchantHandler)))
+	mux.Handle("POST /v1/admin/{username}/merchants/{id}/approve-documents", requireAdmin(http.HandlerFunc(adminHanlder.ApproveMerchantDocumentsHandler)))
 	mux.Handle("POST /v1/admin/{username}/merchants/{id}/reject", requireAdmin(http.HandlerFunc(adminHanlder.RejectMerchantHandler)))
 	mux.Handle("POST /v1/admin/{username}/merchants/{id}/suspend", requireAdmin(http.HandlerFunc(adminHanlder.SuspendMerchantHandler)))
 	mux.Handle("DELETE /v1/admin/{username}/merchants/{id}/delete", requireAdmin(http.HandlerFunc(adminHanlder.DeleteMerchantHandler)))
