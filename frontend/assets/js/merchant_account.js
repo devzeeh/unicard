@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                             <p class="mb-1 text-xs text-slate-600 font-semibold dropzone-text truncate w-full">Click or drag & drop</p>
                                             <p class="text-[10px] text-slate-400 dropzone-hint">PDF, JPG, PNG (Max 4MB)</p>
                                         </div>
-                                        <input type="file" accept="image/*,.pdf,.doc,.docx,.webp" class="hidden doc-upload-input" data-doctype="${docType}" disabled>
+                                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="hidden doc-upload-input" data-doctype="${docType}" disabled>
                                     </label>
                                 </div>
                                 ` : ''}
@@ -420,6 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             
                             let successCount = 0;
                             let failCount = 0;
+                            let errorMessages = [];
                             
                             for (const [docType, file] of selectedFilesMap.entries()) {
                                 const formData = new FormData();
@@ -435,18 +436,24 @@ document.addEventListener("DOMContentLoaded", () => {
                                     if (j.success) successCount++;
                                     else {
                                         failCount++;
+                                        errorMessages.push(`${docType}: ${j.message}`);
                                         console.error(j.message);
                                     }
                                 } catch (err) {
                                     console.error(err);
                                     failCount++;
+                                    errorMessages.push(`${docType}: Network or server error`);
                                 }
                             }
                             
                             if (failCount === 0) {
                                 alert('Documents uploaded successfully!');
                             } else {
-                                alert(`Uploaded ${successCount} documents. Failed ${failCount}.`);
+                                let msg = `Uploaded ${successCount} documents. Failed ${failCount}.`;
+                                if (errorMessages.length > 0) {
+                                    msg += '\n\nErrors:\n' + errorMessages.join('\n');
+                                }
+                                alert(msg);
                             }
                             window.location.reload();
                         }

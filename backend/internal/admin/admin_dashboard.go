@@ -7,6 +7,7 @@ import (
 	structs "unicard-go/backend/internal/pkg/structs"
 
 	"github.com/shopspring/decimal"
+	"unicard-go/backend/internal/pkg/xenditclient"
 )
 
 type AdminPageData struct {
@@ -29,9 +30,9 @@ func (h *Handler) AdminDashboardView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("AdminDashboardDataHandler running...")
 
-	// Compute UniCard's Absolute Gross Revenue
-	// (Transaction Service Fees)
-	query := `SELECT COALESCE(SUM(service_fee), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
+	// Compute UniCard's Gross Revenue
+	// based on actual amount in transactions
+	query := `SELECT COALESCE(SUM(amount), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
 	row := h.Store.QueryRow(query)
 
 	var grossRevenue decimal.Decimal
@@ -43,14 +44,13 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
-	log.Println("Gross revenue row:", grossRevenue)
 
 	// Compute UniCard's Net Revenue
-	// (Service fees from successful payments MINUS service fees lost to refunds/reversals)
+	// based on actual amount in transactions
 	query = `SELECT COALESCE(SUM(
 			CASE 
-				WHEN transaction_type IN ('payment', 'topup', 'withdrawal') THEN service_fee 
-				WHEN transaction_type IN ('refund', 'reversal') THEN -service_fee 
+				WHEN transaction_type IN ('payment', 'topup', 'withdrawal') THEN amount 
+				WHEN transaction_type IN ('refund', 'reversal') THEN -amount 
 				ELSE 0 
 			END
         ), 0.00) FROM transactions`
@@ -66,6 +66,25 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
+
+	// Fetch Xendit transactions
+	xenditTx, err := xenditclient.GetAllTransactions()
+	if err != nil {
+		log.Printf("Warning: Failed to get Xendit transactions for dashboard: %v", err)
+	} else {
+		var xenditGross, xenditNet float64
+		for _, tx := range xenditTx.Data {
+			if string(tx.Status) == "SUCCESS" || string(tx.Status) == "SUCCEEDED" || string(tx.Status) == "COMPLETED" {
+				xenditGross += float64(tx.Amount)
+				xenditNet += float64(tx.Amount)
+			}
+		}
+		
+		grossRevenue = grossRevenue.Add(decimal.NewFromFloat(xenditGross))
+		netRevenue = netRevenue.Add(decimal.NewFromFloat(xenditNet))
+	}
+
+	log.Println("Gross revenue row:", grossRevenue)
 	log.Println("Net revenue row:", netRevenue)
 
 	// Display the number of users
