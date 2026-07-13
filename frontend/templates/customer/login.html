@@ -21,7 +21,7 @@
     <!-- Main Container -->
     <main class="flex items-center justify-center min-h-screen p-4">
         <!-- Login Card -->
-        <section class="w-full max-w-md bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden mx-auto">
+        <section class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mx-auto">
             <!-- Left Column: Login Form -->
             <div class="p-8 md:p-10">
                 <!-- Header -->
@@ -53,7 +53,7 @@
                             </span>
                             <input type="text" id="identifier" name="identifier"
                                 placeholder="Enter your email or username" required
-                                class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                         </div>
                     </div>
 
@@ -73,7 +73,7 @@
                             </span>
                             <input type="password" id="password" name="password" placeholder="Enter your password"
                                 required
-                                class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                class="w-full px-4 py-3 pl-10 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                             <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
                                 <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                   <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -96,7 +96,7 @@
 
                     <!-- Sign In Button -->
                     <button type="submit"
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                         Sign in
                     </button>
                 </form>

@@ -54,7 +54,7 @@
                                 <p class="text-3xl font-bold text-emerald-600 tracking-tight flex items-center h-9" id="availableBalance"><span class="inline-block h-8 w-24 bg-emerald-100 animate-pulse rounded"></span></p>
                             </div>
                             <div class="mt-4">
-                                <button id="openWithdrawModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2">
+                                <button id="openWithdrawModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 active:scale-[0.98]">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                     <span>Withdraw</span>
                                 </button>
@@ -93,11 +93,11 @@
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                     </div>
-                                    <input type="text" id="txSearch" placeholder="Search..." class="block w-full sm:w-48 pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50/50 transition-colors">
+                                    <input type="text" id="txSearch" placeholder="Search..." class="block w-full sm:w-48 pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
                                 </div>
                                 
                                 <!-- Type -->
-                                <select id="txType" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50/50 transition-colors cursor-pointer">
+                                <select id="txType" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors cursor-pointer">
                                     <option value="all">All Types</option>
                                     <option value="payment">Payment</option>
                                     <option value="refund">Refund</option>
@@ -105,7 +105,7 @@
                                 </select>
 
                                 <!-- Sort -->
-                                <select id="txSort" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 bg-gray-50/50 transition-colors cursor-pointer">
+                                <select id="txSort" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors cursor-pointer">
                                     <option value="desc">Newest First</option>
                                     <option value="asc">Oldest First</option>
                                 </select>
@@ -157,7 +157,7 @@
     <div id="txnModal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
         <div id="txnModalContent"
-            class="relative bg-white rounded-lg max-w-md w-full p-6 shadow-2xl transition-all duration-300 ease-out transform scale-95 opacity-0">
+            class="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-lg border border-gray-100 transition-all duration-300 ease-out transform scale-95 opacity-0">
             <div class="flex items-start justify-between border-b pb-4 mb-4">
                 <div>
                     <h3 class="text-xl font-bold text-gray-900">Transaction Details</h3>
@@ -212,7 +212,7 @@
             </div>
             <div class="mt-6 flex justify-end">
                 <button id="closeTxnModalBottomBtn"
-                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-[0.98]">
                     Close
                 </button>
             </div>
@@ -258,7 +258,7 @@
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <span class="text-gray-500 sm:text-sm">₱</span>
                         </div>
-                        <input type="number" name="amount" id="withdrawAmount" class="block w-full rounded-lg border-gray-300 pl-8 pr-12 focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-3 transition-colors" placeholder="0.00" step="0.01" min="500">
+                        <input type="number" name="amount" id="withdrawAmount" class="block w-full rounded-lg bg-gray-50 border border-gray-200 pl-8 pr-12 focus:bg-white hover:bg-gray-100 focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-3 transition-colors" placeholder="0.00" step="0.01" min="500">
                     </div>
                     <p class="text-xs text-gray-500 mt-2 flex items-center justify-between">
                         <span>Withdraws to assigned settlement bank.</span>
@@ -268,10 +268,10 @@
             </div>
 
             <div class="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex justify-end space-x-3 rounded-b-2xl">
-                <button id="cancelWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors shadow-sm">
+                <button id="cancelWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors active:scale-[0.98]">
                     Cancel
                 </button>
-                <button id="submitWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors shadow-sm flex items-center">
+                <button id="submitWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors active:scale-[0.98] flex items-center">
                     <span>Confirm Withdrawal</span>
                 </button>
             </div>
