@@ -17,13 +17,13 @@
 <body class="font-sans antialiased text-gray-900 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
     <main class="flex items-center justify-center min-h-screen p-4">
         <div
-            class="flex flex-col lg:flex-row w-full max-w-5xl rounded-xl shadow-xl border border-gray-200 bg-white overflow-hidden">
+            class="flex flex-col lg:flex-row w-full max-w-5xl rounded-2xl shadow-sm border border-gray-100 bg-white overflow-hidden">
             <section class="w-full lg:w-1/2 p-8 md:p-10">
                 <header class="text-center">
                     <h1 class="text-3xl font-bold text-gray-900 mt-4">Create your account</h1>
                     <p id="step-subtitle" class="text-gray-600 mt-1">Step 1 of 4: Your Details</p>
                     <div class="w-full bg-gray-100 h-1.5 rounded-full mt-6 mb-2 overflow-hidden">
-                        <div id="step-progress" class="bg-blue-600 h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(37,99,235,0.4)]" style="width: 25%"></div>
+                        <div id="step-progress" class="bg-blue-600 h-full rounded-full transition-all duration-500 ease-out" style="width: 25%"></div>
                     </div>
                 </header>
                 <div id="error-message" class="hidden text-sm text-red-600 text-center bg-red-100 p-3 rounded-lg mt-4">
@@ -42,7 +42,7 @@
                                     <input id="first_name" name="first_name" type="text" autocomplete="name" required
                                         placeholder="Enter your first name" onkeypress="return isAlpha(event)"
                                         oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, ''); validateInput(this)" pattern="[A-Za-z\s]+"
-                                        class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                        class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                                 </div>
                                 <p id="error-first_name" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                             </div>
@@ -57,7 +57,7 @@
                                     <input id="last_name" name="last_name" type="text" autocomplete="name" required
                                         placeholder="Enter your last name" onkeypress="return isAlpha(event)"
                                         oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, ''); validateInput(this)" pattern="[A-Za-z\s]+"
-                                        class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                        class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                                 </div>
                                 <p id="error-last_name" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                             </div>
@@ -74,7 +74,7 @@
                                     placeholder="you@example.com"
                                     pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
                                     oninput="validateInput(this)"
-                                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                    class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                             </div>
                             <p id="error-email" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                         </div>
@@ -91,13 +91,13 @@
                                     onkeypress="return isNumber(event)"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateInput(this)" required
                                     placeholder="09123456789"
-                                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                    class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                             </div>
                             <p id="error-contact_number" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                         </div>
                         <div class="pt-2">
                             <button id="btn-step-1" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Next
                             </button>
                         </div>
@@ -118,17 +118,17 @@
                                     placeholder="Enter 6-digit code" pattern="[0-9]{6}"
                                     maxlength="6" onkeypress="return isNumber(event)"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateInput(this)"
-                                    class="w-full px-4 py-3 pl-10 text-center tracking-widest text-lg font-bold border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                    class="w-full px-4 py-3 pl-10 text-center tracking-widest text-lg font-bold border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                             </div>
                             <p id="error-otp_code" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                         </div>
                         <div class="pt-2 grid grid-cols-2 gap-4">
                             <button id="btn-back-2" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-gray-200 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Back
                             </button>
                             <button id="btn-step-2" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Verify
                             </button>
                         </div>
@@ -148,17 +148,17 @@
                                     placeholder="1234567890123456" pattern="[0-9]{16}"
                                     maxlength="16" onkeypress="return isNumber(event)"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateInput(this)"
-                                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                    class="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                             </div>
                             <p id="error-card_number" class="text-xs text-red-500 mt-1 hidden font-medium"></p>
                         </div>
                         <div class="pt-2 grid grid-cols-2 gap-4">
                             <button id="btn-back-3" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-gray-200 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Back
                             </button>
                             <button id="btn-step-3" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Next
                             </button>
                         </div>
@@ -176,7 +176,7 @@
                                     <input id="password" name="password" type="password" autocomplete="new-password"
                                         required placeholder="Create a password"
                                         oninput="validateInput(this)"
-                                        class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                        class="w-full px-4 py-3 pl-10 pr-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                                     <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
                                         <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                           <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -200,7 +200,7 @@
                                     <input id="confirm_password" name="confirm_password" type="password"
                                         autocomplete="new-password" required placeholder="Confirm your password"
                                         oninput="validateInput(this)"
-                                        class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" />
+                                        class="w-full px-4 py-3 pl-10 pr-10 border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-gray-50 hover:bg-gray-100 focus:bg-white" />
                                     <button type="button" id="toggle-confirm-password" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
                                         <svg id="confirm-eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                           <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -226,11 +226,11 @@
                         </div>
                         <div class="pt-2 grid grid-cols-2 gap-4">
                             <button id="btn-back-4" type="button"
-                                class="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-gray-200 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Back
                             </button>
                             <button id="create-account-btn" type="submit"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                                 Create Account
                             </button>
                         </div>
@@ -275,7 +275,7 @@
     </main>
     <div id="success-modal"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 hidden">
-        <div class="w-full max-w-sm bg-white p-8 rounded-xl shadow-xl text-center">
+        <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-lg border border-gray-100 text-center">
             <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-4xl text-green-600"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
             </div>
@@ -284,7 +284,7 @@
                 Your account has been successfully created.
             </p>
             <button id="modal-close-btn" type="button"
-                class="w-full flex justify-center py-3 px-4 mt-6 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150  ease-in-out">
+                class="w-full flex justify-center py-3 px-4 mt-6 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out active:scale-[0.98]">
                 Go to Login
             </button>
         </div>

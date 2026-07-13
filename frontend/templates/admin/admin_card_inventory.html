@@ -12,26 +12,33 @@
     <script src="/frontend/assets/style/tailwind.js"></script>
 </head>
 
-<body class="font-sans antialiased text-gray-900 bg-gray-100">
-    <div class="flex h-screen bg-gray-100">
+<body class="font-sans antialiased text-gray-900 bg-gray-50/50 relative overflow-hidden">
+    <!-- Subtle Background Elements -->
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
+    <div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none -z-10"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full bg-purple-400/10 blur-[100px] pointer-events-none -z-10"></div>
+
+    <div class="flex h-screen">
         <!-- Sidebar Navigation -->
         {{template "admin_sidebar" .}}
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="flex items-center justify-between h-16 px-8 py-4 bg-white border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-800">Card Inventory</h2>
-                <div class="flex items-center">
-                    <span class="mr-3 font-medium text-sm text-gray-600">Welcome, Super Admin</span>
-                    <div
-                        class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-blue-100">
+            <header class="flex items-center justify-between h-20 px-8 bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-20">
+                <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">Card Inventory</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <span class="block font-semibold text-sm text-gray-900">Welcome, Super Admin</span>
+                        <span class="block text-xs text-gray-500">Administrator</span>
+                    </div>
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ring-4 ring-blue-50 uppercase shadow-md transform hover:scale-105 transition-transform duration-200 cursor-pointer">
                         SA
                     </div>
                 </div>
             </header>
 
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
-                <div class="max-w-7xl mx-auto space-y-8">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-8">
+                <div class="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900">Card Inventory</h1>
                         <p class="text-gray-500 mt-1">Manage and track all physical cards across the ecosystem.</p>
@@ -39,11 +46,11 @@
 
                     <!-- Statistics Cards -->
                     <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition duration-200 hover:shadow-md">
                             <p class="text-sm font-medium text-gray-500 mb-2">Total Cards</p>
                             <p class="text-3xl font-bold text-gray-900" id="totalCards">0</p>
                         </div>
-                        <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition duration-200 hover:shadow-md">
                             <div class="grid grid-cols-4 divide-x divide-gray-200">
                                 <div class="pr-4 text-left">
                                     <p class="text-sm font-medium text-gray-500 mb-2">Active</p>
@@ -65,7 +72,7 @@
                         </div>
                     </section>
 
-                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="p-6 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                             <!-- Left: Search -->
                             <div class="relative w-full xl:w-80">
@@ -75,26 +82,26 @@
                                     </svg>
                                 </span>
                                 <input type="text" id="searchInput" placeholder="Search cards by UID or number..."
-                                    class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                                    class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
                             </div>
                             
                             <!-- Right: Filters & Sort -->
                             <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-                                <select id="filterStatus" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <select id="filterStatus" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
                                     <option value="all">All Statuses</option>
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                     <option value="blocked">Blocked</option>
                                     <option value="lost">Lost</option>
                                 </select>
-                                <select id="filterType" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <select id="filterType" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
                                     <option value="all">All Types</option>
                                     <option value="regular">Regular</option>
                                     <option value="student">Student</option>
                                     <option value="pwd">PWD</option>
                                     <option value="senior">Senior</option>
                                 </select>
-                                <select id="sortOrder" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <select id="sortOrder" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
                                     <option value="date_desc">Newest First</option>
                                     <option value="date_asc">Oldest First</option>
                                     <option value="balance_desc">Highest Balance</option>
@@ -177,7 +184,7 @@
 
     <!-- Card Details Modal -->
     <div id="cardDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white">
+        <div class="relative top-20 mx-auto p-6 border border-gray-100 w-full max-w-md shadow-lg rounded-2xl bg-white">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 class="text-xl font-bold text-gray-900">Card Details</h3>
                 <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -219,9 +226,18 @@
                 </div>
             </div>
             <div class="mt-6 flex justify-end">
-                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium transition duration-150">Close</button>
+                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-50 border border-gray-200 text-gray-800 rounded-lg hover:bg-gray-100 font-medium transition duration-150 active:scale-[0.98]">Close</button>
             </div>
         </div>
     </div>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+    </style>
 </body>
 </html>

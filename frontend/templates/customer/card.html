@@ -199,14 +199,14 @@
                                 <h3 class="text-lg font-bold text-gray-900 mb-4">Management</h3>
                                 
                                 <div class="space-y-3">
-                                    <button id="request-replacement-button" class="w-full flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-left group">
+                                    <button id="request-replacement-button" class="w-full flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-left group active:scale-[0.98]">
                                         <div class="flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400 group-hover:text-blue-600 mr-3 transition-colors"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                                             <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors">Request Replacement</span>
                                         </div>
                                     </button>
                                     
-                                    <button id="report-card-button" class="w-full flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors text-left group mt-4">
+                                    <button id="report-card-button" class="w-full flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors text-left group mt-4 active:scale-[0.98]">
                                         <div class="flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500 mr-3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z" /></svg>
                                             <span class="font-medium text-red-700">Report Lost or Stolen</span>
@@ -228,7 +228,7 @@
     <!-- Logout Confirmation Modal -->
     <div id="logout-modal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
-        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
+        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
             id="logout-modal-content">
             <div class="flex items-start justify-between">
                 <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
@@ -247,11 +247,11 @@
             </div>
             <div class="mt-6 flex justify-end space-x-4">
                 <button id="modal-cancel-button"
-                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.98]">
                     Cancel
                 </button>
                 <button id="modal-confirm-logout-button"
-                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:scale-[0.98]">
                     Logout
                 </button>
             </div>
@@ -261,7 +261,7 @@
     <!-- Report Card Confirmation Modal -->
     <div id="report-card-modal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
-        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0" id="report-card-modal-content">
+        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 ease-in-out scale-95 opacity-0" id="report-card-modal-content">
             <div class="flex items-start justify-between">
                 <h3 class="text-2xl font-bold text-gray-900">Report Card</h3>
                 <button id="report-modal-close-button" class="text-gray-400 hover:text-gray-600">
@@ -275,8 +275,8 @@
                 </p>
             </div>
             <div class="mt-6 flex justify-end space-x-4">
-                <button id="report-modal-cancel-button" class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button id="report-modal-confirm-button" class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Yes, Block Card</button>
+                <button id="report-modal-cancel-button" class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.98]">Cancel</button>
+                <button id="report-modal-confirm-button" class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:scale-[0.98]">Yes, Block Card</button>
             </div>
         </div>
     </div>
@@ -284,7 +284,7 @@
     <!-- Request Replacement Modal -->
     <div id="replacement-modal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
-        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 transform transition-all duration-300 ease-in-out scale-95 opacity-0" id="replacement-modal-content">
+        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 ease-in-out scale-95 opacity-0" id="replacement-modal-content">
             <div class="flex items-start justify-between">
                 <h3 class="text-2xl font-bold text-gray-900">Request Replacement</h3>
                 <button id="replacement-modal-close-button" class="text-gray-400 hover:text-gray-600">
@@ -298,8 +298,8 @@
                 </p>
             </div>
             <div class="mt-6 flex justify-end space-x-4">
-                <button id="replacement-modal-cancel-button" class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button id="replacement-modal-confirm-button" class="px-6 py-2 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Confirm Request</button>
+                <button id="replacement-modal-cancel-button" class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.98]">Cancel</button>
+                <button id="replacement-modal-confirm-button" class="px-6 py-2 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-[0.98]">Confirm Request</button>
             </div>
         </div>
     </div>
