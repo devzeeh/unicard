@@ -58,17 +58,32 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	sortParam := r.URL.Query().Get("sort")
 
 	// getting all transactions
-	query := `SELECT 
-			transaction_id, COALESCE(card_number, ''),
-			merchant_id, terminal_id,
-			COALESCE(transaction_type, ''), COALESCE(amount, 0),
-			COALESCE(points_earned, 0), COALESCE(service_fee, 0),
-			COALESCE(net_merchant_payout, 0), processed_by,
-			COALESCE(status, ''), description, COALESCE(created_at, '')
+	query := `SELECT * FROM (
+		SELECT 
+			transaction_id, COALESCE(card_number, '') AS card_number,
+			merchant_id, COALESCE(terminal_id, '') AS terminal_id,
+			COALESCE(transaction_type, '') AS transaction_type, COALESCE(amount, 0) AS amount,
+			COALESCE(points_earned, 0) AS points_earned, COALESCE(service_fee, 0) AS service_fee,
+			COALESCE(net_merchant_payout, 0) AS net_merchant_payout, COALESCE(processed_by, '') AS processed_by,
+			COALESCE(status, '') AS status, COALESCE(description, '') AS description, COALESCE(created_at, '') AS created_at
 		FROM transactions 
-		WHERE merchant_id = ?`
+		WHERE merchant_id = ?
+		
+		UNION ALL
+		
+		SELECT 
+			CONCAT('LOG-', ual.id) AS transaction_id, '' AS card_number,
+			m.merchant_id AS merchant_id, '' AS terminal_id,
+			ual.activity_type AS transaction_type, 0.00 AS amount,
+			0 AS points_earned, 0.00 AS service_fee,
+			0.00 AS net_merchant_payout, ual.user_id AS processed_by,
+			ual.status AS status, COALESCE(ual.description, '') AS description, ual.created_at AS created_at
+		FROM user_activity_logs ual
+		JOIN merchants m ON ual.user_id = m.user_id
+		WHERE m.merchant_id = ?
+	) AS combined_txns WHERE 1=1`
 
-	args := []interface{}{merchantID}
+	args := []any{merchantID, merchantID}
 
 	if txType != "" && txType != "all" {
 		query += ` AND transaction_type = ?`
@@ -86,7 +101,7 @@ func (h *Handler) TransactionHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		query += ` ORDER BY created_at DESC`
 	}
-	
+
 	query += ` LIMIT 100`
 
 	rows, err := h.Store.QueryContext(ctx, query, args...)

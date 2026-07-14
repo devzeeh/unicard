@@ -88,12 +88,13 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch Merchant Info (ID, Settlement Details)
 	var bank BankDetails
+	var userID string
 	err := h.Store.QueryRow(`
-		SELECT m.merchant_id, m.settlement_bank_name, m.settlement_account_name, m.settlement_account_number
+		SELECT m.merchant_id, m.user_id, m.settlement_bank_name, m.settlement_account_name, m.settlement_account_number
 		FROM merchants m
 		JOIN users u ON m.user_id = u.user_id
 		WHERE u.username = ? LIMIT 1
-	`, username).Scan(&bank.merchantID, &bank.settlementBank, &bank.settlementAccountName, &bank.settlementAccount)
+	`, username).Scan(&bank.merchantID, &userID, &bank.settlementBank, &bank.settlementAccountName, &bank.settlementAccount)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -146,7 +147,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 		FROM transactions 
 		WHERE merchant_id = ? AND transaction_type = 'withdrawal' AND DATE(created_at) = CURDATE()
 	`, bank.merchantID).Scan(&dailyWithdrawn)
-	
+
 	if err != nil {
 		log.Println("Error fetching daily withdrawn amount:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
@@ -233,10 +234,10 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 
 	insertTxnQuery := `
 		INSERT INTO transactions (
-			transaction_id, merchant_id, transaction_type, amount, status, description, card_number, service_fee
-		) VALUES (?, ?, 'withdrawal', ?, 'pending', ?, NULL, ?)
+			transaction_id, merchant_id, user_id, transaction_type, amount, status, description, card_number, service_fee
+		) VALUES (?, ?, ?, 'withdrawal', ?, 'pending', ?, NULL, ?)
 	`
-	_, err = h.Store.Exec(insertTxnQuery, txnID, bank.merchantID, req.Amount, description, serviceFee)
+	_, err = h.Store.Exec(insertTxnQuery, txnID, bank.merchantID, userID, req.Amount, description, serviceFee)
 	if err != nil {
 		log.Println("Error inserting withdrawal transaction:", err)
 		// We could potentially try to cancel the disbursement here, or have a manual reconciliation process.
@@ -251,7 +252,7 @@ func (h *Handler) WithdrawHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{
 		Success: true,
 		Message: "Withdrawal is being processed",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"transaction_id": txnID,
 			"amount":         req.Amount,
 			"status":         "pending",

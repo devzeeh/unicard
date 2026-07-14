@@ -185,10 +185,13 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		dbTransactionType = "refund"
 	}
 
+	var userID string
+	_ = tx.QueryRow("SELECT user_id FROM cards WHERE card_number = ?", req.CardNumber).Scan(&userID)
+
 	_, err = tx.Exec(`
-		INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, points_earned) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, transactionID, req.CardNumber, req.MerchantID, terminalID, dbTransactionType, req.Amount, serviceFee, processedBy, loyaltyPoints)
+		INSERT INTO transactions (transaction_id, card_number, user_id, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, points_earned) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, transactionID, req.CardNumber, userID, req.MerchantID, terminalID, dbTransactionType, req.Amount, serviceFee, processedBy, loyaltyPoints)
 
 	if err != nil {
 		// If `merchant_id` is not nullable and causes error or id doesn't auto-increment
@@ -210,7 +213,7 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	jsonwrite.WriteJSON(w, http.StatusOK, map[string]interface{}{
+	jsonwrite.WriteJSON(w, http.StatusOK, map[string]any{
 		"success":     true,
 		"message":     "Transaction successful",
 		"service_fee": serviceFee,

@@ -28,26 +28,65 @@ func (h *Handler) TransactionsView(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Request) {
 	txnQuery := `
 			SELECT 
-				t.transaction_id, 
-				COALESCE(t.terminal_id, ''),
-				DATE(t.created_at) as date,
-				TIME(t.created_at) as time,
-				COALESCE(t.transaction_type, ''),
-				COALESCE(t.amount, 0.00),
-				COALESCE(t.status, ''),
-				COALESCE(t.description, ''),
-				COALESCE(m.business_name, ''),
-				COALESCE(m.merchant_id, ''),
-				COALESCE(t.points_earned, 0),
-				c.card_number,
-				COALESCE(u.name, 'Unknown Customer') as customer_name,
-				COALESCE(t.service_fee, 0)
-
-			FROM transactions t
-			LEFT JOIN cards c ON t.card_number = c.card_number 
-			LEFT JOIN users u ON c.user_id = u.user_id
-			LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
-			ORDER BY t.created_at DESC
+				transaction_id, 
+				terminal_id,
+				date,
+				time,
+				transaction_type,
+				amount,
+				status,
+				description,
+				business_name,
+				merchant_id,
+				points_earned,
+				card_number,
+				customer_name,
+				service_fee
+			FROM (
+				SELECT 
+					t.transaction_id, 
+					COALESCE(t.terminal_id, '') AS terminal_id,
+					DATE(t.created_at) as date,
+					TIME(t.created_at) as time,
+					COALESCE(t.transaction_type, '') AS transaction_type,
+					COALESCE(t.amount, 0.00) AS amount,
+					COALESCE(t.status, '') AS status,
+					COALESCE(t.description, '') AS description,
+					COALESCE(m.business_name, '') AS business_name,
+					COALESCE(m.merchant_id, '') AS merchant_id,
+					COALESCE(t.points_earned, 0) AS points_earned,
+					COALESCE(c.card_number, '') AS card_number,
+					COALESCE(u.name, 'Unknown Customer') as customer_name,
+					COALESCE(t.service_fee, 0) AS service_fee,
+					t.created_at
+				FROM transactions t
+				LEFT JOIN cards c ON t.card_number = c.card_number 
+				LEFT JOIN users u ON t.user_id = u.user_id
+				LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
+				
+				UNION ALL
+				
+				SELECT 
+					CONCAT('LOG-', ual.id) AS transaction_id, 
+					'' AS terminal_id,
+					DATE(ual.created_at) as date,
+					TIME(ual.created_at) as time,
+					ual.activity_type AS transaction_type,
+					0.00 AS amount,
+					ual.status AS status,
+					COALESCE(ual.description, '') AS description,
+					COALESCE(m.business_name, '') AS business_name,
+					COALESCE(m.merchant_id, '') AS merchant_id,
+					0 AS points_earned,
+					'' AS card_number,
+					COALESCE(u.name, 'Unknown Customer') as customer_name,
+					0.00 AS service_fee,
+					ual.created_at
+				FROM user_activity_logs ual
+				LEFT JOIN users u ON ual.user_id = u.user_id
+				LEFT JOIN merchants m ON ual.user_id = m.user_id
+			) AS combined_txns
+			ORDER BY created_at DESC
 		`
 	rows, err := h.Store.Query(txnQuery)
 

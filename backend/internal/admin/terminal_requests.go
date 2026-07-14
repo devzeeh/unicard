@@ -28,12 +28,12 @@ type TerminalRequest struct {
 }
 
 type TerminalRequestsResponse struct {
-	Success     bool        `json:"success"`
-	Message     string      `json:"message"`
-	Data        interface{} `json:"data"`
-	TotalItems  int         `json:"total_items,omitempty"`
-	CurrentPage int         `json:"current_page,omitempty"`
-	TotalPages  int         `json:"total_pages,omitempty"`
+	Success     bool   `json:"success"`
+	Message     string `json:"message"`
+	Data        any    `json:"data"`
+	TotalItems  int    `json:"total_items,omitempty"`
+	CurrentPage int    `json:"current_page,omitempty"`
+	TotalPages  int    `json:"total_pages,omitempty"`
 }
 
 type ApproveTerminalRequestPayload struct {
@@ -98,7 +98,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 		JOIN merchants m ON tr.merchant_id = m.merchant_id
 		LEFT JOIN terminals t ON tr.terminal_sn = t.terminal_sn`
 
-	var args []interface{}
+	var args []any
 	var conditions []string
 
 	if status != "" {
@@ -122,7 +122,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	var totalItems int
 	if err := h.Store.QueryRow(countQuery, args...).Scan(&totalItems); err != nil {
 		log.Printf("Count query error: %v | Query: %s | Args: %v", err, countQuery, args)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": fmt.Sprintf("Failed to count terminal requests: %v", err),
 		})
@@ -143,7 +143,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	rows, err := h.Store.Query(dataQuery, args...)
 	if err != nil {
 		log.Printf("Data query error: %v | Query: %s | Args: %v", err, dataQuery, args)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": fmt.Sprintf("Failed to retrieve terminal requests: %v", err),
 		})
@@ -166,7 +166,7 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 			&tr.BusinessName, &tr.OwnerName, &tr.DeviceName,
 		); err != nil {
 			log.Printf("Scan error: %v", err)
-			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 				"success": false,
 				"message": fmt.Sprintf("Failed to parse terminal request data: %v", err),
 			})
@@ -234,7 +234,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	requestID := r.PathValue("id")
 
 	if requestID == "" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Request ID is required",
 		})
@@ -243,7 +243,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 
 	var payload ApproveTerminalRequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Invalid request payload",
 		})
@@ -253,7 +253,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	// Start transaction
 	tx, err := h.Store.Begin()
 	if err != nil {
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to start transaction",
 		})
@@ -273,13 +273,13 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 
 	if err != nil {
 		if err.Error() == "sql: no rows" {
-			jsonwrite.WriteJSON(w, http.StatusNotFound, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusNotFound, map[string]any{
 				"success": false,
 				"message": "Terminal request not found",
 			})
 			return
 		}
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to retrieve terminal request",
 		})
@@ -287,7 +287,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	}
 
 	if currentStatus != "pending" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Only pending requests can be approved",
 		})
@@ -301,7 +301,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	}
 
 	if assignTerminalSN == "" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "A terminal must be assigned to approve this request",
 		})
@@ -317,7 +317,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 		).Scan(&existingMerchantID)
 
 		if err != nil && err.Error() != "sql: no rows" {
-			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 				"success": false,
 				"message": "Failed to verify terminal",
 			})
@@ -325,7 +325,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 		}
 
 		if err == nil && existingMerchantID != nil && *existingMerchantID != merchantID {
-			jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 				"success": false,
 				"message": "Terminal is already assigned to another merchant",
 			})
@@ -342,7 +342,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 
 	if err != nil {
 		log.Printf("Error updating terminal request: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to approve terminal request",
 		})
@@ -373,7 +373,7 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 
 		if err != nil {
 			log.Printf("Error assigning terminal: %v", err)
-			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 				"success": false,
 				"message": "Failed to assign terminal",
 			})
@@ -383,17 +383,17 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to commit transaction",
 		})
 		return
 	}
 
-	jsonwrite.WriteJSON(w, http.StatusOK, map[string]interface{}{
+	jsonwrite.WriteJSON(w, http.StatusOK, map[string]any{
 		"success": true,
 		"message": "Terminal request approved successfully",
-		"data": map[string]interface{}{
+		"data": map[string]any{
 			"request_id":  requestID,
 			"terminal_sn": assignTerminalSN,
 		},
@@ -406,7 +406,7 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 	requestID := r.PathValue("id")
 
 	if requestID == "" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Request ID is required",
 		})
@@ -415,7 +415,7 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 
 	var payload RejectTerminalRequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Invalid request payload",
 		})
@@ -431,13 +431,13 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 
 	if err != nil {
 		if err.Error() == "sql: no rows" {
-			jsonwrite.WriteJSON(w, http.StatusNotFound, map[string]interface{}{
+			jsonwrite.WriteJSON(w, http.StatusNotFound, map[string]any{
 				"success": false,
 				"message": "Terminal request not found",
 			})
 			return
 		}
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to retrieve terminal request",
 		})
@@ -445,7 +445,7 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	if currentStatus != "pending" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"success": false,
 			"message": "Only pending requests can be rejected",
 		})
@@ -467,17 +467,17 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 
 	if err != nil {
 		log.Printf("Error rejecting terminal request: %v", err)
-		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		jsonwrite.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"success": false,
 			"message": "Failed to reject terminal request",
 		})
 		return
 	}
 
-	jsonwrite.WriteJSON(w, http.StatusOK, map[string]interface{}{
+	jsonwrite.WriteJSON(w, http.StatusOK, map[string]any{
 		"success": true,
 		"message": "Terminal request rejected successfully",
-		"data": map[string]interface{}{
+		"data": map[string]any{
 			"request_id": requestID,
 			"reason":     reason,
 		},

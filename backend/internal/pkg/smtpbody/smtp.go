@@ -329,3 +329,40 @@ func MerchantDeletedEmail() string {
 </body>
 </html>`
 }
+
+func PasswordChangedEmail() string {
+	return `<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Password Changed Successfully</title>
+	<style>
+		body { font-family: 'Inter', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+		.container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
+		.header { background-color: #0f172a; color: #ffffff; padding: 20px; text-align: center; }
+		.header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+		.content { padding: 30px; color: #334155; line-height: 1.6; }
+		.content p { margin: 0 0 15px; }
+		.btn-container { text-align: center; margin: 30px 0; }
+		.btn { display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; }
+		.footer { background-color: #f8fafc; padding: 15px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1>Unicard</h1>
+		</div>
+		<div class="content">
+			<p>Hello %s,</p>
+			<p>Your password has been successfully changed.</p>
+			<p>If you did not make this change, please contact our support immediately to secure your account.</p>
+			<p>Thank you,<br>The Unicard Team</p>
+		</div>
+		<div class="footer">
+			&copy; " + Year() + " Unicard. All rights reserved.
+		</div>
+	</div>
+</body>
+</html>`
+}

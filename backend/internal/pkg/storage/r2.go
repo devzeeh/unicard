@@ -40,7 +40,7 @@ func NewR2Storage() (Service, error) {
 		return nil, fmt.Errorf("missing Cloudflare R2 credentials in environment variables")
 	}
 
-	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
 		return aws.Endpoint{
 			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountId),
 		}, nil
@@ -132,6 +132,6 @@ func (s *R2Storage) UploadBase64(ctx context.Context, b64data string) (string, e
 	}
 
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	
+
 	return s.UploadFile(ctx, bytes.NewReader(data), filename, contentType)
 }
