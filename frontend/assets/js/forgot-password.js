@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const hasLower = new RegExp(/[a-z]/);
     const hasUpper = new RegExp(/[A-Z]/);
     const hasNumber = new RegExp(/[0-9]/);
-    const hasSpecial = new RegExp(/[^A-Za-z0-9]/);
+    const hasSpecial = new RegExp(/[^A-Za-z0-9\s]/);
 
     let currentEmail = "";
     let currentOtp = "";
@@ -117,15 +117,19 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!checkElement) return;
         const icon = checkElement.querySelector('i');
         if (isValid) {
-            checkElement.classList.remove('text-gray-500', 'bg-gray-100');
-            checkElement.classList.add('text-green-700', 'bg-green-100');
-            icon.classList.remove('fa-circle');
-            icon.classList.add('fa-check');
+            checkElement.classList.remove('text-red-500');
+            checkElement.classList.add('text-green-600');
+            if (icon) {
+                icon.classList.remove('fa-circle', 'text-[8px]');
+                icon.classList.add('fa-check', 'text-[12px]');
+            }
         } else {
-            checkElement.classList.remove('text-green-700', 'bg-green-100');
-            checkElement.classList.add('text-gray-500', 'bg-gray-100');
-            icon.classList.remove('fa-check');
-            icon.classList.add('fa-circle');
+            checkElement.classList.remove('text-green-600');
+            checkElement.classList.add('text-red-500');
+            if (icon) {
+                icon.classList.remove('fa-check', 'text-[12px]');
+                icon.classList.add('fa-circle', 'text-[8px]');
+            }
         }
     }
 
@@ -168,6 +172,23 @@ document.addEventListener("DOMContentLoaded", function () {
         emailInput.addEventListener('input', () => hideFieldError(emailInput, emailError));
     }
 
+    function checkOtpFilled() {
+        const otpVal = otpInputs.map(i => i.value).join('');
+        if (otpVal.length === 6) {
+            if (confirmOtpBtn && !confirmOtpBtn.disabled && confirmOtpBtn.textContent !== "Verifying...") {
+                // If it's already verifying, don't click again
+                confirmOtpBtn.click();
+            } else if (confirmOtpBtn && confirmOtpBtn.disabled && confirmOtpBtn.textContent !== "Verifying...") {
+                confirmOtpBtn.disabled = false;
+                confirmOtpBtn.click();
+            }
+        } else {
+            if (confirmOtpBtn && confirmOtpBtn.textContent !== "Verifying...") {
+                confirmOtpBtn.disabled = true;
+            }
+        }
+    }
+
     otpInputs.forEach((input, index) => {
         input.addEventListener('input', (e) => {
             input.value = input.value.replace(/[^0-9]/g, '');
@@ -175,6 +196,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (input.value && index < otpInputs.length - 1) {
                 otpInputs[index + 1].focus();
             }
+            checkOtpFilled();
         });
         
         input.addEventListener('keydown', (e) => {
@@ -182,8 +204,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 otpInputs[index - 1].focus();
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (confirmOtpBtn) confirmOtpBtn.click();
+                if (confirmOtpBtn && !confirmOtpBtn.disabled) confirmOtpBtn.click();
             }
+            // Add a small delay for checkOtpFilled if Backspace changes the length
+            setTimeout(checkOtpFilled, 10);
         });
 
         input.addEventListener('paste', (e) => {
@@ -196,6 +220,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             hideFieldError(otpInputs, otpError);
+            checkOtpFilled();
         });
     });
 
