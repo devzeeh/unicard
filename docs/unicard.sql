@@ -3,6 +3,23 @@
 CREATE DATABASE IF NOT EXISTS unicard;
 USE unicard;
 
+CREATE TABLE `user_activity_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(50) NOT NULL COMMENT 'References users.user_id',
+  `processed_by` varchar(50) DEFAULT NULL COMMENT 'users.user_id of the staff/admin who performed this action on behalf of the user, NULL if self-service',
+  `activity_type` enum('onboarding','password_reset','email_verification', 'login','logout','profile_update','card_linked') NOT NULL,
+  `channel` enum('email','sms','push','in_app') DEFAULT NULL COMMENT 'How the message/event was delivered, if applicable',
+  `status` enum('pending','sent','completed','failed') DEFAULT 'completed',
+  `description` varchar(255) DEFAULT NULL COMMENT 'Optional human-readable note, e.g. "Password reset requested from new device"',
+  `metadata` json DEFAULT NULL COMMENT 'Flexible extra context, e.g. {"ip":"...", "device":"..."}',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id_created_at` (`user_id`, `created_at`),
+  KEY `processed_by` (`processed_by`),
+  CONSTRAINT `user_activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  CONSTRAINT `user_activity_logs_ibfk_2` FOREIGN KEY (`processed_by`) REFERENCES `users` (`user_id`)
+)
+
 --
 -- Table structure for table `cards`
 --
@@ -190,6 +207,7 @@ CREATE TABLE `transactions` (
   `transaction_id` varchar(50) NOT NULL COMMENT 'Custom unique public reference string (e.g., TXN-2026-104294) printed on digital and paper receipts',
   `card_number` varchar(20) DEFAULT NULL COMMENT 'Links target token balance deduction via cards.card_number',
   `merchant_id` varchar(50) DEFAULT NULL COMMENT 'Identifies vendor company collecting the payment token via merchants.merchant_id',
+  `user_id` varchar(50) DEFAULT NULL COMMENT 'Identifies the customer the transaction belongs to via users.user_id'
   `terminal_id` varchar(50) DEFAULT NULL COMMENT 'Identifies physical ESP32 or terminal node hardware unit triggering the capture via terminals.terminal_id',
   `transaction_type` enum('payment','refund','reversal','topup','withdrawal') DEFAULT 'payment' COMMENT 'Categorizes ledger records to process standard deductions or transaction void mappings cleanly',
   `amount` decimal(10,2) DEFAULT NULL COMMENT 'Total Gross fiat amount captured from the card wallet balance tracking column',
@@ -203,7 +221,9 @@ CREATE TABLE `transactions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `transaction_id` (`transaction_id`),
   KEY `card_number` (`card_number`),
-  CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`card_number`) REFERENCES `cards` (`card_number`)
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`card_number`) REFERENCES `cards` (`card_number`),
+  CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='High-growth financial master ledger capturing all terminal token taps, transaction classifications, and system fees';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
