@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 	smtp "unicard-go/backend/internal/pkg/smtpbody"
 	structs "unicard-go/backend/internal/pkg/structs"
@@ -50,7 +49,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 
 	// Build query
 	baseQuery := `FROM merchants`
-	var args []interface{}
+	var args []any
 	var conditions []string
 
 	if search != "" {
@@ -131,7 +130,7 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 		}
 
 		placeholders := make([]string, len(merchantIDs))
-		termArgs := make([]interface{}, len(merchantIDs))
+		termArgs := make([]any, len(merchantIDs))
 		for i, id := range merchantIDs {
 			placeholders[i] = "?"
 			termArgs[i] = id
@@ -319,12 +318,10 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	}*/
 
 	// Insert welcome transaction
-	welcomeTxnID := fmt.Sprintf("Welcome %s-%d", businessName, time.Now().UnixMilli())
 	_, err = tx.Exec(`
-		INSERT INTO transactions 
-		(transaction_id, merchant_id, transaction_type, amount, points_earned, service_fee, status, description) 
-		VALUES (?, ?, 'payment', NULL, NULL, NULL, 'completed', 'Welcome to UniCard! Your merchant account is now approved and ready to accept transactions.')`,
-		welcomeTxnID, merchantID)
+		INSERT INTO user_activity_logs (user_id, activity_type, channel, status, description)
+		VALUES (?, 'onboarding', 'in_app', 'completed', 'Welcome to UniCard! Your merchant account is now approved and ready to accept transactions.')`,
+		merchantUserID)
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{Success: false, Message: "Failed to create welcome transaction"})
 		return

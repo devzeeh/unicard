@@ -111,9 +111,9 @@ func (h *Handler) RequestReplacement(w http.ResponseWriter, r *http.Request) {
 	// Insert transaction record for the fee
 	txnID := fmt.Sprintf("REP-%s-%d", cardNumber, time.Now().Unix())
 	_, err = tx.Exec(`
-		INSERT INTO transactions (transaction_id, card_number, transaction_type, amount, status, description)
-		VALUES (?, ?, 'payment', 150.0, 'completed', 'Card Replacement Fee')
-	`, txnID, cardNumber)
+		INSERT INTO transactions (transaction_id, card_number, user_id, transaction_type, amount, status, description)
+		VALUES (?, ?, ?, 'payment', 150.0, 'completed', 'Card Replacement Fee')
+	`, txnID, cardNumber, userID)
 
 	if err != nil {
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{

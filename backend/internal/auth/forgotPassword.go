@@ -85,6 +85,39 @@ func sendEmailOTP(email, name, otp string) error {
 	return nil
 }
 
+// Send Password Changed Email
+func sendPasswordChangedEmail(email, name string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := 587
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpSender := os.Getenv("SMTP_SENDER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", smtpSender+" <"+smtpEmail+">")
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Unicard Password Changed")
+
+	htmlBody := fmt.Sprintf(smtp.PasswordChangedEmail(), name)
+
+	m.SetBody("text/html", htmlBody)
+
+	d := gomail.NewDialer(
+		smtpHost,
+		smtpPort,
+		smtpEmail,
+		smtpPass,
+	)
+
+	err := d.DialAndSend(m)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Password changed email sent successfully to %s", email)
+	return nil
+}
+
 // Forgot Password Send OTP
 func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) {
 	// get context from request
@@ -213,6 +246,30 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	if err := h.updatePassword(req.Email, hashedPassword); err != nil {
 		http.Error(w, "System error", http.StatusInternalServerError)
 		return
+	}
+
+	// Fetch user details to send email and log transaction
+	var userName, userID string
+	err = h.Store.QueryRowContext(r.Context(), "SELECT name, user_id FROM users WHERE email = ?", req.Email).Scan(&userName, &userID)
+	if err == nil {
+		// Try to fetch card number (user might not have one)
+		var cardNumber *string
+		_ = h.Store.QueryRowContext(r.Context(), "SELECT card_number FROM cards WHERE user_id = ?", userID).Scan(&cardNumber)
+
+		_, errTx := h.Store.ExecContext(r.Context(), `
+			INSERT INTO user_activity_logs (user_id, activity_type, channel, status, description)
+			VALUES (?, 'password_reset', 'in_app', 'completed', 'Password reset successfully')
+		`, userID)
+		if errTx != nil {
+			log.Printf("Failed to insert password reset log for %s: %v", req.Email, errTx)
+		}
+
+		// Send email in a goroutine so it doesn't block the response
+		go func(email, name string) {
+			if err := sendPasswordChangedEmail(email, name); err != nil {
+				log.Printf("Failed to send password changed email to %s: %v", email, err)
+			}
+		}(req.Email, userName)
 	}
 
 	// Clean up OTP

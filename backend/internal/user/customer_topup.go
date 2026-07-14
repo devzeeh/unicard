@@ -278,9 +278,13 @@ func (h *Handler) SaveTopUpToDatabase(w http.ResponseWriter, r *http.Request) {
 
 	// Insert into Spending Ledger (transactions table)
 	// *Note: Adjust 'category' if your enum doesn't include 'top_up'
-	queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	// Fetch user_id for the transaction log
+	var userID string
+	_ = tx.QueryRow("SELECT user_id FROM cards WHERE card_number = ?", req.CardNumber).Scan(&userID)
+
+	queryTx := `INSERT INTO transactions (transaction_id, card_number, user_id, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	// "xendit" as the merchant_id since this is an internal load, not a retail/Fare purchase
-	if _, err := tx.Exec(queryTx, transactionID, req.CardNumber, sql.NullString{}, sql.NullString{}, "topup", req.Amount, req.ConvenienceFee, sql.NullString{}, "pending", "Topup initiated"); err != nil {
+	if _, err := tx.Exec(queryTx, transactionID, req.CardNumber, userID, sql.NullString{}, sql.NullString{}, "topup", req.Amount, req.ConvenienceFee, sql.NullString{}, "pending", "Topup initiated"); err != nil {
 		log.Println("Failed to record global transaction:", err)
 		jsonwrite.WriteJSON(w, http.StatusInternalServerError, jsonwrite.APIResponse{
 			Success: false,

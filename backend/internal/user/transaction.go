@@ -36,26 +36,45 @@ func (h *Handler) TransactionsJSONHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	txnQuery := `
-			SELECT 
+			(SELECT 
 				t.transaction_id, 
-				COALESCE(t.terminal_id, ''), 
+				COALESCE(t.terminal_id, '') AS terminal_id, 
 				t.created_at, 
-				COALESCE(t.transaction_type, ''), 
+				COALESCE(t.transaction_type, '') AS transaction_type, 
 				t.amount, 
-				COALESCE(t.status, ''),
-				COALESCE(t.description, ''),
-				COALESCE(m.business_name, ''),
-				COALESCE(m.merchant_id, ''),
-				COALESCE(t.points_earned, 0),
-				c.card_number
+				COALESCE(t.status, '') AS status,
+				COALESCE(t.description, '') AS description,
+				COALESCE(m.business_name, '') AS business_name,
+				COALESCE(m.merchant_id, '') AS merchant_id,
+				COALESCE(t.points_earned, 0) AS points_earned,
+				COALESCE(c.card_number, '') AS card_number
 			FROM transactions t
-			JOIN cards c ON t.card_number = c.card_number 
-			JOIN users u ON c.user_id = u.user_id
+			LEFT JOIN cards c ON t.card_number = c.card_number 
+			JOIN users u ON t.user_id = u.user_id
 			LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
-			WHERE u.username = ?
-			ORDER BY t.created_at DESC
+			WHERE u.username = ?)
+			
+			UNION ALL
+			
+			(SELECT 
+				CONCAT('LOG-', ual.id) AS transaction_id, 
+				'' AS terminal_id, 
+				ual.created_at, 
+				ual.activity_type AS transaction_type, 
+				0.00 AS amount, 
+				ual.status,
+				ual.description,
+				'' AS business_name,
+				'' AS merchant_id,
+				0 AS points_earned,
+				'' AS card_number
+			FROM user_activity_logs ual
+			JOIN users u ON ual.user_id = u.user_id
+			WHERE u.username = ?)
+			
+			ORDER BY created_at DESC
 		`
-	rows, err := h.Store.Query(txnQuery, username)
+	rows, err := h.Store.Query(txnQuery, username, username)
 
 	type TxnResponse struct {
 		TransactionID string          `json:"transaction_id"`

@@ -58,7 +58,7 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 
 	// Build query
 	baseQuery := `FROM terminals t LEFT JOIN merchants m ON t.merchant_id = m.merchant_id`
-	var args []interface{}
+	var args []any
 	var conditions []string
 
 	if search != "" {

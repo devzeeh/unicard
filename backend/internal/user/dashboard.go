@@ -148,15 +148,39 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch recent transactions
 	txnQuery := `
-    SELECT t.transaction_id, t.description, t.created_at, COALESCE(t.transaction_type, ''), t.amount, COALESCE(t.terminal_id, ''), COALESCE(t.status, ''), m.business_name, m.merchant_id, COALESCE(t.points_earned, 0)
+    (SELECT 
+        t.transaction_id, 
+        t.description, 
+        t.created_at, 
+        COALESCE(t.transaction_type, '') AS transaction_type, 
+        t.amount, 
+        COALESCE(t.terminal_id, '') AS terminal_id, 
+        COALESCE(t.status, '') AS status, 
+        m.business_name, 
+        m.merchant_id, 
+        COALESCE(t.points_earned, 0) AS points_earned
     FROM transactions t 
-    JOIN cards c ON t.card_number = c.card_number 
-    JOIN users u ON c.user_id = u.user_id
+    JOIN users u ON t.user_id = u.user_id
     LEFT JOIN merchants m ON t.merchant_id = m.merchant_id
-    WHERE u.username = ? 
-    ORDER BY t.created_at DESC LIMIT 5
+    WHERE u.username = ?)
+    UNION ALL
+    (SELECT 
+        CONCAT('LOG-', ual.id) AS transaction_id, 
+        ual.description, 
+        ual.created_at, 
+        ual.activity_type AS transaction_type, 
+        0.00 AS amount, 
+        '' AS terminal_id, 
+        ual.status, 
+        NULL AS business_name, 
+        NULL AS merchant_id, 
+        0 AS points_earned
+    FROM user_activity_logs ual
+    JOIN users u ON ual.user_id = u.user_id
+    WHERE u.username = ?)
+    ORDER BY created_at DESC LIMIT 5
 `
-	rows, err := h.Store.Query(txnQuery, userID)
+	rows, err := h.Store.Query(txnQuery, userID, userID)
 	var transactions []Transaction
 	if err != nil {
 		fmt.Printf("Error fetching transactions: %v\n", err)

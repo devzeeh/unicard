@@ -116,8 +116,10 @@ func (h *Handler) XenditWebhook(w http.ResponseWriter, r *http.Request) {
 			rowsAffected, _ := res.RowsAffected()
 			if rowsAffected == 0 {
 				transactionID := fmt.Sprintf("TX-%d", time.Now().UnixNano())
-				queryTx := `INSERT INTO transactions (transaction_id, card_number, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-				if _, err := tx.Exec(queryTx, transactionID, cardNumber, "xendit", "xendit", "topup", topUp.Amount, convenienceFee, "xendit", "Successful topup via Xendit", "completed"); err != nil {
+				var userID string
+				_ = tx.QueryRow("SELECT user_id FROM cards WHERE card_number = ?", cardNumber).Scan(&userID)
+				queryTx := `INSERT INTO transactions (transaction_id, card_number, user_id, merchant_id, terminal_id, transaction_type, amount, service_fee, processed_by, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+				if _, err := tx.Exec(queryTx, transactionID, cardNumber, userID, "xendit", "xendit", "topup", topUp.Amount, convenienceFee, "xendit", "Successful topup via Xendit", "completed"); err != nil {
 					log.Println("Failed to insert transaction:", err)
 					return fmt.Errorf("failed to insert transaction")
 				}

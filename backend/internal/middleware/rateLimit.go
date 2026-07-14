@@ -42,7 +42,7 @@ func RateLimitMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			// If they are going too fast, block them!
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusTooManyRequests) // 429 Error code
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			json.NewEncoder(w).Encode(map[string]any{
 				"success": false,
 				"message": "Too many login attempts. Please wait a moment and try again.",
 			})

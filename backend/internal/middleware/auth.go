@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 	authentication "unicard-go/backend/internal/auth"
@@ -40,9 +41,9 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 
 			// Extract Access Token from Header OR Cookie
 			authHeader := r.Header.Get("Authorization")
-			if strings.HasPrefix(authHeader, "Bearer ") {
+			if after, ok := strings.CutPrefix(authHeader, "Bearer "); ok {
 				// Extract from Authorization header (API / Thunder Client / cURL)
-				tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+				tokenString = after
 			} else {
 				// Fallback: Check if token is in the Cookie (Web Browsers)
 				cookie, err := r.Cookie("jwt")
@@ -110,11 +111,8 @@ func RequireAuth(allowedRoles ...string) func(http.Handler) http.Handler {
 				// If no specific roles are required, any valid token is sufficient
 				roleAllowed = true
 			} else {
-				for _, role := range allowedRoles {
-					if claims.Role == role {
-						roleAllowed = true
-						break
-					}
+				if slices.Contains(allowedRoles, claims.Role) {
+					roleAllowed = true
 				}
 			}
 

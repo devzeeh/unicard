@@ -271,10 +271,11 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get the merchant ID and existing account number from the database
+	// get the merchant ID, user ID, and existing account number from the database
 	var merchantID string
+	var userID string
 	var existingAccNumber *string
-	err := h.Store.QueryRow("SELECT merchant_id, settlement_account_number FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID, &existingAccNumber)
+	err := h.Store.QueryRow("SELECT merchant_id, settlement_account_number, user_id FROM merchants WHERE user_id = (SELECT user_id FROM users WHERE username=?)", username).Scan(&merchantID, &existingAccNumber, &userID)
 	if err != nil {
 		log.Println("Error finding merchant for update:", err)
 		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{Success: false, Message: "Merchant not found"})
@@ -295,12 +296,10 @@ func (h *Handler) UpdateBankDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert a system transaction to log the update
-	sysTxnID := fmt.Sprintf("SYS-SETTLE-%d", time.Now().UnixMilli())
 	_, _ = h.Store.Exec(`
-		INSERT INTO transactions 
-		(transaction_id, merchant_id, transaction_type, amount, points_earned, service_fee, status, description) 
-		VALUES (?, ?, 'payment', NULL, NULL, NULL, 'completed', 'Settlement bank details were updated by the merchant.')`,
-		sysTxnID, merchantID)
+		INSERT INTO user_activity_logs (user_id, activity_type, channel, status, description)
+		VALUES (?, 'profile_update', 'in_app', 'completed', 'Settlement bank details were updated by the merchant.')`,
+		userID)
 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Bank details updated"})
 }
