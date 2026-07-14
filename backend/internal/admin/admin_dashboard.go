@@ -7,7 +7,6 @@ import (
 	structs "unicard-go/backend/internal/pkg/structs"
 
 	"github.com/shopspring/decimal"
-	"unicard-go/backend/internal/pkg/xenditclient"
 )
 
 type AdminPageData struct {
@@ -31,8 +30,8 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	log.Println("AdminDashboardDataHandler running...")
 
 	// Compute UniCard's Gross Revenue
-	// based on actual amount in transactions
-	query := `SELECT COALESCE(SUM(amount), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
+	// based on actual service fees collected in transactions
+	query := `SELECT COALESCE(SUM(service_fee), 0.00) FROM transactions WHERE transaction_type IN ('payment', 'topup', 'withdrawal')`
 	row := h.Store.QueryRow(query)
 
 	var grossRevenue decimal.Decimal
@@ -46,11 +45,11 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Compute UniCard's Net Revenue
-	// based on actual amount in transactions
+	// based on actual service fees collected in transactions
 	query = `SELECT COALESCE(SUM(
 			CASE 
-				WHEN transaction_type IN ('payment', 'topup', 'withdrawal') THEN amount 
-				WHEN transaction_type IN ('refund', 'reversal') THEN -amount 
+				WHEN transaction_type IN ('payment', 'topup', 'withdrawal') THEN service_fee 
+				WHEN transaction_type IN ('refund', 'reversal') THEN -service_fee 
 				ELSE 0 
 			END
         ), 0.00) FROM transactions`
@@ -65,23 +64,6 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 			Message: "Internal server error while calculating Net Revenue",
 		})
 		return
-	}
-
-	// Fetch Xendit transactions
-	xenditTx, err := xenditclient.GetAllTransactions()
-	if err != nil {
-		log.Printf("Warning: Failed to get Xendit transactions for dashboard: %v", err)
-	} else {
-		var xenditGross, xenditNet float64
-		for _, tx := range xenditTx.Data {
-			if string(tx.Status) == "SUCCESS" || string(tx.Status) == "SUCCEEDED" || string(tx.Status) == "COMPLETED" {
-				xenditGross += float64(tx.Amount)
-				xenditNet += float64(tx.Amount)
-			}
-		}
-		
-		grossRevenue = grossRevenue.Add(decimal.NewFromFloat(xenditGross))
-		netRevenue = netRevenue.Add(decimal.NewFromFloat(xenditNet))
 	}
 
 	log.Println("Gross revenue row:", grossRevenue)

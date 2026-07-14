@@ -14,7 +14,7 @@ func GetAllTransactions() (*balance_and_transaction.TransactionsResponse, error)
 	// Fallback to the known secret key if ENV is not set for the test environment
 	secretKey := os.Getenv("XENDIT_SECRET_KEY")
 	if secretKey == "" {
-		secretKey = "xnd_development_f9UQ6DIgR2bQiKWBsq8E6g6B5YFnueeGBNKlQALqfnNM8ISuHd4T6VRIlDHYO"
+		return nil, fmt.Errorf("XENDIT_SECRET_KEY is not set")
 	}
 
 	xenditClient := xendit.NewClient(secretKey)
