@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let allTransactions = [];
     let currentPage = 1;
     const itemsPerPage = 10;
+    const validTransactionTypes = new Set(['payment','refund','reversal','topup','withdrawal']);
+    const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
 
     // DOM Elements
     const searchTxn = document.getElementById("searchTxn");
@@ -107,10 +109,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (paginated.length > 0) {
             paginated.forEach(tx => {
                 const tr = document.createElement("tr");
+                const showAmount = shouldShowAmount(tx.type);
                 const isPayment = tx.type && tx.type.toLowerCase() === "payment";
-                const colorClass = isPayment ? "text-red-600" : "text-green-600";
+                const colorClass = showAmount ? (isPayment ? "text-red-600" : "text-green-600") : "";
                 const sign = isPayment ? "-" : "+";
-                const amount = Number(tx.amount).toFixed(2);
+                const amount = showAmount ? Number(tx.amount).toFixed(2) : '';
                 const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
 
                 let txDate = "N/A";
@@ -152,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         ${displayType}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
-                        ${sign}₱${amount}
+                        ${showAmount ? `${sign}₱${amount}` : ''}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right">
                         ${statusHtml}
@@ -236,13 +239,22 @@ document.addEventListener("DOMContentLoaded", function () {
             merchantRow.classList.add("flex");
         }
 
+        const showAmount = shouldShowAmount(tx.type);
         const isPayment = tx.type && tx.type.toLowerCase() === "payment";
         const sign = isPayment ? "-" : "+";
         const colorClass = isPayment ? "text-red-600" : "text-green-600";
 
         const amtEl = document.getElementById("modalTxnTotal");
-        amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
-        amtEl.className = `font-bold text-lg ${colorClass}`;
+        const amountRow = amtEl.closest('.flex');
+        if (showAmount) {
+            if (amountRow) amountRow.classList.remove('hidden');
+            amtEl.textContent = `${sign}₱${Number(tx.amount).toFixed(2)}`;
+            amtEl.className = `font-bold text-lg ${colorClass}`;
+        } else {
+            if (amountRow) amountRow.classList.add('hidden');
+            amtEl.textContent = '';
+            amtEl.className = 'font-bold text-lg';
+        }
 
         txnModal.classList.remove('hidden');
         setTimeout(() => {
