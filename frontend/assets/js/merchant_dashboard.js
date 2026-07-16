@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
     };
 
+    const validTransactionTypes = new Set(['payment','refund','reversal','topup','withdrawal']);
+    const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
+
     const fetchDashboardData = async () => {
         try {
             const response = await fetch(`/v1/merchant/${window.CURRENT_USERNAME}/dashboard`);
@@ -98,10 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-                        const isPayment = tx.transaction_type.toLowerCase() === 'payment';
-                        const amountColor = isPayment ? 'text-green-600' : 'text-red-600';
+                        const showAmount = shouldShowAmount(tx.transaction_type);
+                        const isPayment = (tx.transaction_type || '').toLowerCase() === 'payment';
+                        const amountColor = showAmount ? (isPayment ? 'text-green-600' : 'text-red-600') : '';
                         const sign = isPayment ? '+' : '-';
-                        const amount = Number(tx.amount).toFixed(2);
+                        const amount = showAmount ? Number(tx.amount).toFixed(2) : '';
                         const displayType = tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1);
                         
                         let statusBadge = '';
@@ -129,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 ${displayType}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm ${amountColor} text-right font-medium">
-                                ${sign}₱${amount}
+                                ${showAmount ? `${sign}₱${amount}` : ''}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                 ${statusBadge}
@@ -193,17 +197,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("modalTxnDesc").textContent = tx.description || 'N/A';
 
+        const showAmount = shouldShowAmount(tx.transaction_type);
         const isPayment = (tx.transaction_type || '').toLowerCase() === "payment";
         const sign = isPayment ? "+" : "-";
         const colorClass = isPayment ? "text-green-600" : "text-red-600";
         
         const grossAmt = Number(tx.amount || 0);
-        document.getElementById("modalTxnGross").textContent = `₱${grossAmt.toFixed(2)}`;
-
+        const grossEl = document.getElementById("modalTxnGross");
+        const feeEl = document.getElementById("modalTxnFee");
         const netAmtEl = document.getElementById("modalTxnNet");
-        const netValue = Number(tx.net_merchant_payout || grossAmt);
-        netAmtEl.textContent = `${sign}₱${netValue.toFixed(2)}`;
-        netAmtEl.className = `font-bold text-lg ${colorClass}`;
+        const grossRow = grossEl?.closest('.flex');
+        const feeRow = feeEl?.closest('.flex');
+        const netRow = netAmtEl?.closest('.flex');
+
+        if (showAmount) {
+            if (grossRow) grossRow.classList.remove("hidden");
+            if (feeRow) feeRow.classList.remove("hidden");
+            if (netRow) netRow.classList.remove("hidden");
+            grossEl.textContent = `₱${grossAmt.toFixed(2)}`;
+            feeEl.textContent = `₱${Number(tx.service_fee || 0).toFixed(2)}`;
+            const netValue = Number(tx.net_merchant_payout || grossAmt);
+            netAmtEl.textContent = `${sign}₱${netValue.toFixed(2)}`;
+            netAmtEl.className = `font-bold text-lg ${colorClass}`;
+        } else {
+            if (grossRow) grossRow.classList.add("hidden");
+            if (feeRow) feeRow.classList.add("hidden");
+            if (netRow) netRow.classList.add("hidden");
+            grossEl.textContent = '';
+            feeEl.textContent = '';
+            netAmtEl.textContent = '';
+            netAmtEl.className = 'font-bold text-lg';
+        }
 
         const isSystemEvent = grossAmt === 0 && Number(tx.service_fee || 0) === 0;
         

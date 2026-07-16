@@ -31,6 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
     };
 
+    const validTransactionTypes = new Set(['payment','refund','reversal','topup','withdrawal']);
+    const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
+
     const fetchStats = async () => {
         try {
             const response = await fetch(`/v1/merchant/${window.CURRENT_USERNAME}/incomes`);
@@ -98,10 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
+                    const showAmount = shouldShowAmount(tx.transaction_type);
                     const isPayment = tx.transaction_type.toLowerCase() === 'payment';
-                    const amountColor = isPayment ? 'text-green-600' : 'text-red-600';
+                    const amountColor = showAmount ? (isPayment ? 'text-green-600' : 'text-red-600') : '';
                     const sign = isPayment ? '+' : '-';
-                    const amountStr = `${sign}${formatCurrency(Math.abs(tx.amount))}`;
+                    const amountStr = showAmount ? `${sign}${formatCurrency(Math.abs(tx.amount))}` : '';
 
                     let statusBadgeClass = 'bg-green-100 text-green-800';
                     if (tx.status.toLowerCase() === 'failed' || tx.status.toLowerCase() === 'declined') {
@@ -128,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <div class="text-sm font-semibold ${amountColor}">${amountStr}</div>
-                            ${tx.service_fee > 0 ? `<div class="text-[10px] text-gray-400 mt-1">Fee: ${formatCurrency(Math.abs(tx.service_fee))}</div>` : ''}
+                            ${showAmount && tx.service_fee > 0 ? `<div class="text-[10px] text-gray-400 mt-1">Fee: ${formatCurrency(Math.abs(tx.service_fee))}</div>` : ''}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${statusBadgeClass}">
@@ -192,17 +196,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("modalTxnDesc").textContent = tx.description || 'N/A';
 
+        const showAmount = shouldShowAmount(tx.transaction_type);
         const isPayment = (tx.transaction_type || '').toLowerCase() === "payment";
         const sign = isPayment ? "+" : "-";
         const colorClass = isPayment ? "text-green-600" : "text-red-600";
         
         const grossAmt = Number(tx.amount || 0);
-        document.getElementById("modalTxnGross").textContent = formatCurrency(grossAmt);
-
+        const grossEl = document.getElementById("modalTxnGross");
+        const feeEl = document.getElementById("modalTxnFee");
         const netAmtEl = document.getElementById("modalTxnNet");
-        const netValue = Number(tx.net_merchant_payout || grossAmt);
-        netAmtEl.textContent = `${sign}${formatCurrency(Math.abs(netValue))}`;
-        netAmtEl.className = `font-bold text-lg ${colorClass}`;
+        const grossRow = grossEl.closest('.flex');
+        const feeRow = feeEl.closest('.flex');
+        const netRow = netAmtEl.closest('.flex');
+
+        if (showAmount) {
+            if (grossRow) grossRow.classList.remove('hidden');
+            if (feeRow) feeRow.classList.remove('hidden');
+            if (netRow) netRow.classList.remove('hidden');
+            grossEl.textContent = formatCurrency(grossAmt);
+            feeEl.textContent = formatCurrency(Number(tx.service_fee || 0));
+            const netValue = Number(tx.net_merchant_payout || grossAmt);
+            netAmtEl.textContent = `${sign}${formatCurrency(Math.abs(netValue))}`;
+            netAmtEl.className = `font-bold text-lg ${colorClass}`;
+        } else {
+            if (grossRow) grossRow.classList.add('hidden');
+            if (feeRow) feeRow.classList.add('hidden');
+            if (netRow) netRow.classList.add('hidden');
+            grossEl.textContent = '';
+            feeEl.textContent = '';
+            netAmtEl.textContent = '';
+            netAmtEl.className = 'font-bold text-lg';
+        }
 
         const isSystemEvent = grossAmt === 0 && Number(tx.service_fee || 0) === 0;
         

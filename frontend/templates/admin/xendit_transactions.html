@@ -170,6 +170,8 @@
 
     <script>
         let allTransactions = [];
+        const validTransactionTypes = new Set(['payment','refund','reversal','topup','withdrawal']);
+        const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
 
         function renderTable(transactions) {
             const tbody = document.getElementById('transactionsList');
@@ -187,13 +189,12 @@
             }
             
             transactions.forEach(txn => {
-                // Format amount
-                const isNegative = txn.type.toLowerCase() === 'payment';
-                const amountColor = isNegative ? 'text-red-600' : 'text-green-600';
+                const showAmount = shouldShowAmount(txn.type);
+                const isNegative = (txn.type || '').toLowerCase() === 'payment';
+                const amountColor = showAmount ? (isNegative ? 'text-red-600' : 'text-green-600') : '';
                 const amountPrefix = isNegative ? '-₱' : '+₱';
-                const amountStr = `${amountPrefix}${Math.abs(txn.amount).toFixed(2)}`;
+                const amountStr = showAmount ? `${amountPrefix}${Math.abs(txn.amount).toFixed(2)}` : '';
                 
-                // Format date and time
                 const dateObj = new Date(txn.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 
@@ -208,7 +209,6 @@
                     console.error(e);
                 }
 
-                // Status Badge
                 let statusBadgeClass = 'bg-green-100 text-green-800';
                 if (txn.status.toLowerCase() === 'failed') {
                     statusBadgeClass = 'bg-red-100 text-red-800';
@@ -232,7 +232,7 @@
                         <div class="text-sm text-gray-600 capitalize">${txn.type}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right">
-                        <div class="text-sm font-semibold ${amountColor}">${amountStr}</div>
+                        ${showAmount ? `<div class="text-sm font-semibold ${amountColor}">${amountStr}</div>` : ''}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right">
                         <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${statusBadgeClass}">
@@ -275,10 +275,11 @@
         }
 
         function showModal(txn) {
-            const isNegative = txn.type.toLowerCase() === 'payment';
-            const amountColor = isNegative ? 'text-red-600' : 'text-green-600';
+            const showAmount = shouldShowAmount(txn.type);
+            const isNegative = (txn.type || '').toLowerCase() === 'payment';
+            const amountColor = showAmount ? (isNegative ? 'text-red-600' : 'text-green-600') : '';
             const amountPrefix = isNegative ? '-₱' : '+₱';
-            const amountStr = `${amountPrefix}${Math.abs(txn.amount).toFixed(2)}`;
+            const amountStr = showAmount ? `${amountPrefix}${Math.abs(txn.amount).toFixed(2)}` : '';
 
             const dateObj = new Date(txn.date);
             const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -303,10 +304,12 @@
                         <span class="text-gray-500 font-medium">Status</span>
                         <span class="text-gray-900 capitalize">${txn.status}</span>
                     </div>
+                    ${showAmount ? `
                     <div class="flex justify-between pb-2">
                         <span class="text-gray-500 font-medium">Amount</span>
                         <span class="font-bold ${amountColor}">${amountStr}</span>
                     </div>
+                    ` : ''}
                 </div>
             `;
             document.getElementById('txnModal').classList.remove('hidden');

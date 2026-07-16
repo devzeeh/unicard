@@ -272,10 +272,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.recent_transactions && data.recent_transactions.length > 0) {
                         data.recent_transactions.forEach(tx => {
                             const tr = document.createElement("tr");
-                            const isPayment = tx.type && tx.type.toLowerCase() === "payment";
-                            const colorClass = isPayment ? "text-red-600" : "text-green-600";
-                            const sign = isPayment ? "-" : "+";
-                            const amount = Number(tx.amount).toFixed(2);
+const showAmount = shouldShowAmount(tx.type);
+                        const isPayment = tx.type && tx.type.toLowerCase() === "payment";
+                        const colorClass = showAmount ? (isPayment ? "text-red-600" : "text-green-600") : "";
+                        const sign = isPayment ? "-" : "+";
+                        const amount = showAmount ? Number(tx.amount).toFixed(2) : '';
                             const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
 
                             let statusHtml = "";
@@ -305,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     ${displayType}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
-                                    ${sign}₱${amount}
+                                    ${showAmount ? `${sign}₱${amount}` : ''}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     ${statusHtml}
