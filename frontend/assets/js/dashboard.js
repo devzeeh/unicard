@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeIcon = document.getElementById('icon-close');
     const mainContent = document.getElementById('main-content');
 
+    const validTransactionTypes = new Set(['payment', 'top-up', 'refund', 'charge', 'deduction']);
+    const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
+
     // --- Profile Dropdown Elements ---
     const profileButton = document.getElementById('profile-avatar-button');
     const profileMenu = document.getElementById('profile-dropdown-menu');
@@ -82,10 +85,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (modalElementsExist) {
 
-        // Function to open the modal
         function openLogoutModal() {
             logoutModal.classList.remove('hidden');
             setTimeout(() => {
+                logoutModal.classList.remove('opacity-0');
                 logoutModal.classList.add('opacity-100');
                 logoutModalContent.classList.add('scale-100', 'opacity-100');
                 logoutModalContent.classList.remove('scale-95', 'opacity-0');
@@ -96,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function closeLogoutModal() {
             logoutModalContent.classList.add('scale-95', 'opacity-0');
             logoutModalContent.classList.remove('scale-100', 'opacity-100');
+            logoutModal.classList.add('opacity-0');
             logoutModal.classList.remove('opacity-100');
 
             setTimeout(() => {
@@ -137,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Confirm logout and redirect
         confirmLogoutButton.addEventListener('click', () => {
             console.log('Logging out...');
-            window.location.href = "/login";
+            window.location.href = "/logout";
         });
 
     } else {

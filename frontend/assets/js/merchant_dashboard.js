@@ -232,16 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isSystemEvent = grossAmt === 0 && Number(tx.service_fee || 0) === 0;
         
         if (isSystemEvent) {
-            let sysType = "System Notification";
-            if (tx.transaction_id && tx.transaction_id.toLowerCase().startsWith("welcome")) {
-                sysType = "Account Approval";
-            } else if (tx.description && tx.description.toLowerCase().includes("username")) {
-                sysType = "Profile Update";
-            } else if (tx.description && tx.description.toLowerCase().includes("settlement")) {
-                sysType = "Bank Update";
-            } else if (tx.transaction_type) {
-                sysType = tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1);
-            }
+            let sysType = tx.transaction_type || "System Notification";
 
             document.getElementById("modalTxnType").textContent = sysType;
             document.getElementById("modalTxnCardNumber").closest('.flex').classList.add("hidden");
