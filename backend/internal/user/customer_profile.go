@@ -61,10 +61,18 @@ func (h *Handler) ProfileView(w http.ResponseWriter, r *http.Request) {
 
 	// Extract the username from the URL path
 	username := r.PathValue("username")
+	user, err := h.GetDashboardUser(username)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := struct {
 		Username string
+		User     DashboardUser
 	}{
 		Username: username,
+		User:     user,
 	}
 
 	// Render the profile template with the username data

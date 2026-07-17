@@ -43,12 +43,19 @@ const ConvenienceFee = 15.00
 func (h *Handler) TopUpView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TopUp view is running...")
 
-	// get username from url parameter
 	username := r.PathValue("username")
+	user, err := h.GetDashboardUser(username)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := struct {
 		Username string
+		User     DashboardUser
 	}{
 		Username: username,
+		User:     user,
 	}
 
 	h.Tpl.ExecuteTemplate(w, "customer_topup.html", data)

@@ -46,33 +46,7 @@ type DashboardUser struct {
 	RecentTransactions []Transaction   `json:"recent_transactions"` // Add recent transactions to the dashboard response
 }
 
-func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Dashboard view is running...")
-
-	username := r.PathValue("username")
-	data := struct {
-		Username string
-	}{
-		Username: username,
-	}
-
-	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
-}
-
-func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Dashboard JSON handler is running...")
-
-	// Get user ID from path param (No cookies for now)
-	userID := r.PathValue("username")
-	if userID == "" {
-		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
-			Success: false,
-			Message: "user is required",
-		})
-		return
-	}
-
-	// Fetch user and card details
+func (h *Handler) GetDashboardUser(userID string) (DashboardUser, error) {
 	var (
 		id            int
 		username      string
@@ -110,17 +84,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	var userStatus string
 	err := h.Store.QueryRow(stmt, userID).Scan(&id, &username, &fullName, &email, &pendingEmail, &phone, &userType, &balance, &loyaltyPoints, &cardNumber, &expiryDate, &cardStatus, &userStatus)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Printf("User %s not found in DB\n", userID)
-		} else {
-			fmt.Printf("Error fetching user %s from DB: %v\n", userID, err)
-		}
-		// Clear invalid session cookie (Removed)
-		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
-			Success: false,
-			Message: "Unauthorized: User not found",
-		})
-		return
+		return DashboardUser{}, err
 	}
 
 	// Generate Initials
@@ -182,9 +146,7 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 `
 	rows, err := h.Store.Query(txnQuery, userID, userID)
 	var transactions []Transaction
-	if err != nil {
-		fmt.Printf("Error fetching transactions: %v\n", err)
-	} else {
+	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var t Transaction
@@ -205,7 +167,6 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 				&merchantId,
 				&pointsEarned,
 			); err != nil {
-				fmt.Printf("Error scanning transaction row: %v\n", err)
 				continue
 			}
 			t.Date = formatDate(createdAt)
@@ -252,6 +213,55 @@ func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		CardStatus:         cardStatus,
 		UserStatus:         userStatus,
 		RecentTransactions: transactions,
+	}
+
+	return dashboardUser, nil
+}
+
+func (h *Handler) DashboardView(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Dashboard view is running...")
+
+	username := r.PathValue("username")
+	user, err := h.GetDashboardUser(username)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	data := struct {
+		Username string
+		User     DashboardUser
+	}{
+		Username: username,
+		User:     user,
+	}
+
+	h.Tpl.ExecuteTemplate(w, "dashboard.html", data)
+}
+
+func (h *Handler) DashboardHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from path param (No cookies for now)
+	userID := r.PathValue("username")
+	if userID == "" {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "user is required",
+		})
+		return
+	}
+
+	dashboardUser, err := h.GetDashboardUser(userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Printf("User %s not found in DB\n", userID)
+		} else {
+			fmt.Printf("Error fetching user %s from DB: %v\n", userID, err)
+		}
+		jsonwrite.WriteJSON(w, http.StatusUnauthorized, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Unauthorized: User not found",
+		})
+		return
 	}
 
 	jsonwrite.WriteJSON(w, http.StatusOK, dashboardUser)

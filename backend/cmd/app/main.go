@@ -197,6 +197,19 @@ func main() {
 	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView) // kept public since it's a sim
 	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
 
+	// Catch-all route for 404
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		if tpl != nil {
+			err := tpl.ExecuteTemplate(w, "404.html", nil)
+			if err != nil {
+				http.Error(w, "404 page not found", http.StatusNotFound)
+			}
+		} else {
+			http.Error(w, "404 page not found", http.StatusNotFound)
+		}
+	})
+
 	// Wrap mux with custom handler for root redirect
 	customHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

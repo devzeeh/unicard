@@ -12,10 +12,18 @@ func (h *Handler) CardView(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Card view is running...")
 
 	username := r.PathValue("username")
+	user, err := h.GetDashboardUser(username)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	data := struct {
 		Username string
+		User     DashboardUser
 	}{
 		Username: username,
+		User:     user,
 	}
 
 	h.Tpl.ExecuteTemplate(w, "card.html", data)
