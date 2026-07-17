@@ -23,16 +23,12 @@
             <!-- Header -->
             <header class="flex items-center justify-end h-16 px-6 py-4 bg-white border-b border-gray-200">
                 <div class="flex items-center">
-                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
-                            class="ml-1"><span
-                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
+                    <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name" class="ml-1">{{.User.Name}}</span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
-                        <!-- Profile Avatar Button -->
-                        <button id="profile-avatar-button"
-                            class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                            <span id="user-initials">U</span>
+                        <button id="profile-avatar-button" class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
+                            <span id="user-initials">{{.User.Initials}}</span>
                         </button>
 
                         <!-- Dropdown Menu -->

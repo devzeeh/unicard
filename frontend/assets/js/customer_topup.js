@@ -67,11 +67,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (quickBtns) {
             quickBtns.forEach(btn => {
                 if (!isNaN(amount) && parseFloat(btn.innerText) === amount) {
-                    btn.classList.remove('text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
-                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700');
+                    btn.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200', 'hover:bg-gray-100');
+                    btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-600', 'hover:bg-blue-100');
                 } else {
-                    btn.classList.add('text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
-                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-gray-50', 'text-gray-700', 'border-gray-200', 'hover:bg-gray-100');
+                    btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-600', 'hover:bg-blue-100');
                 }
             });
         }
