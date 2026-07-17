@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeIcon = document.getElementById('icon-close');
     const mainContent = document.getElementById('main-content');
 
+    const validTransactionTypes = new Set(['payment', 'top-up', 'refund', 'charge', 'deduction']);
+    const shouldShowAmount = (type) => typeof type === 'string' && validTransactionTypes.has(type.toLowerCase());
+
     // --- Profile Dropdown Elements ---
     const profileButton = document.getElementById('profile-avatar-button');
     const profileMenu = document.getElementById('profile-dropdown-menu');
@@ -82,10 +85,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (modalElementsExist) {
 
-        // Function to open the modal
         function openLogoutModal() {
             logoutModal.classList.remove('hidden');
             setTimeout(() => {
+                logoutModal.classList.remove('opacity-0');
                 logoutModal.classList.add('opacity-100');
                 logoutModalContent.classList.add('scale-100', 'opacity-100');
                 logoutModalContent.classList.remove('scale-95', 'opacity-0');
@@ -96,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function closeLogoutModal() {
             logoutModalContent.classList.add('scale-95', 'opacity-0');
             logoutModalContent.classList.remove('scale-100', 'opacity-100');
+            logoutModal.classList.add('opacity-0');
             logoutModal.classList.remove('opacity-100');
 
             setTimeout(() => {
@@ -137,211 +141,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // Confirm logout and redirect
         confirmLogoutButton.addEventListener('click', () => {
             console.log('Logging out...');
-            window.location.href = "/login";
+            window.location.href = "/logout";
         });
 
     } else {
         console.error("Logout modal elements not found. Make sure all IDs are correct.");
     }
 
-    // --- Fetch Dashboard Data ---
-    function fetchDashboardData() {
-        const pathSegments = window.location.pathname.split('/');
-        let userId = null;
-        if (pathSegments.length >= 3 && pathSegments[1] === 'u') {
-            userId = pathSegments[2];
-        } else if (pathSegments.length >= 2 && pathSegments[1] !== '') {
-            userId = pathSegments[1];
-        } else {
-            // fallback if it's still somehow in query string
-            const urlParams = new URLSearchParams(window.location.search);
-            userId = urlParams.get('username');
-        }
-
-        let endpoint = "/v1/user/";
-        if (userId) {
-            endpoint += encodeURIComponent(userId);
-        }
-
-        fetch(endpoint)
-            .then(response => {
-                if (response.status === 401) {
-                    window.location.href = "/login";
-                    return null;
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data) return;
-
-                const fullNameEl = document.getElementById("user-full-name");
-                const initialsEl = document.getElementById("user-initials");
-                const balanceEl = document.getElementById("user-balance");
-                const loyaltyPointsEl = document.getElementById("user-loyalty-points");
-                const accountTypeEl = document.getElementById("user-account-type");
-                const transactionsBody = document.getElementById("recent-transactions-table-body");
-
-                const cardNoEl = document.getElementById("user-card-number");
-                const cardHolderEl = document.getElementById("user-card-holder");
-                const cardExpiryEl = document.getElementById("user-card-expiry");
-                const cardStatusEl = document.getElementById("card-status-badge");
-
-                // Profile Page Specific Elements
-                const profileViewName = document.getElementById("profile-view-name");
-                const profileViewEmail = document.getElementById("profile-view-email");
-                const profileViewPendingEmail = document.getElementById("profile-view-pending-email");
-                const pendingEmailContainer = document.getElementById("pending-email-container");
-                const profileViewPhone = document.getElementById("profile-view-phone");
-                const profileViewUsername = document.getElementById("profile-view-username");
-                const profileEditName = document.getElementById("full_name");
-                const profileEditEmail = document.getElementById("email");
-                const profileEditPhone = document.getElementById("phone");
-
-                // Card Page Specific Elements
-                const cardDetailNumber = document.getElementById("card-detail-number");
-                const cardDetailExpiry = document.getElementById("card-detail-expiry");
-
-                if (fullNameEl) fullNameEl.innerText = data.name || "";
-                if (initialsEl) initialsEl.innerText = data.initials || "U";
-                if (balanceEl) balanceEl.innerText = Number(data.balance).toFixed(2);
-                if (loyaltyPointsEl) loyaltyPointsEl.innerText = Number(data.loyalty_points).toFixed(2);
-                if (accountTypeEl) accountTypeEl.innerText = data.account_type || "Regular";
-
-                if (profileViewName) profileViewName.innerText = data.name || "";
-                if (profileViewEmail) profileViewEmail.innerText = data.email || "";
-                
-                if (pendingEmailContainer && profileViewPendingEmail) {
-                    if (data.pending_email) {
-                        pendingEmailContainer.classList.remove('hidden');
-                        profileViewPendingEmail.innerText = data.pending_email;
-                    } else {
-                        pendingEmailContainer.classList.add('hidden');
-                        profileViewPendingEmail.innerText = "";
-                    }
-                }
-
-                if (profileViewPhone) profileViewPhone.innerText = data.phone || "";
-                if (profileViewUsername) profileViewUsername.innerText = data.username || "";
-
-                if (profileEditName) profileEditName.value = data.name || "";
-                if (profileEditEmail) profileEditEmail.value = data.email || "";
-                if (profileEditPhone) profileEditPhone.value = data.phone || "";
-
-                if (cardNoEl || cardDetailNumber) {
-                    const rawNum = data.card_number || "••••••••••••••••";
-                    let formattedNum;
-                    if (rawNum.length >= 16) {
-                        formattedNum = rawNum.substring(0, 4) + ' •••• •••• ' + rawNum.substring(rawNum.length - 4);
-                    } else {
-                        formattedNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
-                    }
-                    const fullNum = rawNum.replace(/(\d{4})/g, '$1 ').trim();
-
-                    if (cardNoEl) {
-                        cardNoEl.innerText = formattedNum;
-                        cardNoEl.setAttribute("data-masked", formattedNum);
-                        cardNoEl.setAttribute("data-full", fullNum);
-                        cardNoEl.setAttribute("data-hidden", "true");
-                    }
-                    if (cardDetailNumber) cardDetailNumber.innerText = formattedNum || "•••• •••• •••• ••••";
-                }
-                if (cardHolderEl) {
-                    cardHolderEl.innerText = data.name || "CARDHOLDER NAME";
-                }
-                if (cardExpiryEl || cardDetailExpiry) {
-                    if (cardExpiryEl) cardExpiryEl.innerText = data.card_expiry || "MM/YY";
-                    if (cardDetailExpiry) cardDetailExpiry.innerText = data.card_expiry || "MM/YY";
-                }
-                if (cardStatusEl) {
-                    const status = data.card_status || "No Card";
-                    const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
-                    cardStatusEl.textContent = displayStatus;
-                    cardStatusEl.className = "px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm";
-                    const lowerStatus = status.toLowerCase();
-                    if (lowerStatus === "active") {
-                        cardStatusEl.classList.add("bg-green-500", "text-white");
-                    } else if (lowerStatus === "blocked" || lowerStatus === "lost" || lowerStatus === "expired") {
-                        cardStatusEl.classList.add("bg-red-500", "text-white");
-                    } else {
-                        cardStatusEl.classList.add("bg-yellow-500", "text-white");
-                    }
-                }
-
-                if (transactionsBody) {
-                    transactionsBody.innerHTML = "";
-                    if (data.recent_transactions && data.recent_transactions.length > 0) {
-                        data.recent_transactions.forEach(tx => {
-                            const tr = document.createElement("tr");
-const showAmount = shouldShowAmount(tx.type);
-                        const isPayment = tx.type && tx.type.toLowerCase() === "payment";
-                        const colorClass = showAmount ? (isPayment ? "text-red-600" : "text-green-600") : "";
-                        const sign = isPayment ? "-" : "+";
-                        const amount = showAmount ? Number(tx.amount).toFixed(2) : '';
-                            const displayType = tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : "";
-
-                            let statusHtml = "";
-                            if (tx.status) {
-                                const statusVal = tx.status.toLowerCase();
-                                const statusColor = statusVal === "completed" ? "bg-green-100 text-green-800" :
-                                    statusVal === "pending" ? "bg-yellow-100 text-yellow-800" :
-                                    "bg-red-100 text-red-800";
-                                statusHtml = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${statusColor}">${tx.status}</span>`;
-                            }
-
-                            tr.className = "hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100";
-                            tr.onclick = function () {
-                                openTxnModal(tx);
-                            };
-
-                            tr.innerHTML = `
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="font-medium text-gray-900">${tx.date}</div>
-                                    <div class="text-xs text-gray-500 mt-0.5">${tx.time}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="font-medium text-gray-900">${tx.description}</div>
-                                    <div class="text-xs text-gray-500 mt-0.5">ID: ${tx.transaction_id || 'N/A'}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ${displayType}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm ${colorClass} text-right font-medium">
-                                    ${showAmount ? `${sign}₱${amount}` : ''}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    ${statusHtml}
-                                </td>
-                            `;
-                            transactionsBody.appendChild(tr);
-                        });
-                    } else {
-                        transactionsBody.innerHTML = `
-                            <tr>
-                                <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">
-                                    No recent transactions found.
-                                </td>
-                            </tr>
-                        `;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Error loading dashboard data:", error);
-                const transactionsBody = document.getElementById("recent-transactions-table-body");
-                if (transactionsBody) {
-                    transactionsBody.innerHTML = `
-                        <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-sm text-red-500">
-                                Failed to load dashboard data.
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-    }
-
-    // Call fetch on load
-    fetchDashboardData();
+    // --- Fetch Dashboard Data (Removed for SSR) ---
 
     // --- Modal Logic ---
     const txnModal = document.getElementById("txnModal");

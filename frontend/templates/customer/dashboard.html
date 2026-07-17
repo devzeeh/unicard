@@ -25,14 +25,13 @@
 
                 <div class="flex items-center">
                     <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
-                            class="ml-1"><span
-                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
+                            class="ml-1">{{.User.Name}}</span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
                         <button id="profile-avatar-button"
                             class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                            <span id="user-initials">U</span>
+                            <span id="user-initials">{{.User.Initials}}</span>
                         </button>
 
                         <!-- Dropdown Menu -->
@@ -87,8 +86,7 @@
                             class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:bg-gray-50">
                             <p class="text-sm font-medium text-gray-500 mb-2">Available Balance</p>
                             <p class="text-3xl font-bold text-gray-900 tracking-tight flex items-center h-9">₱<span
-                                    id="user-balance" class="ml-1"><span
-                                        class="inline-block h-8 w-24 bg-gray-200 animate-pulse rounded"></span></span>
+                                    id="user-balance" class="ml-1">{{printf "%.2f" .User.Balance}}</span>
                             </p>
                         </div>
 
@@ -101,8 +99,7 @@
                                     class="text-[10px] font-semibold tracking-wider uppercase bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Cashback</span>
                             </div>
                             <p class="text-3xl font-bold text-emerald-600 tracking-tight flex items-center h-9">₱<span
-                                    id="user-loyalty-points" class="ml-1"><span
-                                        class="inline-block h-8 w-24 bg-emerald-100 animate-pulse rounded"></span></span>
+                                    id="user-loyalty-points" class="ml-1">{{.User.LoyaltyPoints}}</span>
                             </p>
                         </div>
 
@@ -111,11 +108,11 @@
                             <div class="flex justify-between items-center mb-2">
                                 <p class="text-sm font-medium text-gray-500">Account Type</p>
                                 <span id="card-status-badge" class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-full shadow-sm bg-gray-100 text-gray-500">
-                                    <span class="inline-block h-2 w-10 bg-gray-200 animate-pulse rounded"></span>
+                                    {{if .User.CardStatus}}{{.User.CardStatus}}{{else}}No Card{{end}}
                                 </span>
                             </div>
                             <p class="text-3xl font-bold text-blue-600 tracking-tight capitalize mt-1 h-9 flex items-center" id="user-account-type">
-                                <span class="inline-block h-8 w-32 bg-blue-100 animate-pulse rounded"></span>
+                                {{.User.AccountType}}
                             </p>
                         </div>
                     </div>
@@ -162,60 +159,43 @@
                                     </thead>
                                     <tbody id="recent-transactions-table-body"
                                         class="divide-y divide-gray-150 bg-white">
-                                        <!-- Skeleton Row 1 -->
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                                        {{range .User.RecentTransactions}}
+                                        <tr class="hover:bg-gray-50 transition duration-150 group">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="font-medium text-gray-900">{{.Date}}</div>
+                                                <div class="text-xs">{{.Time}}</div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm font-semibold text-gray-900 truncate max-w-[200px]">{{.MerchantName}}</div>
+                                                <div class="text-xs text-gray-500 truncate max-w-[200px]">{{.Description}}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
+                                                <span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full {{if eq .Type "TOP_UP"}}bg-green-100 text-green-800{{else if eq .Type "PAYMENT"}}bg-blue-100 text-blue-800{{else}}bg-gray-100 text-gray-800{{end}}">
+                                                    {{.Type}}
+                                                </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold {{if eq .Type "TOP_UP"}}text-green-600{{else}}text-gray-900{{end}}">
+                                                {{if eq .Type "TOP_UP"}}+{{end}}₱{{.Amount}}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                {{if eq .Status "COMPLETED"}}
+                                                    <span class="text-green-600 font-medium">Completed</span>
+                                                {{else if eq .Status "PENDING"}}
+                                                    <span class="text-yellow-600 font-medium">Pending</span>
+                                                {{else if eq .Status "FAILED"}}
+                                                    <span class="text-red-600 font-medium">Failed</span>
+                                                {{else}}
+                                                    <span class="text-gray-600">{{.Status}}</span>
+                                                {{end}}
                                             </td>
                                         </tr>
-                                        <!-- Skeleton Row 2 -->
+                                        {{else}}
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                                            <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                                                No recent transactions found.
                                             </td>
                                         </tr>
-                                        <!-- Skeleton Row 3 -->
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-48"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap flex justify-end">
-                                                <div class="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                                            </td>
-                                        </tr>
+                                        {{end}}
                                     </tbody>
                                 </table>
                             </div>
@@ -229,42 +209,7 @@
     <!-- Mobile sidebar overlay -->
     <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black bg-opacity-50 hidden md:hidden"></div>
 
-    <!-- Logout Confirmation Modal -->
-    <div id="logout-modal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
-        <!-- Modal Content -->
-        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
-            id="logout-modal-content">
-            <!-- Modal Header -->
-            <div class="flex items-start justify-between">
-                <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
-                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-            <!-- Modal Body -->
-            <div class="mt-4">
-                <p class="text-base text-gray-600">
-                    Are you sure you want to log out of your PayCard account?
-                </p>
-            </div>
-            <!-- Modal Footer -->
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="modal-cancel-button"
-                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.98]">
-                    Cancel
-                </button>
-                <button id="modal-confirm-logout-button"
-                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:scale-[0.98]">
-                    Logout
-                </button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Transaction Details Modal -->
     <div id="txnModal"

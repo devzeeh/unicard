@@ -38,14 +38,13 @@
                 <!-- Profile Dropdown (Right) -->
                 <div class="flex items-center">
                     <span class="mr-3 font-medium hidden md:flex items-center">Welcome, <span id="user-full-name"
-                            class="ml-1"><span
-                                class="inline-block h-4 w-24 bg-gray-200 animate-pulse rounded align-middle"></span></span></span>
+                            class="ml-1">{{.User.Name}}</span></span>
 
                     <!-- PROFILE DROPDOWN -->
                     <div class="relative">
                         <button id="profile-avatar-button"
                             class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all duration-150">
-                            <span id="user-initials">U</span>
+                            <span id="user-initials">{{.User.Initials}}</span>
                         </button>
 
                         <!-- Dropdown Menu -->
@@ -279,8 +278,7 @@
                                         class="text-[10px] uppercase tracking-widest text-indigo-200 mb-1 opacity-80 relative z-10">
                                         Current Balance</p>
                                     <p class="text-3xl font-bold tracking-tight relative z-10 flex items-center h-9">
-                                        ₱<span id="user-balance" class="ml-1"><span
-                                                class="inline-block h-8 w-24 bg-white/20 animate-pulse rounded"></span></span>
+                                        ₱<span id="user-balance" class="ml-1">{{printf "%.2f" .User.Balance}}</span>
                                     </p>
                                 </div>
 
@@ -298,8 +296,7 @@
                                         <p class="text-sm font-medium text-gray-600">Loyalty Points</p>
                                     </div>
                                     <p class="text-lg font-bold text-gray-900 flex items-center h-7">
-                                        <span id="user-loyalty-points"><span
-                                                class="inline-block h-6 w-16 bg-gray-200 animate-pulse rounded"></span></span>
+                                        <span id="user-loyalty-points">{{.User.LoyaltyPoints}}</span>
                                     </p>
                                 </div>
                             </div>
@@ -311,42 +308,7 @@
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div id="logout-modal"
-        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out opacity-0">
-        <!-- Modal Content -->
-        <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-lg border border-gray-100 transform transition-all duration-300 ease-in-out scale-95 opacity-0"
-            id="logout-modal-content">
-            <!-- Modal Header -->
-            <div class="flex items-start justify-between">
-                <h3 class="text-2xl font-bold text-gray-900">Confirm Logout</h3>
-                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-            <!-- Modal Body -->
-            <div class="mt-4">
-                <p class="text-base text-gray-600">
-                    Are you sure you want to log out of your PayCard account?
-                </p>
-            </div>
-            <!-- Modal Footer -->
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="modal-cancel-button"
-                    class="px-6 py-2 text-base font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:scale-[0.98]">
-                    Cancel
-                </button>
-                <button id="modal-confirm-logout-button"
-                    class="px-6 py-2 text-base font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:scale-[0.98]">
-                    Logout
-                </button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Mobile menu logic -->
     <script>
