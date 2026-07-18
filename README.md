@@ -2,7 +2,7 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/devzeeh/unicard)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/devzeeh/unicard)
-![Status](https://img.shields.io/badge/Status-Development-blue)
+![Status](https://img.shields.io/badge/Status-Alpha-orange)
 ![GitHub Created At](https://img.shields.io/github/created-at/devzeeh/unicard)
 ![GitHub last commit](https://img.shields.io/github/last-commit/devzeeh/unicard)
 ![GitHub language count](https://img.shields.io/github/languages/count/devzeeh/unicard)
@@ -40,14 +40,36 @@
 |-----------|-----------|
 | **Backend** | Go 1.25 |
 | **Database** | MySQL |
-| **Payments** | Stripe |
+| **Payments** | Xendit |
 | **Hardware** | ESP32 + RC522 RFID |
-| **Frontend** | HTML, Tailwind CSS, JavaScript |
+| **Frontend** | Go Templates, HTML, JS, Tailwind CSS |
 | **Email** | SMTP |
 | **Version Control** | Git & GitHub |
 
 ## Quick Start
 
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/devzeeh/unicard.git
+   cd unicard
+   ```
+
+2. **Database Setup:**
+   - Ensure MySQL is running.
+   - Import the database schema from `docs/unicard.sql`.
+
+3. **Environment Setup:**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Update `.env` with your MySQL credentials and API keys.
+
+4. **Run the Application:**
+   ```bash
+   go run backend/cmd/app/main.go
+   ```
+   The server will start on `http://localhost:3001` (or your configured port).
 ## Demo
 A video demonstration will be available here once the project is finalized.
 
@@ -72,7 +94,7 @@ This project was made possible by the incredible work of the following communiti
 - **MySQL** - For a reliable and powerful database solution.
 - **ESP & Arduino Developers** - For versatile microcontroller support.
 - **Tailwind Labs** - For a utility-first CSS framework.
-- **Stripe** - For accessible and developer-friendly payment infrastructure.
+- **Xendit** - For localized and developer-friendly payment infrastructure.
 - **The entire Open Source Community** - For the countless tools and libraries that power modern development.
 
 ---
