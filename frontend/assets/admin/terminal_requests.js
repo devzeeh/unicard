@@ -293,11 +293,23 @@ async function openApproveModal(requestId, merchantId, businessName, terminalSN,
         }
     });
 
-    document.getElementById('approveModal').classList.remove('hidden');
+    const modal = document.getElementById('approveModal');
+    const inner = document.getElementById('approveModalInner');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        inner.classList.remove('opacity-0', 'scale-95');
+        inner.classList.add('opacity-100', 'scale-100');
+    }, 10);
 }
 
 function closeApproveModal() {
-    document.getElementById('approveModal').classList.add('hidden');
+    const modal = document.getElementById('approveModal');
+    const inner = document.getElementById('approveModalInner');
+    inner.classList.remove('opacity-100', 'scale-100');
+    inner.classList.add('opacity-0', 'scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
     approveData = null;
 }
 
@@ -350,11 +362,23 @@ function openRejectModal(requestId, merchantId, businessName) {
     document.getElementById('rejectRequestId').textContent = requestId;
     document.getElementById('rejectMerchantName').textContent = `${businessName} (${merchantId})`;
     document.getElementById('rejectReason').value = '';
-    document.getElementById('rejectModal').classList.remove('hidden');
+    const modal = document.getElementById('rejectModal');
+    const inner = document.getElementById('rejectModalInner');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        inner.classList.remove('opacity-0', 'scale-95');
+        inner.classList.add('opacity-100', 'scale-100');
+    }, 10);
 }
 
 function closeRejectModal() {
-    document.getElementById('rejectModal').classList.add('hidden');
+    const modal = document.getElementById('rejectModal');
+    const inner = document.getElementById('rejectModalInner');
+    inner.classList.remove('opacity-100', 'scale-100');
+    inner.classList.add('opacity-0', 'scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
     rejectData = null;
 }
 
@@ -455,14 +479,26 @@ window.openRequestDetailsModal = function(dataStr, event) {
         statusEl.textContent = capitalizeFirst(req.status);
         statusEl.className = `capitalize px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClasses(req.status.toLowerCase())}`;
         
-        document.getElementById('requestDetailsModal').classList.remove('hidden');
+        const modal = document.getElementById('requestDetailsModal');
+        const inner = document.getElementById('requestDetailsModalInner');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            inner.classList.remove('opacity-0', 'scale-95');
+            inner.classList.add('opacity-100', 'scale-100');
+        }, 10);
     } catch (e) {
         console.error("Error parsing request details:", e);
     }
 }
 
 window.closeRequestDetailsModal = function() {
-    document.getElementById('requestDetailsModal').classList.add('hidden');
+    const modal = document.getElementById('requestDetailsModal');
+    const inner = document.getElementById('requestDetailsModalInner');
+    inner.classList.remove('opacity-100', 'scale-100');
+    inner.classList.add('opacity-0', 'scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
 }
 
 // Add fade-in animation
