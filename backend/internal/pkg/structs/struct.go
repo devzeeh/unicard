@@ -8,7 +8,7 @@ type CardData struct {
 	CardNumber string          `json:"cardNumber" db:"card_number"`
 	CardHolder string          `json:"cardHolder" db:"user_id"`
 	CardType   string          `json:"cardType" db:"card_type"`
-	Balance    decimal.Decimal `json:"initial_amount" db:"balance" validate:"required,min=0"`
+	Balance    decimal.Decimal `json:"initial_amount" db:"balance" validate:"required"`
 }
 
 // List of all merchants

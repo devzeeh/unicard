@@ -12,6 +12,7 @@ import (
 	authentication "unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/middleware"
+	"unicard-go/backend/internal/mqtt"
 	"unicard-go/backend/internal/pkg/database"
 	"unicard-go/backend/internal/pkg/storage"
 	"unicard-go/backend/internal/user"
@@ -51,6 +52,12 @@ func main() {
 	defer db.Close()
 
 	store := database.NewStore(db)
+
+	// Initialize MQTT Service
+	_, err = mqtt.NewMQTTService(store)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize MQTT service: %v", err)
+	}
 
 	// Initialize R2 Storage
 	r2Storage, err := storage.NewR2Storage()
