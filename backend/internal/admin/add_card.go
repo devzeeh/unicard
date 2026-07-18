@@ -70,6 +70,14 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Balance.IsNegative() {
+		jsonwrite.WriteJSON(w, http.StatusBadRequest, jsonwrite.APIResponse{
+			Success: false,
+			Message: "Initial amount cannot be negative.",
+		})
+		return
+	}
+
 	// Auto-generate data
 	cardNumber := h.generateCardNumber()
 	// Set card to be unlinked for 2 years

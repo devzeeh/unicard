@@ -21,18 +21,24 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================
     // 1. MQTT WEBSOCKET INTEGRATION (Hardware Auto-fill)
     // ==========================================
-    const brokerUrl = 'ws://localhost:9001'; // 192.168.254.104 
+    const brokerUrl = 'ws://localhost:9001'; 
     const mqttClient = typeof mqtt !== 'undefined' ? mqtt.connect(brokerUrl) : null;
 
     if (mqttClient) {
         mqttClient.on('connect', () => {
             console.log('✅ Connected to Mosquitto Broker via WebSockets.');
-            mqttClient.subscribe('unicard/admin/register');
+            mqttClient.subscribe('unicard/card/add');
         });
 
         mqttClient.on('message', (topic, message) => {
-            if (topic === 'unicard/admin/register') {
-                const scannedUID = message.toString().trim().toUpperCase();
+            if (topic === 'unicard/card/add') {
+                let scannedUID = "";
+                try {
+                    const payload = JSON.parse(message.toString());
+                    scannedUID = payload.uid ? payload.uid.trim().toUpperCase() : "";
+                } catch (e) {
+                    scannedUID = message.toString().trim().toUpperCase();
+                }
                 console.log('🔥 Hardware Scan Detected! UID:', scannedUID);
 
                 if (uidInput && previewUid) {
@@ -53,14 +59,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // 2. UI DYNAMICS (Manual Typing)
     // ==========================================
     if (form) {
-        if(uidInput && previewUid) {
+        if (uidInput && previewUid) {
             uidInput.addEventListener('input', (e) => {
                 const val = e.target.value.trim().toUpperCase();
                 previewUid.textContent = val || 'A346F101';
             });
         }
 
-        if(amountInput && previewBalance) {
+        if (amountInput && previewBalance) {
             amountInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 if (!isNaN(val)) {
@@ -84,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Grab the admin username from the URL path
             const adminUsername = window.location.pathname.split('/')[2];
-            
+
             fetch(`/v1/admin/${adminUsername}/addcardauth`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -94,31 +100,31 @@ document.addEventListener("DOMContentLoaded", function () {
                     initial_amount: parseFloat(initialAmount)
                 })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (successAlert && successText) {
-                        successText.innerText = data.message;
-                        successAlert.classList.remove("hidden");
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (successAlert && successText) {
+                            successText.innerText = data.message;
+                            successAlert.classList.remove("hidden");
+                        }
+                        // Reset the form and the dynamic card preview
+                        form.reset();
+                        if (previewUid) previewUid.textContent = 'UNICARD1';
+                        if (previewBalance) previewBalance.textContent = '0.00';
+                    } else {
+                        if (errorAlert && errorText) {
+                            errorText.innerText = data.message;
+                            errorAlert.classList.remove("hidden");
+                        }
                     }
-                    // Reset the form and the dynamic card preview
-                    form.reset();
-                    if(previewUid) previewUid.textContent = 'A346F101';
-                    if(previewBalance) previewBalance.textContent = '0.00';
-                } else {
+                })
+                .catch(err => {
+                    console.error(err);
                     if (errorAlert && errorText) {
-                        errorText.innerText = data.message;
+                        errorText.innerText = "Network error. Please try again.";
                         errorAlert.classList.remove("hidden");
                     }
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                if (errorAlert && errorText) {
-                    errorText.innerText = "Network error. Please try again.";
-                    errorAlert.classList.remove("hidden");
-                }
-            });
+                });
         });
     }
 });

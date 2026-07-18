@@ -8,6 +8,51 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let txCount = 0;
 
+    // ==========================================
+    // MQTT WEBSOCKET INTEGRATION (Hardware Auto-fill)
+    // ==========================================
+    const brokerUrl = 'ws://localhost:9001'; 
+    const mqttClient = typeof mqtt !== 'undefined' ? mqtt.connect(brokerUrl) : null;
+
+    if (mqttClient) {
+        mqttClient.on('connect', () => {
+            console.log('✅ Connected to Mosquitto Broker via WebSockets.');
+            mqttClient.subscribe('unicard/frontend/scan');
+        });
+
+        mqttClient.on('message', (topic, message) => {
+            if (topic === 'unicard/frontend/scan') {
+                try {
+                    const payload = JSON.parse(message.toString());
+                    console.log('🔥 Backend Scan Received!', payload);
+
+                    if (payload.card_number) {
+                        document.getElementById('cardNumber').value = payload.card_number;
+                        
+                        // Select transaction type based on payload
+                        if (payload.type === 'Payment Store') {
+                            const rb = document.querySelector('input[name="type"][value="Payment Store"]');
+                            if(rb) rb.checked = true;
+                        } else if (payload.type === 'Fare') {
+                            const rb = document.querySelector('input[name="type"][value="Fare"]');
+                            if(rb) rb.checked = true;
+                        }
+
+                        // Flash input to show user it auto-filled
+                        const cardInput = document.getElementById('cardNumber');
+                        cardInput.classList.add('ring-2', 'ring-green-500', 'border-green-500');
+                        setTimeout(() => cardInput.classList.remove('ring-2', 'ring-green-500', 'border-green-500'), 1500);
+                    }
+                } catch (e) {
+                    console.error("Error parsing MQTT message:", e);
+                }
+            }
+        });
+    } else {
+        console.error("MQTT library not found.");
+    }
+
+
     simForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
