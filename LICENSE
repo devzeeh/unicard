@@ -1,0 +1,143 @@
+# Unicard Noncommercial & Educational Use License
+
+**Version 1.0 — based on PolyForm Noncommercial License 1.0.0**
+Copyright (c) 2026 devzeeh. All rights reserved.
+
+---
+
+## Acceptance
+
+By using, copying, modifying, or distributing this software, you agree to
+all of the terms and conditions below. If you do not agree to them, you
+must not use, copy, modify, or distribute this software.
+
+## Copyright License
+
+Subject to the conditions below, the Licensor (devzeeh, the original
+author and copyright holder of this software) grants you a
+non-exclusive, worldwide, royalty-free, non-sublicensable, non-transferable
+license to do the following, for the term of the copyright:
+
+1. Use the software for any **noncommercial purpose**, including personal
+   study, research, and education.
+2. Copy and distribute unmodified copies of the software, in whole or in
+   part, for noncommercial purposes only.
+3. Modify the software and distribute your modifications (in source or
+   compiled form) for noncommercial purposes only.
+
+## Distribution Conditions
+
+If you redistribute the software (with or without modifications), you
+must:
+
+1. **Include this license.** Provide the full, unmodified text of this
+   license file with every copy of the software or any substantial
+   portion of it.
+2. **Attribute the original author.** Clearly credit devzeeh as the
+   original creator, and include a link back to the original repository
+   where reasonably possible.
+3. **State changes.** If you modified the software, indicate that
+   changes were made and briefly describe them.
+4. **Not remove or obscure notices.** Copyright, attribution, and license
+   notices already present in the software must remain intact.
+
+## Noncommercial Purpose
+
+A "noncommercial purpose" is one **not primarily intended for, or
+directed toward, commercial advantage or monetary compensation.**
+
+This includes, without limitation:
+
+- Personal learning, coursework, and academic research
+- Non-profit and educational institution use
+- Portfolio, demonstration, and evaluation purposes
+- Open-source contribution back to this project
+
+This **excludes**, without limitation:
+
+- Selling the software or any derivative of it
+- Offering the software, or a service built on it, to customers for a
+  fee, subscription, or any other form of monetary or business
+  compensation
+- Using the software internally to run a for-profit business's
+  operations, products, or services
+- Any use where the primary purpose or effect is commercial advantage,
+  even if no direct payment changes hands (e.g., using it to power a
+  revenue-generating product)
+
+If you are unsure whether your intended use qualifies as noncommercial,
+contact the Licensor before proceeding.
+
+## Reservation of Rights — Owner's Commercial Use
+
+This license restricts **third-party** use of the software. It does
+**not** restrict the Licensor in any way.
+
+devzeeh, as the original author and sole copyright holder of this
+software, retains full, unrestricted, and irrevocable rights to:
+
+- Use the software, in whole or in part, for **any purpose, including
+  commercial purposes**
+- Launch, sell, sublicense, or operate the software (or any product or
+  service built on it) **for profit**
+- Relicense the software, in whole or in part, under different terms at
+  any time, including proprietary or commercial licenses
+- Grant separate commercial licenses to third parties at the Licensor's
+  discretion
+
+Nothing in this license limits or waives any of the Licensor's rights as
+copyright holder. Contributions accepted into this project from other
+contributors are understood to be made under these same terms, including
+this reservation of the Licensor's rights, unless a separate written
+agreement states otherwise.
+
+## Patents
+
+The Licensor grants you a license, under any patent claims the Licensor
+can license or becomes able to license, to make, have made, use, sell,
+offer for sale, import, and have imported the software, in whole or in
+part, strictly for noncommercial purposes as defined above. This patent
+license does not extend to any commercial use.
+
+## No Warranty
+
+**THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+NON-INFRINGEMENT.** The Licensor does not guarantee the software is
+error-free, secure, or fit for use in production, financial, or any
+other critical systems. This is especially relevant given that Unicard
+handles financial transaction logic and personal data structures — do
+not deploy it in a live financial environment without independent
+security review.
+
+## Limitation of Liability
+
+**IN NO EVENT WILL THE LICENSOR BE LIABLE FOR ANY DAMAGES OF ANY KIND,
+INCLUDING BUT NOT LIMITED TO DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES, ARISING OUT OF OR IN CONNECTION WITH
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.**
+
+## Termination
+
+If you violate any term of this license, your rights under it end
+automatically. Rights already exercised in compliance with the license
+(e.g., copies lawfully distributed before the violation) are not
+retroactively revoked, but you may not continue to use, copy, modify, or
+distribute the software after violating these terms.
+
+## Miscellaneous
+
+If any provision of this license is held unenforceable, the remaining
+provisions remain in full effect. This license does not grant you rights
+to use the Licensor's name, trademarks, or logos except as needed to
+comply with the attribution requirement above.
+
+---
+
+*This license is adapted from the [PolyForm Noncommercial License
+1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/), with
+additional clauses reserving commercial rights for the original author.
+For questions about commercial licensing of Unicard, contact devzeeh
+directly.*

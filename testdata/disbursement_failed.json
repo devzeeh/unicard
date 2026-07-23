@@ -1,0 +1,23 @@
+{
+    "created": "2026-06-28T22:17:09.555Z",
+    "business_id": "kDB19Lt2dRQSphsrPNicb5ax6",
+    "event": "payout.failed",
+    "data": {
+        "id": "disb-ac1af0ef-7e8c-4d89-9c55-4db1383eb546",
+        "amount": 500,
+        "status": "FAILED",
+        "created": "2026-06-28T22:17:09.146Z",
+        "updated": "2026-06-28T22:17:09.300Z",
+        "currency": "PHP",
+        "description": "Withdrawal in Maya",
+        "channel_code": "PH_MAYA",
+        "failure_code": "INSUFFICIENT_BALANCE",
+        "reference_id": "TXN-WD-5082362892636141474",
+        "account_number": "4344808448452663",
+        "idempotency_key": "TXN-WD-5082362892636141474",
+        "channel_category": "BANK",
+        "account_holder_name": "John Doe",
+        "estimated_arrival_time": "2026-06-28T22:32:09.144Z"
+    },
+    "api_version": "v2"
+}

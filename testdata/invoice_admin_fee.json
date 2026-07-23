@@ -1,0 +1,44 @@
+{
+    "id": "Ed2m9b8QzhFagOGv5NBKDxCeZ",
+    "fees": [
+        {
+            "type": "Admin Fee",
+            "value": 10
+        }
+    ],
+    "items": [
+        {
+            "name": "Unicard Wallet Top-up",
+            "price": 500,
+            "quantity": 1
+        },
+        {
+            "name": "Admin Fee",
+            "price": 15,
+            "quantity": 1
+        }
+    ],
+    "amount": 515,
+    "status": "PAID",
+    "created": "2026-06-30T00:35:37.759Z",
+    "is_high": false,
+    "paid_at": "2026-06-30T00:39:42.334Z",
+    "updated": "2026-06-30T00:39:44.166Z",
+    "user_id": "ErOTRLy41VeH97Si2g8mUf6ZJ",
+    "currency": "PHP",
+    "payment_id": "py-1ee80290a-0b90-4c33-b1ae-102d6b33c3df",
+    "description": "Unicard Wallet Top-up",
+    "external_id": "unicard-topup-1234598228541373874",
+    "paid_amount": 515,
+    "payer_email": "sample@test.com",
+    "merchant_name": "devzeeh",
+    "payment_method": "QR_CODE",
+    "payment_channel": "QRPH",
+    "payment_details": {
+        "source": "GCash",
+        "receipt_id": "323500"
+    },
+    "payment_method_id": "pm-af3d20c6-7c7f-4037-a516-1539455bc6c6",
+    "failure_redirect_url": "https://unicard.app/payment/failed",
+    "success_redirect_url": "https://unicard.app/payment/success"
+}

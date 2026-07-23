@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Merchant - Transactions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend/assets/style/tailwind.js"></script>
+    <script>window.CURRENT_USERNAME = "{{.Username}}";</script>
+</head>
+
+<body class="font-sans antialiased text-gray-900 bg-gray-50/50 relative overflow-hidden">
+    <!-- Subtle Background Elements -->
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-50 to-transparent -z-10"></div>
+    <div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-purple-400/10 blur-[100px] pointer-events-none -z-10"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-400/10 blur-[100px] pointer-events-none -z-10"></div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        {{template "merchant_sidebar" .}}
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden relative z-0">
+            <!-- Top Navbar -->
+            <header class="flex items-center justify-between h-20 px-8 bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-20">
+                <div>
+                    <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">Transactions</h2>
+                    <p class="text-sm text-gray-500 font-medium">Review your complete transaction history.</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <span class="block font-semibold text-sm text-gray-900 merchant-header-username"></span>
+                        <span class="block text-xs text-gray-500">Merchant</span>
+                    </div>
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ring-4 ring-blue-50 uppercase shadow-md transform hover:scale-105 transition-transform duration-200 cursor-pointer merchant-header-initial">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Scrollable Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-8">
+                <div class="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+
+                    <!-- Statistics -->
+                    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Available Balance Card -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full transition duration-200 hover:shadow-md">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500 mb-2">Available Balance</p>
+                                <p class="text-3xl font-bold text-emerald-600 tracking-tight flex items-center h-9" id="availableBalance"><span class="inline-block h-8 w-24 bg-emerald-100 animate-pulse rounded"></span></p>
+                            </div>
+                            <div class="mt-4">
+                                <button id="openWithdrawModalBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 active:scale-[0.98]">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    <span>Withdraw</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- This Month Card -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Net Income (This Month)</p>
+                            <p class="text-3xl font-bold text-emerald-600 tracking-tight flex items-center h-9" id="monthIncomes"><span class="inline-block h-8 w-24 bg-emerald-100 animate-pulse rounded"></span></p>
+                        </div>
+
+                        <!-- Gross Revenue Card -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Gross Revenue</p>
+                            <p class="text-3xl font-bold text-gray-900 tracking-tight flex items-center h-9" id="grossRevenue"><span class="inline-block h-8 w-24 bg-gray-200 animate-pulse rounded"></span></p>
+                        </div>
+
+                        <!-- Platform Fee Card -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-full transition duration-200 hover:shadow-md">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Total Platform Fees</p>
+                            <p class="text-3xl font-bold text-red-500 tracking-tight flex items-center h-9" id="platformFee"><span class="inline-block h-8 w-24 bg-red-100 animate-pulse rounded"></span></p>
+                        </div>
+                    </section>
+
+                    <!-- Transactions Table -->
+                    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">All Transactions</h3>
+                                <p class="text-sm text-gray-500 mt-1">Detailed record of every payment, refund, and payout.</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <!-- Search -->
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    </div>
+                                    <input type="text" id="txSearch" placeholder="Search..." class="block w-full sm:w-48 pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                </div>
+                                
+                                <!-- Type -->
+                                <select id="txType" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors cursor-pointer">
+                                    <option value="all">All Types</option>
+                                    <option value="payment">Payment</option>
+                                    <option value="refund">Refund</option>
+                                    <option value="withdrawal">Withdrawal</option>
+                                </select>
+
+                                <!-- Sort -->
+                                <select id="txSort" class="block w-full sm:w-36 pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white hover:bg-gray-100 focus:ring-emerald-500 focus:border-emerald-500 transition-colors cursor-pointer">
+                                    <option value="desc">Newest First</option>
+                                    <option value="asc">Oldest First</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full table-fixed divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="w-[20%] px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="w-[35%] px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                                        <th scope="col" class="w-[15%] px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th scope="col" class="w-[15%] px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                                        <th scope="col" class="w-[15%] px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody" class="bg-white divide-y divide-gray-100">
+                                    <tr class="animate-pulse">
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-24"></div><div class="h-3 bg-gray-100 rounded w-16 mt-2"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="px-6 py-4 text-right"><div class="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                                        <td class="px-6 py-4 text-center"><div class="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-24"></div><div class="h-3 bg-gray-100 rounded w-16 mt-2"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="px-6 py-4 text-right"><div class="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                                        <td class="px-6 py-4 text-center"><div class="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-24"></div><div class="h-3 bg-gray-100 rounded w-16 mt-2"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="px-6 py-4 text-right"><div class="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                                        <td class="px-6 py-4 text-center"><div class="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div id="txnModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0">
+        <div id="txnModalContent"
+            class="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-lg border border-gray-100 transition-all duration-300 ease-out transform scale-95 opacity-0">
+            <div class="flex items-start justify-between border-b pb-4 mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Transaction Details</h3>
+                    <p id="modalTxnDesc" class="text-sm text-gray-500 mt-1"></p>
+                </div>
+                <button id="closeTxnModalBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="text-xl w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Transaction ID</span>
+                    <span id="modalTxnId" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <div>
+                        <div class="font-medium text-gray-500">Customer Card</div>
+                        <div id="modalTxnTerminalLabel" class="font-medium text-gray-500 text-xs mt-0.5">Terminal</div>
+                    </div>
+                    <div class="text-right">
+                        <div id="modalTxnCardNumber" class="font-semibold text-gray-900"></div>
+                        <div id="modalTxnTerminalId" class="text-xs text-gray-500 mt-0.5"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Date & Time</span>
+                    <span id="modalTxnDate" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Transaction Type</span>
+                    <span id="modalTxnType" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Status</span>
+                    <span id="modalTxnStatus" class="font-semibold text-gray-900 uppercase"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Gross Amount</span>
+                    <span id="modalTxnGross" class="font-semibold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Platform Fee</span>
+                    <span id="modalTxnFee" class="font-semibold text-red-600"></span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Net Income</span>
+                    <span id="modalTxnNet" class="font-bold text-gray-900 text-lg"></span>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="closeTxnModalBottomBtn"
+                    class="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-[0.98]">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdrawal Modal -->
+    <div id="withdrawModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" id="withdrawModalBackdrop"></div>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 relative z-10 overflow-hidden transform transition-all scale-95 opacity-0" id="withdrawModalContent">
+            
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    </div>
+                    Withdraw Funds
+                </h3>
+                <button id="closeWithdrawModalBtn" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-colors focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Available Balance -->
+                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-emerald-800 mb-1">Available to Withdraw</p>
+                        <p class="text-2xl font-bold text-emerald-600" id="withdrawModalBalance">₱0.00</p>
+                    </div>
+                    <div class="h-10 w-10 bg-white rounded-full flex items-center justify-center text-emerald-500 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="withdrawErrorMsg" class="hidden text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100"></div>
+
+                <!-- Input Amount -->
+                <div>
+                    <label for="withdrawAmount" class="block text-sm font-medium text-gray-700 mb-1">Amount to Withdraw</label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <span class="text-gray-500 sm:text-sm">₱</span>
+                        </div>
+                        <input type="number" name="amount" id="withdrawAmount" class="block w-full rounded-lg bg-gray-50 border border-gray-200 pl-8 pr-12 focus:bg-white hover:bg-gray-100 focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm py-3 transition-colors" placeholder="0.00" step="0.01" min="500">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 flex items-center justify-between">
+                        <span>Withdraws to assigned settlement bank.</span>
+                        <button id="withdrawMaxBtn" class="text-emerald-600 hover:text-emerald-700 font-medium">Withdraw Max</button>
+                    </p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex justify-end space-x-3 rounded-b-2xl">
+                <button id="cancelWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors active:scale-[0.98]">
+                    Cancel
+                </button>
+                <button id="submitWithdrawBtn" class="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors active:scale-[0.98] flex items-center">
+                    <span>Confirm Withdrawal</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+    </style>
+    <script src="/assets/js/merchant_transactions.js"></script>
+</body>
+
+</html>

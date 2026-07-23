@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Card Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/frontend/assets/style/tailwind.js"></script>
+</head>
+
+<body class="font-sans antialiased text-gray-900 bg-gray-50/50 relative overflow-hidden">
+    <!-- Subtle Background Elements -->
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-transparent -z-10"></div>
+    <div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none -z-10"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full bg-purple-400/10 blur-[100px] pointer-events-none -z-10"></div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        {{template "admin_sidebar" .}}
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="flex items-center justify-between h-20 px-8 bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-20">
+                <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">Card Inventory</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <span class="block font-semibold text-sm text-gray-900">Welcome, Super Admin</span>
+                        <span class="block text-xs text-gray-500">Administrator</span>
+                    </div>
+                    <div class="w-11 h-11 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold ring-4 ring-blue-50 uppercase shadow-md transform hover:scale-105 transition-transform duration-200 cursor-pointer">
+                        SA
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-8">
+                <div class="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Card Inventory</h1>
+                        <p class="text-gray-500 mt-1">Manage and track all physical cards across the ecosystem.</p>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition duration-200 hover:shadow-md">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Total Cards</p>
+                            <p class="text-3xl font-bold text-gray-900" id="totalCards">0</p>
+                        </div>
+                        <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition duration-200 hover:shadow-md">
+                            <div class="grid grid-cols-4 divide-x divide-gray-200">
+                                <div class="pr-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Active</p>
+                                    <p class="text-2xl font-bold text-green-600" id="activeCards">0</p>
+                                </div>
+                                <div class="px-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Inactive</p>
+                                    <p class="text-2xl font-bold text-gray-600" id="inactiveCards">0</p>
+                                </div>
+                                <div class="px-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Blocked</p>
+                                    <p class="text-2xl font-bold text-red-600" id="blockedCards">0</p>
+                                </div>
+                                <div class="pl-4 text-left">
+                                    <p class="text-sm font-medium text-gray-500 mb-2">Lost</p>
+                                    <p class="text-2xl font-bold text-orange-600" id="lostCards">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                            <!-- Left: Search -->
+                            <div class="relative w-full xl:w-80">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input type="text" id="searchInput" placeholder="Search cards by UID or number..."
+                                    class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150" />
+                            </div>
+                            
+                            <!-- Right: Filters & Sort -->
+                            <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                                <select id="filterStatus" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="blocked">Blocked</option>
+                                    <option value="lost">Lost</option>
+                                </select>
+                                <select id="filterType" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
+                                    <option value="all">All Types</option>
+                                    <option value="regular">Regular</option>
+                                    <option value="student">Student</option>
+                                    <option value="pwd">PWD</option>
+                                    <option value="senior">Senior</option>
+                                </select>
+                                <select id="sortOrder" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150">
+                                    <option value="date_desc">Newest First</option>
+                                    <option value="date_asc">Oldest First</option>
+                                    <option value="balance_desc">Highest Balance</option>
+                                    <option value="balance_asc">Lowest Balance</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="overflow-hidden">
+                            <table class="w-full table-fixed text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
+                                        <th class="p-4 font-semibold w-[22%]">Card Number & UID</th>
+                                        <th class="p-4 font-semibold w-[18%]">User ID</th>
+                                        <th class="p-4 font-semibold w-[12%]">Type</th>
+                                        <th class="p-4 font-semibold w-[15%]">Balance</th>
+                                        <th class="p-4 font-semibold w-[10%]">Status</th>
+                                        <th class="p-4 font-semibold w-[15%]">Created At</th>
+                                        <th class="p-4 font-semibold w-[8%] text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cardsTableBody" class="text-sm text-gray-700 divide-y divide-gray-100">
+                                    <tr class="animate-pulse">
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-3 bg-gray-100 rounded w-1/2 mt-2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                        <td class="p-4 text-center"><div class="h-8 bg-gray-200 rounded w-16 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-3 bg-gray-100 rounded w-1/2 mt-2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                        <td class="p-4 text-center"><div class="h-8 bg-gray-200 rounded w-16 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-3 bg-gray-100 rounded w-1/2 mt-2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                        <td class="p-4 text-center"><div class="h-8 bg-gray-200 rounded w-16 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-3 bg-gray-100 rounded w-1/2 mt-2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                        <td class="p-4 text-center"><div class="h-8 bg-gray-200 rounded w-16 mx-auto"></div></td>
+                                    </tr>
+                                    <tr class="animate-pulse">
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-3/4"></div><div class="h-3 bg-gray-100 rounded w-1/2 mt-2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-2/3"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-1/2"></div></td>
+                                        <td class="p-4"><div class="h-6 bg-gray-200 rounded-full w-20"></div></td>
+                                        <td class="p-4"><div class="h-4 bg-gray-200 rounded w-24"></div></td>
+                                        <td class="p-4 text-center"><div class="h-8 bg-gray-200 rounded w-16 mx-auto"></div></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                            <p class="text-sm text-gray-500">Showing <span class="font-medium" id="pageStart">0</span> to <span class="font-medium" id="pageEnd">0</span> of <span class="font-medium" id="totalItems">0</span> cards</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="../../assets/admin/admin_card_inventory.js?"></script>
+
+    <!-- Card Details Modal -->
+    <div id="cardDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-6 border border-gray-100 w-full max-w-md shadow-lg rounded-2xl bg-white">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-gray-900">Card Details</h3>
+                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-700">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Card Number</span>
+                    <span class="font-semibold text-gray-900" id="modalCardNumber"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Card UID</span>
+                    <span class="text-gray-900" id="modalCardUID"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">User ID</span>
+                    <span class="text-gray-900" id="modalUserID"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Type</span>
+                    <span class="capitalize text-gray-900" id="modalCardType"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Balance</span>
+                    <span class="text-gray-900 font-medium" id="modalBalance"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Status</span>
+                    <span class="capitalize px-2 py-1 text-xs font-medium rounded-full" id="modalStatus"></span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                    <span class="font-medium text-gray-500">Expiry Date</span>
+                    <span class="text-gray-900" id="modalExpiryDate"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-medium text-gray-500">Created At</span>
+                    <span class="text-gray-900" id="modalCreatedAt"></span>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="document.getElementById('cardDetailsModal').classList.add('hidden')" class="px-5 py-2 bg-gray-50 border border-gray-200 text-gray-800 rounded-lg hover:bg-gray-100 font-medium transition duration-150 active:scale-[0.98]">Close</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+    </style>
+</body>
+</html>

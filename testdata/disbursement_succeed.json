@@ -1,0 +1,23 @@
+{
+    "created": "2026-06-28T22:14:24.569Z",
+    "business_id": "kDB19Lt2dRQSphsrPNicb5ax6",
+    "event": "payout.succeeded",
+    "data": {
+        "id": "disb-f6ee5710-4788-4a6a-afec-7820b1e9be6e",
+        "amount": 1000,
+        "status": "SUCCEEDED",
+        "created": "2026-06-28T22:12:18.146Z",
+        "updated": "2026-06-28T22:14:24.349Z",
+        "currency": "PHP",
+        "description": "Withdrawal to bdo ending in 8475",
+        "channel_code": "PH_BDO",
+        "reference_id": "TXN-WD-2172194951736530962",
+        "account_number": "5511287827573753",
+        "idempotency_key": "TXN-WD-2172194951736530962",
+        "channel_category": "BANK",
+        "account_holder_name": "John Doe",
+        "connector_reference": "SIMULATED_CONNECTOR_REFERENCE_1655178105738_4",
+        "estimated_arrival_time": "2026-06-28T22:27:18.144Z"
+    },
+    "api_version": "v2"
+}
