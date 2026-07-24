@@ -69,16 +69,14 @@ func main() {
 	authRepo := auth.NewRepository(store)
 	authSvc := auth.NewService(authRepo, r2Storage)
 
-	// Initialize the Handler from the admin package
-	adminRepo := admin.NewRepository(store)
-	adminSvc := admin.NewService(adminRepo)
-
 	// Initialize Handlers for other modules
 	authHandler := auth.NewHandler(authSvc, tpl)
-	adminHandler := admin.NewHandler(adminSvc, tpl)
+	adminRepo := admin.NewRepository(store)
+	adminSvc := admin.NewService(adminRepo)
+	adminHanlder := admin.NewHandler(adminSvc, tpl)
 	userHandler := user.NewHandler(store, tpl)
 	merchantHandler := merchant.NewHandler(store, tpl, r2Storage)
-	
+
 	// Setup Router
 	mux := http.NewServeMux()
 
@@ -113,15 +111,15 @@ func main() {
 	// Register auth routes endpoints
 	// Holds: login, logout, admin-signup, merchant-signup, customer-signup, forgot-password
 	auth.RegisterRoutes(mux, authHandler)
-
+	
 	// Middleware definitions
 	requireCustomer := middleware.RequireAuth("customer")
 	requireMerchant := middleware.RequireAuth("merchant_admin", "merchant_staff")
 	requireAdmin := middleware.RequireAuth("super_admin")
-
-	// Register admin routes endpoints
-	admin.RegisterRoutes(mux, adminHandler, requireAdmin)
-
+	
+	// Routes admin endpoints
+	admin.RegisterRoutes(mux, adminHanlder, requireAdmin)
+	
 	// Customer Routes
 	mux.Handle("GET /u/{username}", requireCustomer(http.HandlerFunc(userHandler.ProfileView)))
 	mux.Handle("PATCH /u/{username}/profile/edit", requireCustomer(http.HandlerFunc(userHandler.ProfileEdit)))
@@ -160,6 +158,12 @@ func main() {
 	mux.Handle("POST /v1/merchant/{username}/upload-document", requireMerchant(http.HandlerFunc(merchantHandler.UploadDocument)))
 	mux.Handle("POST /v1/merchant/{username}/withdraw", requireMerchant(http.HandlerFunc(merchantHandler.WithdrawHandler)))
 	mux.Handle("POST /v1/merchant/{username}/terminals/request", requireMerchant(http.HandlerFunc(merchantHandler.RequestTerminalHandler)))
+
+	
+
+	// terminal endpoints for Fare and Retails.
+	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView) // kept public since it's a sim
+	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
 
 	// Catch-all route for 404
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
