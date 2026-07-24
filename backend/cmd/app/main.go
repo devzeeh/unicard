@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 	"unicard-go/backend/internal/admin"
-	authentication "unicard-go/backend/internal/auth"
+	"unicard-go/backend/internal/auth"
 	"unicard-go/backend/internal/merchant"
 	"unicard-go/backend/internal/middleware"
 	"unicard-go/backend/internal/mqtt"
@@ -66,11 +66,19 @@ func main() {
 	}
 
 	// Initialize the Handler from the auth package
-	authHandler := authentication.NewHandler(store, tpl, r2Storage)
-	adminHanlder := admin.NewHandler(store, tpl)
+	authRepo := auth.NewRepository(store)
+	authSvc := auth.NewService(authRepo, r2Storage)
+
+	// Initialize the Handler from the admin package
+	adminRepo := admin.NewRepository(store)
+	adminSvc := admin.NewService(adminRepo)
+
+	// Initialize Handlers for other modules
+	authHandler := auth.NewHandler(authSvc, tpl)
+	adminHandler := admin.NewHandler(adminSvc, tpl)
 	userHandler := user.NewHandler(store, tpl)
 	merchantHandler := merchant.NewHandler(store, tpl, r2Storage)
-
+	
 	// Setup Router
 	mux := http.NewServeMux()
 
@@ -90,10 +98,10 @@ func main() {
 			}
 			defer body.Close()
 			w.Header().Set("Content-Type", contentType)
-			
+
 			// Optional: add cache headers to prevent re-fetching the image constantly
 			w.Header().Set("Cache-Control", "public, max-age=86400")
-			
+
 			io.Copy(w, body)
 		})
 	} else {
@@ -102,28 +110,17 @@ func main() {
 		mux.Handle("/storage/", http.StripPrefix("/storage/", storageServer))
 	}
 
-	// general endpoints
-	mux.HandleFunc("GET /login", authHandler.LoginView)
-	mux.HandleFunc("POST /v1/loginauth", authHandler.LoginAuthHandler)  // Login authentication endpoint
-	mux.HandleFunc("POST /v1/refresh", authHandler.RefreshTokenHandler) // Refresh token endpoint
-	mux.HandleFunc("GET /merchant-signup", authHandler.MerchantSignupView)
-	mux.HandleFunc("POST /v1/merchant-signup", authHandler.MerchantSignupHandler)
-	mux.HandleFunc("GET /admin-signup", authHandler.AdminSignupView)
-	mux.HandleFunc("POST /v1/admin-signup", authHandler.AdminSignupHandler)
-	// Customer Signup routes
-	mux.HandleFunc("GET /signup", authHandler.SignupView)
-	mux.HandleFunc("POST /v1/signup/send-otp", authHandler.SignupSendOTP)
-	mux.HandleFunc("POST /v1/signup/verify-otp", authHandler.SignupVerifyOTP)
-	mux.HandleFunc("POST /v1/signup/check-card", authHandler.CheckCardHandler)
-	mux.HandleFunc("POST /v1/signupauth", authHandler.SignupHandler)
-	mux.HandleFunc("GET /forgot-password", authHandler.ForgotPasswordView)
-	mux.HandleFunc("POST /v1/forgot-password/send-otp", authHandler.ForgotPasswordSendOTP)
-	mux.HandleFunc("POST /v1/forgot-password/verify-otp", authHandler.ForgotPasswordVerifyOTP)
-	mux.HandleFunc("POST /v1/reset-password", authHandler.ResetPassword)
+	// Register auth routes endpoints
+	// Holds: login, logout, admin-signup, merchant-signup, customer-signup, forgot-password
+	auth.RegisterRoutes(mux, authHandler)
+
 	// Middleware definitions
 	requireCustomer := middleware.RequireAuth("customer")
 	requireMerchant := middleware.RequireAuth("merchant_admin", "merchant_staff")
 	requireAdmin := middleware.RequireAuth("super_admin")
+
+	// Register admin routes endpoints
+	admin.RegisterRoutes(mux, adminHandler, requireAdmin)
 
 	// Customer Routes
 	mux.Handle("GET /u/{username}", requireCustomer(http.HandlerFunc(userHandler.ProfileView)))
@@ -149,8 +146,6 @@ func main() {
 
 	mux.Handle("GET /v1/user/{username}", requireCustomer(http.HandlerFunc(userHandler.DashboardHandler)))
 	mux.Handle("GET /v1/user/{username}/transactions", requireCustomer(http.HandlerFunc(userHandler.TransactionsJSONHandler)))
-	mux.HandleFunc("GET /logout", authHandler.LogoutHandler)
-	mux.HandleFunc("POST /logout", authHandler.LogoutHandler) // Allow POST as well just in cases
 
 	// merchant endpoints
 	mux.Handle("GET /merchant/{username}/dashboard", requireMerchant(http.HandlerFunc(merchantHandler.MerchantDashboardView)))
@@ -165,44 +160,6 @@ func main() {
 	mux.Handle("POST /v1/merchant/{username}/upload-document", requireMerchant(http.HandlerFunc(merchantHandler.UploadDocument)))
 	mux.Handle("POST /v1/merchant/{username}/withdraw", requireMerchant(http.HandlerFunc(merchantHandler.WithdrawHandler)))
 	mux.Handle("POST /v1/merchant/{username}/terminals/request", requireMerchant(http.HandlerFunc(merchantHandler.RequestTerminalHandler)))
-
-	// super admin endpoints
-	mux.Handle("GET /admin/{username}", requireAdmin(http.HandlerFunc(adminHanlder.AdminDashboardView)))
-	mux.Handle("GET /v1/admin/{username}/dashboard-data", requireAdmin(http.HandlerFunc(adminHanlder.AdminDashboardDataHandler)))
-	mux.Handle("GET /admin/{username}/merchants", requireAdmin(http.HandlerFunc(adminHanlder.MerchantManagementView)))
-	mux.Handle("GET /v1/admin/{username}/merchants-data", requireAdmin(http.HandlerFunc(adminHanlder.MerchantManagementDataHandler)))
-	mux.Handle("GET /admin/{username}/terminals", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRegistryView)))
-	mux.Handle("GET /v1/admin/{username}/terminals-data", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRegistryDataHandler)))
-	mux.Handle("GET /v1/admin/{username}/terminals/unassigned", requireAdmin(http.HandlerFunc(adminHanlder.GetUnassignedTerminalsHandler)))
-	mux.Handle("POST /v1/admin/{username}/terminals/add", requireAdmin(http.HandlerFunc(adminHanlder.AddTerminalHandler)))
-	mux.Handle("GET /admin/{username}/terminal-requests", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRequestsView)))
-	mux.Handle("GET /v1/admin/{username}/terminal-requests-data", requireAdmin(http.HandlerFunc(adminHanlder.TerminalRequestsDataHandler)))
-	mux.Handle("POST /v1/admin/{username}/terminal-requests/{id}/approve", requireAdmin(http.HandlerFunc(adminHanlder.ApproveTerminalRequestHandler)))
-	mux.Handle("POST /v1/admin/{username}/terminal-requests/{id}/reject", requireAdmin(http.HandlerFunc(adminHanlder.RejectTerminalRequestHandler)))
-	mux.Handle("GET /admin/{username}/settings", requireAdmin(http.HandlerFunc(adminHanlder.SystemSettingsView)))
-	mux.Handle("GET /admin/{username}/transactions", requireAdmin(http.HandlerFunc(adminHanlder.TransactionsView)))
-	mux.Handle("GET /v1/admin/{username}/transactions", requireAdmin(http.HandlerFunc(adminHanlder.AllTransactionsJSONHandler)))
-	mux.Handle("POST /v1/admin/{username}/merchants/add", requireAdmin(http.HandlerFunc(adminHanlder.AddMerchantHandler)))
-	mux.Handle("GET /admin/{username}/merchants/{id}", requireAdmin(http.HandlerFunc(adminHanlder.MerchantInfoView)))
-	mux.Handle("GET /v1/admin/{username}/merchants/{id}/data", requireAdmin(http.HandlerFunc(adminHanlder.MerchantInfoDataHandler)))
-	mux.Handle("POST /v1/admin/{username}/merchants/{id}/approve", requireAdmin(http.HandlerFunc(adminHanlder.ApproveMerchantHandler)))
-	mux.Handle("POST /v1/admin/{username}/merchants/{id}/approve-documents", requireAdmin(http.HandlerFunc(adminHanlder.ApproveMerchantDocumentsHandler)))
-	mux.Handle("POST /v1/admin/{username}/merchants/{id}/reject", requireAdmin(http.HandlerFunc(adminHanlder.RejectMerchantHandler)))
-	mux.Handle("POST /v1/admin/{username}/merchants/{id}/suspend", requireAdmin(http.HandlerFunc(adminHanlder.SuspendMerchantHandler)))
-	mux.Handle("DELETE /v1/admin/{username}/merchants/{id}/delete", requireAdmin(http.HandlerFunc(adminHanlder.DeleteMerchantHandler)))
-	mux.Handle("GET /admin/{username}/card-inventory", requireAdmin(http.HandlerFunc(adminHanlder.CardInventoryView)))
-	mux.Handle("GET /v1/admin/{username}/card-inventory-data", requireAdmin(http.HandlerFunc(adminHanlder.CardInventoryDataHandler)))
-	mux.Handle("POST /v1/admin/{username}/cards/{id}/block", requireAdmin(http.HandlerFunc(adminHanlder.BlockCardHandler)))
-	mux.Handle("GET /admin/{username}/addcard", requireAdmin(http.HandlerFunc(adminHanlder.AddCardsView)))
-	mux.Handle("GET /admin/{username}/deactivatecard", requireAdmin(http.HandlerFunc(adminHanlder.DeactivateView)))
-	mux.Handle("POST /v1/admin/{username}/addcardauth", requireAdmin(http.HandlerFunc(adminHanlder.AddCardHandler)))
-	mux.Handle("POST /v1/admin/{username}/deactivatecardauth", requireAdmin(http.HandlerFunc(adminHanlder.DeactivateCardHanlder)))
-	mux.Handle("POST /v1/admin/{username}/deletecardauth", requireAdmin(http.HandlerFunc(adminHanlder.DeleteCardHandler)))
-	mux.Handle("GET /admin/{username}/delete-cards", requireAdmin(http.HandlerFunc(adminHanlder.DeleteCardView)))
-
-	// terminal endpoints for Fare and Retails.
-	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView) // kept public since it's a sim
-	mux.HandleFunc("POST /v1/terminal-sim/transact", adminHanlder.TerminalSimTransactionHandler)
 
 	// Catch-all route for 404
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
