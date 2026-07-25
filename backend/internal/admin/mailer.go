@@ -36,6 +36,7 @@ func SendMerchantDeletedEmail(email, name string) error {
 
 // internal helper
 
+// sendMail configures and dispatches an HTML email using the system SMTP settings.
 func sendMail(to, subject, htmlBody string) error {
 	host := os.Getenv("SMTP_HOST")
 	email := os.Getenv("SMTP_EMAIL")

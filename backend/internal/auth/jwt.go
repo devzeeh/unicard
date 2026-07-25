@@ -10,6 +10,7 @@ import (
 
 var jwtSecret = []byte(getEnv("JWT_SECRET", "super-secret-key")) // fallback for dev only
 
+// getEnv retrieves the value of the environment variable named by the key, or returns the fallback value if not present.
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
@@ -17,6 +18,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// JWTClaims represents the custom and standard claims embedded within the JSON Web Token.
 type JWTClaims struct {
 	UserID string `json:"user_id"`
 	Role   string `json:"role"`
@@ -60,6 +62,7 @@ func ValidateJWT(tokenString string) (*JWTClaims, error) {
 
 // internal helper
 
+// signToken creates and signs a new JWT with the specified claims and expiration time.
 func signToken(userID, role, subject string, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{

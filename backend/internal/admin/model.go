@@ -12,6 +12,7 @@ import (
 // Merchant Models
 // ---------------------------------------------------------------------------
 
+// MerchantDetailsData represents the comprehensive profile and settlement information for a merchant.
 type MerchantDetailsData struct {
 	MerchantID       string             `db:"merchant_id"`
 	UserID           string             `db:"user_id"`
@@ -37,6 +38,7 @@ type MerchantDetailsData struct {
 	Terminals        []structs.Terminal `db:"-"`
 }
 
+// PaginatedMerchantsResult structures the response for paginated merchant lists.
 type PaginatedMerchantsResult struct {
 	Merchants  []structs.Merchant `json:"merchants"`
 	TotalItems int                `json:"totalItems"`
@@ -44,6 +46,7 @@ type PaginatedMerchantsResult struct {
 	Limit      int                `json:"limit"`
 }
 
+// SimMerchant is a lightweight representation of a merchant, often used in dropdowns or simple lists.
 type SimMerchant struct {
 	ID   string `db:"merchant_id"`
 	Name string `db:"business_name"`
@@ -53,12 +56,14 @@ type SimMerchant struct {
 // Terminal Models
 // ---------------------------------------------------------------------------
 
+// UnassignedTerminalData holds basic details about a terminal before it's assigned to a merchant.
 type UnassignedTerminalData struct {
 	TerminalSN string `json:"terminal_sn" db:"terminal_sn"`
 	DeviceName string `json:"device_name" db:"device_name"`
 	Status     string `json:"status" db:"status"`
 }
 
+// PaginatedTerminalsResult structures the response for paginated terminal lists and status counts.
 type PaginatedTerminalsResult struct {
 	Terminals     []structs.Terminal `json:"terminals"`
 	TotalItems    int                `json:"totalItems"`
@@ -68,6 +73,7 @@ type PaginatedTerminalsResult struct {
 	InactiveCount int                `json:"inactiveCount"`
 }
 
+// TerminalRequest models a merchant's application for a new payment terminal.
 type TerminalRequest struct {
 	ID           int        `json:"id" db:"id"`
 	RequestID    string     `json:"request_id" db:"request_id"`
@@ -83,6 +89,7 @@ type TerminalRequest struct {
 	DeviceName   *string    `json:"device_name" db:"device_name"`
 }
 
+// TerminalRequestsResult structures the paginated response for terminal application requests.
 type TerminalRequestsResult struct {
 	Requests    []TerminalRequest
 	TotalItems  int
@@ -94,6 +101,7 @@ type TerminalRequestsResult struct {
 // Card Models
 // ---------------------------------------------------------------------------
 
+// AdminCard represents a smart card entity as viewed from the administrative dashboard.
 type AdminCard struct {
 	UserID     sql.NullString  `json:"user_id" db:"user_id"`
 	CardUID    string          `json:"card_uid" db:"card_uid"`
@@ -105,6 +113,7 @@ type AdminCard struct {
 	CreatedAt  string          `json:"created_at" db:"created_at"`
 }
 
+// AdminCardInventoryStats tracks the distribution of card statuses across the system.
 type AdminCardInventoryStats struct {
 	Total    int `json:"total"`
 	Active   int `json:"active"`
@@ -113,6 +122,7 @@ type AdminCardInventoryStats struct {
 	Lost     int `json:"lost"`
 }
 
+// CardInventoryResult wraps a list of cards along with system-wide inventory statistics.
 type CardInventoryResult struct {
 	Stats AdminCardInventoryStats `json:"stats"`
 	Cards []AdminCard             `json:"cards"`
@@ -122,6 +132,7 @@ type CardInventoryResult struct {
 // Transaction Models
 // ---------------------------------------------------------------------------
 
+// TxnRow represents a detailed financial transaction record for administrative auditing.
 type TxnRow struct {
 	TransactionID string          `json:"transaction_id" db:"transaction_id"`
 	TerminalID    string          `json:"terminal_id" db:"terminal_id"`
@@ -142,6 +153,7 @@ type TxnRow struct {
 	CardNumber    string          `json:"card_number" db:"card_number"`
 }
 
+// XenditTxnRow models a payout or top-up transaction processed through the Xendit payment gateway.
 type XenditTxnRow struct {
 	TransactionID    string          `json:"transaction_id" db:"transaction_id"`
 	Date             string          `json:"date" db:"date"`
@@ -158,6 +170,7 @@ type XenditTxnRow struct {
 // View Data
 // ---------------------------------------------------------------------------
 
+// AdminPageData holds the necessary template variables to render an admin dashboard page.
 type AdminPageData struct {
 	Page     string
 	Username string

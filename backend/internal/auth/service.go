@@ -34,6 +34,7 @@ type Service struct {
 	storage storage.Service
 }
 
+// NewService creates a new auth Service with the required dependencies.
 func NewService(repo *Repository, storage storage.Service) *Service {
 	return &Service{repo: repo, storage: storage}
 }
@@ -42,6 +43,7 @@ func NewService(repo *Repository, storage storage.Service) *Service {
 // Login
 // ---------------------------------------------------------------------------
 
+// LoginResult contains the user details and JWT tokens generated upon successful authentication.
 type LoginResult struct {
 	ID          string
 	Username    string
@@ -53,6 +55,7 @@ type LoginResult struct {
 	}
 }
 
+// Login authenticates a user by identifier and password, returning tokens if successful.
 func (s *Service) Login(req LoginRequest) (LoginResult, error) {
 	user, err := s.repo.FindUserByIdentifier(req.Identifier)
 	if err != nil {
@@ -81,6 +84,7 @@ func (s *Service) Login(req LoginRequest) (LoginResult, error) {
 	return result, nil
 }
 
+// redirectFor determines the appropriate post-login dashboard URL based on the user's role.
 func redirectFor(role, username string) string {
 	switch role {
 	case "super_admin":
@@ -102,6 +106,7 @@ const (
 	userStatusActive   = "active"
 )
 
+// SignupSendOTP validates uniqueness of contact details and sends a verification OTP to the user's email.
 func (s *Service) SignupSendOTP(email, contactNumber string) error {
 	exists, err := account.IsEmailExist(s.repo.store.DB(), email)
 	if err != nil {
@@ -129,10 +134,12 @@ func (s *Service) SignupSendOTP(email, contactNumber string) error {
 	return nil
 }
 
+// SignupVerifyOTP checks the provided OTP against the in-memory store.
 func (s *Service) SignupVerifyOTP(email, otp string) error {
 	return verifyOTP(email, otp)
 }
 
+// CheckCard verifies that a card number exists and is inactive, ready for registration.
 func (s *Service) CheckCard(cardNumber string) error {
 	status, err := s.repo.GetCardStatus(cardNumber)
 	if err != nil {
@@ -144,6 +151,7 @@ func (s *Service) CheckCard(cardNumber string) error {
 	return nil
 }
 
+// Signup registers a new customer, activates their card, and sends a welcome email.
 func (s *Service) Signup(ctx context.Context, req SignupRequest) error {
 	hashedPassword, err := account.HashPassword(req.Password)
 	if err != nil {
@@ -211,6 +219,7 @@ func (s *Service) Signup(ctx context.Context, req SignupRequest) error {
 // Admin signup
 // ---------------------------------------------------------------------------
 
+// AdminSignup creates a new super admin account with direct database insertion.
 func (s *Service) AdminSignup(ctx context.Context, req AdminSignupRequest) error {
 	req.Name = strings.TrimSpace(req.Name)
 	req.Username = strings.TrimSpace(req.Username)
@@ -247,6 +256,7 @@ func (s *Service) AdminSignup(ctx context.Context, req AdminSignupRequest) error
 // Merchant signup
 // ---------------------------------------------------------------------------
 
+// MerchantSignup processes a merchant application, uploading documents and creating initial accounts.
 func (s *Service) MerchantSignup(ctx context.Context, req MerchantSignupRequest) error {
 	// Sanitise
 	caser := cases.Title(language.English)
@@ -343,6 +353,7 @@ func (s *Service) uploadBase64(ctx context.Context, b64data string) string {
 // Forgot / reset password
 // ---------------------------------------------------------------------------
 
+// ForgotPasswordSendOTP initiates the password recovery flow without revealing email existence.
 func (s *Service) ForgotPasswordSendOTP(ctx context.Context, email string) error {
 	exists, err := account.IsEmailExist(s.repo.store.DB(), email)
 	if err != nil {
@@ -365,10 +376,12 @@ func (s *Service) ForgotPasswordSendOTP(ctx context.Context, email string) error
 	return nil
 }
 
+// ForgotPasswordVerifyOTP validates the OTP provided during the password recovery flow.
 func (s *Service) ForgotPasswordVerifyOTP(email, otp string) error {
 	return verifyOTP(email, otp)
 }
 
+// ResetPassword updates the user's password and notifies them via email upon successful OTP verification.
 func (s *Service) ResetPassword(ctx context.Context, email, otp, newPassword string) error {
 	if err := verifyOTP(email, otp); err != nil {
 		return err
@@ -406,17 +419,20 @@ func (s *Service) ResetPassword(ctx context.Context, email, otp, newPassword str
 // OTP helpers (internal)
 // ---------------------------------------------------------------------------
 
+// generateOTP creates a random 6-digit one-time password.
 func generateOTP() string {
 	n, _ := rand.Int(rand.Reader, big.NewInt(1_000_000))
 	return fmt.Sprintf("%06d", n.Int64())
 }
 
+// setOTP stores the generated OTP with a 5-minute expiration.
 func setOTP(email, otp string) {
 	otpStoreMu.Lock()
 	defer otpStoreMu.Unlock()
 	otpStore[email] = OTPData{OTP: otp, Expiry: time.Now().Add(5 * time.Minute)}
 }
 
+// verifyOTP checks if the provided OTP matches the stored value and has not expired.
 func verifyOTP(email, otp string) error {
 	otpStoreMu.Lock()
 	defer otpStoreMu.Unlock()
@@ -432,6 +448,7 @@ func verifyOTP(email, otp string) error {
 	return nil
 }
 
+// deleteOTP removes an OTP from the in-memory store after it has been used or expired.
 func deleteOTP(email string) {
 	otpStoreMu.Lock()
 	defer otpStoreMu.Unlock()

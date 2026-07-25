@@ -2,6 +2,7 @@ package admin
 
 import "net/http"
 
+// RegisterRoutes wires all administrative endpoints onto the given mux, wrapping them in an authentication middleware.
 func RegisterRoutes(mux *http.ServeMux, h *Handler, requireAdmin func(http.Handler) http.Handler) {
 	mux.Handle("GET /admin/{username}", requireAdmin(http.HandlerFunc(h.AdminDashboardView)))
 	mux.Handle("GET /v1/admin/{username}/dashboard-data", requireAdmin(http.HandlerFunc(h.AdminDashboardDataHandler)))

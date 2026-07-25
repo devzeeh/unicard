@@ -68,14 +68,18 @@ func main() {
 	// Initialize the Handler from the auth package
 	authRepo := auth.NewRepository(store)
 	authSvc := auth.NewService(authRepo, r2Storage)
-
-	// Initialize Handlers for other modules
 	authHandler := auth.NewHandler(authSvc, tpl)
+
 	adminRepo := admin.NewRepository(store)
 	adminSvc := admin.NewService(adminRepo)
 	adminHanlder := admin.NewHandler(adminSvc, tpl)
+
+	merchantRepo := merchant.NewRepository(store)
+	payoutGateway := merchant.NewXenditPayoutGateway(os.Getenv("XENDIT_SECRET_KEY"))
+	merchantSvc := merchant.NewService(merchantRepo, r2Storage, payoutGateway)
+	merchantHandler := merchant.NewHandler(merchantSvc, tpl)
+
 	userHandler := user.NewHandler(store, tpl)
-	merchantHandler := merchant.NewHandler(store, tpl, r2Storage)
 
 	// Setup Router
 	mux := http.NewServeMux()
@@ -111,15 +115,16 @@ func main() {
 	// Register auth routes endpoints
 	// Holds: login, logout, admin-signup, merchant-signup, customer-signup, forgot-password
 	auth.RegisterRoutes(mux, authHandler)
-	
+
 	// Middleware definitions
 	requireCustomer := middleware.RequireAuth("customer")
 	requireMerchant := middleware.RequireAuth("merchant_admin", "merchant_staff")
 	requireAdmin := middleware.RequireAuth("super_admin")
-	
+
 	// Routes admin endpoints
 	admin.RegisterRoutes(mux, adminHanlder, requireAdmin)
-	
+	merchant.RegisterRoutes(mux, merchantHandler, requireMerchant)
+
 	// Customer Routes
 	mux.Handle("GET /u/{username}", requireCustomer(http.HandlerFunc(userHandler.ProfileView)))
 	mux.Handle("PATCH /u/{username}/profile/edit", requireCustomer(http.HandlerFunc(userHandler.ProfileEdit)))
@@ -137,7 +142,6 @@ func main() {
 	// Payment gateway endpoints
 	// Xendit's servers call this behind the scenes when the payment is done
 	mux.HandleFunc("POST /api/webhooks/xendit/invoice", userHandler.XenditWebhook)
-	mux.HandleFunc("POST /api/webhooks/xendit/disbursement", merchantHandler.XenditDisbursementWebhook)
 	mux.Handle("POST /v1/user/{username}/topup/checkout", requireCustomer(http.HandlerFunc(userHandler.CreateXenditInvoice)))
 	mux.Handle("GET /u/{username}/transaction", requireCustomer(http.HandlerFunc(userHandler.TransactionView)))
 	mux.Handle("GET /u/{username}/transactions", requireCustomer(http.HandlerFunc(userHandler.TransactionView)))
@@ -146,20 +150,6 @@ func main() {
 	mux.Handle("GET /v1/user/{username}/transactions", requireCustomer(http.HandlerFunc(userHandler.TransactionsJSONHandler)))
 
 	// merchant endpoints
-	mux.Handle("GET /merchant/{username}/dashboard", requireMerchant(http.HandlerFunc(merchantHandler.MerchantDashboardView)))
-	mux.Handle("GET /v1/merchant/{username}/dashboard", requireMerchant(http.HandlerFunc(merchantHandler.MerchantDashboardDataHandler)))
-	mux.Handle("GET /merchant/{username}/transactions", requireMerchant(http.HandlerFunc(merchantHandler.MerchantTransactionsView)))
-	mux.Handle("GET /v1/merchant/{username}/transactions", requireMerchant(http.HandlerFunc(merchantHandler.TransactionHandler)))
-
-	mux.Handle("GET /v1/merchant/{username}/incomes", requireMerchant(http.HandlerFunc(merchantHandler.IncomeHandler)))
-	mux.Handle("GET /merchant/{username}/account", requireMerchant(http.HandlerFunc(merchantHandler.MerchantAccountView)))
-	mux.Handle("GET /v1/merchant/{username}/account", requireMerchant(http.HandlerFunc(merchantHandler.MerchantAccountDataHandler)))
-	mux.Handle("POST /v1/merchant/{username}/update-bank", requireMerchant(http.HandlerFunc(merchantHandler.UpdateBankDetails)))
-	mux.Handle("POST /v1/merchant/{username}/upload-document", requireMerchant(http.HandlerFunc(merchantHandler.UploadDocument)))
-	mux.Handle("POST /v1/merchant/{username}/withdraw", requireMerchant(http.HandlerFunc(merchantHandler.WithdrawHandler)))
-	mux.Handle("POST /v1/merchant/{username}/terminals/request", requireMerchant(http.HandlerFunc(merchantHandler.RequestTerminalHandler)))
-
-	
 
 	// terminal endpoints for Fare and Retails.
 	mux.HandleFunc("GET /terminal-sim", adminHanlder.TerminalSimView) // kept public since it's a sim
