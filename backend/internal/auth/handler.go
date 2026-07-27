@@ -14,11 +14,13 @@ import (
 // HTTP Request Structs
 // ---------------------------------------------------------------------------
 
+// LoginRequest represents the payload for user authentication.
 type LoginRequest struct {
 	Identifier string `json:"identifier" validate:"required"` // email, username, or phone
 	Password   string `json:"password" validate:"required"`
 }
 
+// SignupRequest represents the payload for creating a new customer account.
 type SignupRequest struct {
 	FirstName     string `json:"first_name" validate:"required"`
 	LastName      string `json:"last_name" validate:"required"`
@@ -28,16 +30,19 @@ type SignupRequest struct {
 	ContactNumber string `json:"contact_number" validate:"required,numeric,len=11"`
 }
 
+// CheckDetailsRequest represents the payload for verifying email and contact number uniqueness.
 type CheckDetailsRequest struct {
 	Email         string `json:"email"`
 	ContactNumber string `json:"contact_number"`
 }
 
+// SignupVerifyOTPRequest represents the payload for verifying the email OTP during signup.
 type SignupVerifyOTPRequest struct {
 	Email string `json:"email"`
 	OTP   string `json:"otp"`
 }
 
+// AdminSignupRequest represents the payload for creating a new admin account.
 type AdminSignupRequest struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
@@ -45,6 +50,7 @@ type AdminSignupRequest struct {
 	Password string `json:"password"`
 }
 
+// MerchantSignupRequest represents the payload for submitting a new merchant application.
 type MerchantSignupRequest struct {
 	BusinessName     string `json:"businessName" validate:"required"`
 	BusinessType     string `json:"businessType" validate:"required"`
@@ -58,6 +64,7 @@ type MerchantSignupRequest struct {
 	OtherDocument    string `json:"otherDocument"`
 }
 
+// ForgotPasswordRequest represents the payload for password reset flows.
 type ForgotPasswordRequest struct {
 	Email       string `json:"email" validate:"required,email"`
 	OTP         string `json:"otp"`
@@ -70,16 +77,19 @@ type Handler struct {
 	tpl *template.Template
 }
 
+// NewHandler creates a new instance of Handler with the provided dependencies.
 func NewHandler(svc *Service, tpl *template.Template) *Handler {
 	return &Handler{svc: svc, tpl: tpl}
 }
 
 // Login
 
+// LoginView renders the login HTML template.
 func (h *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 	h.tpl.ExecuteTemplate(w, "login.html", nil)
 }
 
+// LoginAuthHandler processes user authentication and issues JWT cookies.
 func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -115,6 +125,7 @@ func (h *Handler) LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 
 // Logout
 
+// LogoutHandler clears the authentication cookies and redirects the user.
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	clearAuthCookies(w)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -122,6 +133,7 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // Refresh token
 
+// RefreshTokenHandler issues a new access token using a valid refresh token.
 func (h *Handler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
@@ -152,10 +164,12 @@ func (h *Handler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 // Customer signup
 
+// SignupView renders the customer signup HTML template.
 func (h *Handler) SignupView(w http.ResponseWriter, r *http.Request) {
 	h.tpl.ExecuteTemplate(w, "signup.html", nil)
 }
 
+// SignupSendOTP initiates email verification for a new customer signup.
 func (h *Handler) SignupSendOTP(w http.ResponseWriter, r *http.Request) {
 	var req CheckDetailsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -184,6 +198,7 @@ func (h *Handler) SignupSendOTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// SignupVerifyOTP verifies the provided OTP for customer email verification.
 func (h *Handler) SignupVerifyOTP(w http.ResponseWriter, r *http.Request) {
 	var req SignupVerifyOTPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -205,6 +220,7 @@ func (h *Handler) SignupVerifyOTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// CheckCardHandler validates a card number for registration.
 func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -224,6 +240,7 @@ func (h *Handler) CheckCardHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// SignupHandler finalizes the creation of a new customer account.
 func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("SignupHandler: running")
 	var req SignupRequest
@@ -249,10 +266,12 @@ func (h *Handler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 // Admin signup
 
+// AdminSignupView renders the admin signup HTML template.
 func (h *Handler) AdminSignupView(w http.ResponseWriter, r *http.Request) {
 	h.tpl.ExecuteTemplate(w, "admin_signup.html", nil)
 }
 
+// AdminSignupHandler processes the creation of a new super admin account.
 func (h *Handler) AdminSignupHandler(w http.ResponseWriter, r *http.Request) {
 	var req AdminSignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -277,10 +296,12 @@ func (h *Handler) AdminSignupHandler(w http.ResponseWriter, r *http.Request) {
 
 // Merchant signup
 
+// MerchantSignupView renders the merchant application HTML template.
 func (h *Handler) MerchantSignupView(w http.ResponseWriter, r *http.Request) {
 	h.tpl.ExecuteTemplate(w, "merchant_signup.html", nil)
 }
 
+// MerchantSignupHandler processes a new merchant application submission.
 func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) {
 	var req MerchantSignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -310,10 +331,12 @@ func (h *Handler) MerchantSignupHandler(w http.ResponseWriter, r *http.Request) 
 
 // Forgot / reset password
 
+// ForgotPasswordView renders the forgot password HTML template.
 func (h *Handler) ForgotPasswordView(w http.ResponseWriter, r *http.Request) {
 	h.tpl.ExecuteTemplate(w, "forgot-password.html", nil)
 }
 
+// ForgotPasswordSendOTP initiates the password reset flow by sending an OTP.
 func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) {
 	var req ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -336,6 +359,7 @@ func (h *Handler) ForgotPasswordSendOTP(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// ForgotPasswordVerifyOTP validates the OTP for a password reset request.
 func (h *Handler) ForgotPasswordVerifyOTP(w http.ResponseWriter, r *http.Request) {
 	var req ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -353,6 +377,7 @@ func (h *Handler) ForgotPasswordVerifyOTP(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// ResetPassword updates the user's password after successful OTP verification.
 func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var req ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -377,6 +402,7 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 // Cookie helpers
 
+// setAuthCookies attaches the JWT and refresh tokens to the HTTP response.
 func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
@@ -398,6 +424,7 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	})
 }
 
+// clearAuthCookies removes the JWT and refresh token cookies from the client.
 func clearAuthCookies(w http.ResponseWriter) {
 	for _, name := range []string{"jwt", "refresh_token"} {
 		http.SetCookie(w, &http.Cookie{
@@ -414,6 +441,7 @@ func clearAuthCookies(w http.ResponseWriter) {
 
 // Response helper
 
+// writeErr is a helper function to send JSON error responses.
 func writeErr(w http.ResponseWriter, status int, msg string) {
 	jsonwrite.WriteJSON(w, status, jsonwrite.APIResponse{
 		Success: false,

@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shopspring/decimal"
 	jsonwrite "unicard-go/backend/internal/pkg/handler"
 	structs "unicard-go/backend/internal/pkg/structs"
+
+	"github.com/shopspring/decimal"
 )
 
-// ---------------------------------------------------------------------------
 // HTTP Request Structs
-// ---------------------------------------------------------------------------
 
+// AddMerchantRequest contains the required fields to manually onboard a new merchant.
 type AddMerchantRequest struct {
 	BusinessName      string `json:"businessName" validate:"required"`
 	BusinessType      string `json:"businessType" validate:"required"`
@@ -33,33 +33,40 @@ type AddMerchantRequest struct {
 	DeviceName        string `json:"deviceName"`
 }
 
+// ApproveMerchantRequest contains the admin-assigned commission rate and terminal for a pending merchant.
 type ApproveMerchantRequest struct {
 	CommissionRate string `json:"commissionRate"`
 	TerminalSn     string `json:"terminalSn"`
 }
 
+// RejectMerchantRequest captures the reason for declining a merchant application.
 type RejectMerchantRequest struct {
 	Reason string `json:"reason"`
 }
 
+// SuspendMerchantRequest captures the reason for temporarily deactivating a merchant account.
 type SuspendMerchantRequest struct {
 	Reason string `json:"reason"`
 }
 
+// AddTerminalRequest contains details for adding a new physical payment terminal to the inventory.
 type AddTerminalRequest struct {
 	TerminalSN string `json:"terminalSn" validate:"required"`
 	DeviceName string `json:"deviceName" validate:"required"`
 }
 
+// ApproveTerminalRequestPayload captures the terminal assigned to a merchant's hardware request.
 type ApproveTerminalRequestPayload struct {
 	AssignTerminalSN string `json:"assign_terminal_sn"`
 	Notes            string `json:"notes"`
 }
 
+// RejectTerminalRequestPayload captures the reason for denying a merchant's terminal request.
 type RejectTerminalRequestPayload struct {
 	Reason string `json:"reason"`
 }
 
+// SimRequest models an emulated point-of-sale transaction for testing card payments.
 type SimRequest struct {
 	CardNumber string          `json:"card_number"`
 	Type       string          `json:"type"`
@@ -72,22 +79,32 @@ type SimRequest struct {
 
 // Handler holds HTTP handlers for the admin package.
 type Handler struct {
-	svc *Service
-	tpl *template.Template
+	svc *Service           // Service layer
+	tpl *template.Template // Template layer
 }
 
+// NewHandler creates a new admin handler.
+// It takes a Service and a template.Template as arguments.
+//
+// Example: handler := admin.NewHandler(service, template)
 func NewHandler(svc *Service, tpl *template.Template) *Handler {
 	return &Handler{svc: svc, tpl: tpl}
 }
 
-// ---------------------------------------------------------------------------
 // Dashboard
-// ---------------------------------------------------------------------------
 
+// Handles admin dashboard view
+// Renders the admin dashboard view template
+//
+// Example: handler.AdminDashboardView(w, r)
 func (h *Handler) AdminDashboardView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "admin_dashboard.html", AdminPageData{Page: "dashboard", Username: r.PathValue("username")})
 }
 
+// Handles admin dashboard data request
+// Fetches admin dashboard data from the database and returns it as JSON
+//
+// Example: handler.AdminDashboardDataHandler(w, r)
 func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("AdminDashboardDataHandler running...")
 	data, err := h.svc.GetDashboardData()
@@ -101,14 +118,20 @@ func (h *Handler) AdminDashboardDataHandler(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Merchants
-// ---------------------------------------------------------------------------
 
+// Handles merchant management view
+// Renders the merchant management view template
+//
+// Example: handler.MerchantManagementView(w, r)
 func (h *Handler) MerchantManagementView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "admin_merchant.html", AdminPageData{Page: "merchants", Username: r.PathValue("username")})
 }
 
+// Handles merchant management data request
+// Fetches all merchants from the database and returns them as JSON
+//
+// Example: handler.MerchantManagementDataHandler(w, r)
 func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("MerchantManagementDataHandler running...")
 	page, limit := parsePagination(r)
@@ -128,10 +151,18 @@ func (h *Handler) MerchantManagementDataHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
+// Handles merchant info view
+// Renders the merchant info view template
+//
+// Example: handler.MerchantInfoView(w, r)
 func (h *Handler) MerchantInfoView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "merchant_info.html", AdminPageData{Page: "merchants", Username: r.PathValue("username")})
 }
 
+// Handles merchant info data request
+// Fetches merchant info from the database and returns it as JSON
+//
+// Example: handler.MerchantInfoDataHandler(w, r)
 func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	if merchantID == "" {
@@ -154,6 +185,10 @@ func (h *Handler) MerchantInfoDataHandler(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// Handles merchant approval request
+// Validates the request payload and calls the service to approve the merchant
+//
+// Example: handler.ApproveMerchantHandler(w, r)
 func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	adminUsername := r.PathValue("username")
@@ -181,6 +216,10 @@ func (h *Handler) ApproveMerchantHandler(w http.ResponseWriter, r *http.Request)
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant approved successfully"})
 }
 
+// Handles merchant rejection request
+// Validates the request payload and calls the service to reject the merchant
+//
+// Example: handler.RejectMerchantHandler(w, r)
 func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	if merchantID == "" {
@@ -205,6 +244,10 @@ func (h *Handler) RejectMerchantHandler(w http.ResponseWriter, r *http.Request) 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant rejected successfully"})
 }
 
+// Handles merchant suspension request
+// Validates the request payload and calls the service to suspend the merchant
+//
+// Example: handler.SuspendMerchantHandler(w, r)
 func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	if merchantID == "" {
@@ -229,6 +272,10 @@ func (h *Handler) SuspendMerchantHandler(w http.ResponseWriter, r *http.Request)
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant suspended successfully"})
 }
 
+// Handles merchant deletion request
+// Validates the request payload and calls the service to delete the merchant
+//
+// Example: handler.DeleteMerchantHandler(w, r)
 func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	if merchantID == "" {
@@ -247,6 +294,10 @@ func (h *Handler) DeleteMerchantHandler(w http.ResponseWriter, r *http.Request) 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Merchant deleted successfully"})
 }
 
+// Handles merchant documents approval request
+// Validates the request payload and calls the service to approve the merchant documents
+//
+// Example: handler.ApproveMerchantDocumentsHandler(w, r)
 func (h *Handler) ApproveMerchantDocumentsHandler(w http.ResponseWriter, r *http.Request) {
 	merchantID := r.PathValue("id")
 	if merchantID == "" {
@@ -261,6 +312,10 @@ func (h *Handler) ApproveMerchantDocumentsHandler(w http.ResponseWriter, r *http
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Documents approved successfully"})
 }
 
+// Handles add merchant request
+// Validates the request payload and calls the service to add the merchant
+//
+// Example: handler.AddMerchantHandler(w, r)
 func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	var reqs []AddMerchantRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
@@ -283,14 +338,20 @@ func (h *Handler) AddMerchantHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Terminals
-// ---------------------------------------------------------------------------
 
+// Handles terminal registry view
+// Renders the terminal registry view template
+//
+// Example: handler.TerminalRegistryView(w, r)
 func (h *Handler) TerminalRegistryView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "admin_terminal.html", AdminPageData{Page: "terminals", Username: r.PathValue("username")})
 }
 
+// Handles terminal registry data request
+// Fetches all terminals from the registry and returns them as JSON
+//
+// Example: handler.TerminalRegistryDataHandler(w, r)
 func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("TerminalRegistryDataHandler running...")
 	page, limit := parsePagination(r)
@@ -309,6 +370,10 @@ func (h *Handler) TerminalRegistryDataHandler(w http.ResponseWriter, r *http.Req
 	})
 }
 
+// Handles add terminal request
+// Validates the request payload and calls the service to add the terminal
+//
+// Example: handler.AddTerminalHandler(w, r)
 func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	var req AddTerminalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -328,6 +393,10 @@ func (h *Handler) AddTerminalHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Terminal registered to inventory successfully"})
 }
 
+// Handles unassigned terminals request
+// Fetches all unassigned terminals from the database and returns them as JSON
+//
+// Example: handler.GetUnassignedTerminalsHandler(w, r)
 func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.Request) {
 	terminals, err := h.svc.GetUnassignedTerminals()
 	if err != nil {
@@ -338,14 +407,20 @@ func (h *Handler) GetUnassignedTerminalsHandler(w http.ResponseWriter, r *http.R
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Data: terminals})
 }
 
-// ---------------------------------------------------------------------------
 // Terminal requests
-// ---------------------------------------------------------------------------
 
+// Handles terminal requests view
+// Renders the terminal requests view template
+//
+// Example: handler.TerminalRequestsView(w, r)
 func (h *Handler) TerminalRequestsView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "terminal_requests.html", AdminPageData{Page: "terminal_requests", Username: r.PathValue("username")})
 }
 
+// Handles terminal requests data request
+// Fetches all terminal requests from the database and returns them as JSON
+//
+// Example: handler.TerminalRequestsDataHandler(w, r)
 func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("TerminalRequestsDataHandler running...")
 	page, limit := parsePagination(r)
@@ -369,6 +444,10 @@ func (h *Handler) TerminalRequestsDataHandler(w http.ResponseWriter, r *http.Req
 	})
 }
 
+// Handles approve terminal request
+// Validates the request payload and calls the service to approve the terminal request
+//
+// Example: handler.ApproveTerminalRequestHandler(w, r)
 func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("ApproveTerminalRequestHandler running...")
 	adminUserID := r.PathValue("username")
@@ -403,6 +482,10 @@ func (h *Handler) ApproveTerminalRequestHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
+// Handles reject terminal request
+// Validates the request payload and calls the service to reject the terminal request
+//
+// Example: handler.RejectTerminalRequestHandler(w, r)
 func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("RejectTerminalRequestHandler running...")
 	adminUserID := r.PathValue("username")
@@ -437,14 +520,19 @@ func (h *Handler) RejectTerminalRequestHandler(w http.ResponseWriter, r *http.Re
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Cards
-// ---------------------------------------------------------------------------
 
+// Renders the add cards view
+//
+// Example: handler.AddCardsView(w, r)
 func (h *Handler) AddCardsView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "addCards.html", AdminPageData{Page: "addcard", Username: r.PathValue("username")})
 }
 
+// Handles add card request
+// Validates the request payload and calls the service to add the card
+//
+// Example: handler.AddCardHandler(w, r)
 func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	var req structs.CardData
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -469,10 +557,17 @@ func (h *Handler) AddCardHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusCreated, jsonwrite.APIResponse{Success: true, Message: "Card added successfully!"})
 }
 
+// Renders the card inventory view
+//
+// Example: handler.CardInventoryView(w, r)
 func (h *Handler) CardInventoryView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "admin_card_inventory.html", AdminPageData{Page: "card-inventory", Username: r.PathValue("username")})
 }
 
+// Handles card inventory data request
+// Fetches all cards from the inventory and returns them as JSON
+//
+// Example: handler.CardInventoryDataHandler(w, r)
 func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Request) {
 	result, err := h.svc.GetCardInventory()
 	if err != nil {
@@ -483,6 +578,10 @@ func (h *Handler) CardInventoryDataHandler(w http.ResponseWriter, r *http.Reques
 	jsonwrite.WriteJSON(w, http.StatusOK, result)
 }
 
+// Handles block card request
+// Validates the request payload and calls the service to block the card
+//
+// Example: handler.BlockCardHandler(w, r)
 func (h *Handler) BlockCardHandler(w http.ResponseWriter, r *http.Request) {
 	cardID := r.PathValue("id")
 	if cardID == "" {
@@ -503,10 +602,17 @@ func (h *Handler) BlockCardHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Card blocked successfully"})
 }
 
+// Renders the deactivate card view
+//
+// Example: handler.DeactivateView(w, r)
 func (h *Handler) DeactivateView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "deactivateCard.html", AdminPageData{Page: "deactivatecard", Username: r.PathValue("username")})
 }
 
+// Handles deactivate card request
+// Validates the request payload and calls the service to deactivate the card
+//
+// Example: handler.DeactivateCardHanlder(w, r)
 func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) {
 	var req structs.CardData
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -532,10 +638,17 @@ func (h *Handler) DeactivateCardHanlder(w http.ResponseWriter, r *http.Request) 
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Card deactivated successfully!"})
 }
 
+// Renders the delete card view
+//
+// Example: handler.DeleteCardView(w, r)
 func (h *Handler) DeleteCardView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "delete_card.html", AdminPageData{Page: "delete-cards", Username: r.PathValue("username")})
 }
 
+// Handles delete card request
+// Validates the request payload and calls the service to delete the card
+//
+// Example: handler.DeleteCardHandler(w, r)
 func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	var req structs.CardData
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -561,14 +674,17 @@ func (h *Handler) DeleteCardHandler(w http.ResponseWriter, r *http.Request) {
 	jsonwrite.WriteJSON(w, http.StatusOK, jsonwrite.APIResponse{Success: true, Message: "Card deleted successfully!"})
 }
 
-// ---------------------------------------------------------------------------
 // Transactions
-// ---------------------------------------------------------------------------
 
+// Renders the transactions view
+//
+// Example: handler.TransactionsView(w, r)
 func (h *Handler) TransactionsView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "transactions.html", AdminPageData{Page: "transactions", Username: r.PathValue("username")})
 }
 
+// Gets all transactions
+// Example: handler.AllTransactionsJSONHandler(w, r)
 func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Request) {
 	txns, err := h.svc.GetAllTransactions()
 	if err != nil {
@@ -581,10 +697,13 @@ func (h *Handler) AllTransactionsJSONHandler(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// xendit transactions view
 func (h *Handler) XenditTransactionsView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "xendit_transactions.html", AdminPageData{Page: "xendit-transactions", Username: r.PathValue("username")})
 }
 
+// Gets all Xendit transactions
+// Example: handler.AllXenditTransactionsJSONHandler(w, r)
 func (h *Handler) AllXenditTransactionsJSONHandler(w http.ResponseWriter, r *http.Request) {
 	txns, err := h.svc.GetXenditTransactions()
 	if err != nil {
@@ -597,10 +716,10 @@ func (h *Handler) AllXenditTransactionsJSONHandler(w http.ResponseWriter, r *htt
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Terminal simulation
-// ---------------------------------------------------------------------------
 
+// Renders the terminal simulation view
+// Example: handler.TerminalSimView(w, r)
 func (h *Handler) TerminalSimView(w http.ResponseWriter, r *http.Request) {
 	merchants := h.svc.GetSimMerchants()
 	if err := h.tpl.ExecuteTemplate(w, "terminal_sim.html", struct{ Merchants []SimMerchant }{Merchants: merchants}); err != nil {
@@ -608,6 +727,10 @@ func (h *Handler) TerminalSimView(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handles terminal simulation transactions
+// Validates the request payload and calls the service to process the transaction
+//
+// Example: handler.TerminalSimTransactionHandler(w, r)
 func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.Request) {
 	var req SimRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -636,18 +759,16 @@ func (h *Handler) TerminalSimTransactionHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
-// ---------------------------------------------------------------------------
 // Settings (view-only page)
-// ---------------------------------------------------------------------------
-
 func (h *Handler) SystemSettingsView(w http.ResponseWriter, r *http.Request) {
 	h.renderTemplate(w, "system_settings.html", AdminPageData{Page: "settings", Username: r.PathValue("username")})
 }
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
+// Renders the specified template.
+//
+// Example: h.renderTemplate(w, "merchant_account.html", MerchantPageData{Page: "account", Username: r.PathValue("username")})
 func (h *Handler) renderTemplate(w http.ResponseWriter, name string, data any) {
 	if err := h.tpl.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("renderTemplate %s: %v", name, err)
@@ -657,10 +778,14 @@ func (h *Handler) renderTemplate(w http.ResponseWriter, name string, data any) {
 	}
 }
 
+// Writes an error to the response
+//
+// Example: writeErr(w, http.StatusBadRequest, "Invalid request payload")
 func writeErr(w http.ResponseWriter, status int, msg string) {
 	jsonwrite.WriteJSON(w, status, jsonwrite.APIResponse{Success: false, Message: msg})
 }
 
+// Parses the pagination
 func parsePagination(r *http.Request) (page, limit int) {
 	page, limit = 1, 10
 	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {

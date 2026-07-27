@@ -80,6 +80,7 @@ func ValidatePassword(password string) error {
 	return nil
 }
 
+// ValidateForgotPasswordRequest returns a user-friendly error for an invalid email, or ("", true) on success.
 func ValidateForgotPasswordRequest(req ForgotPasswordRequest) (string, bool) {
 	return validateStruct(req, map[string]string{
 		"Email": "Please enter a valid email address.",

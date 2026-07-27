@@ -13,6 +13,7 @@ type Repository struct {
 	store database.Store
 }
 
+// NewRepository creates a new instance of Repository connected to the given store.
 func NewRepository(store database.Store) *Repository {
 	return &Repository{store: store}
 }

@@ -25,6 +25,7 @@ type Service struct {
 	repo *Repository
 }
 
+// NewService creates a new admin Service with the required dependencies.
 func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
@@ -33,6 +34,7 @@ func NewService(repo *Repository) *Service {
 // Dashboard
 // ---------------------------------------------------------------------------
 
+// GetDashboardData aggregates system-wide metrics for the admin overview dashboard.
 func (s *Service) GetDashboardData() (structs.AdminDashboardData, error) {
 	store := s.repo.store
 	var data structs.AdminDashboardData
@@ -83,6 +85,7 @@ func (s *Service) GetDashboardData() (structs.AdminDashboardData, error) {
 // Merchants
 // ---------------------------------------------------------------------------
 
+// GetMerchants fetches a paginated, filtered list of merchants and their assigned terminals.
 func (s *Service) GetMerchants(page, limit int, search, sortOrder, category, status string) (PaginatedMerchantsResult, error) {
 	store := s.repo.store
 
@@ -152,6 +155,7 @@ func (s *Service) GetMerchants(page, limit int, search, sortOrder, category, sta
 	return PaginatedMerchantsResult{Merchants: merchants, TotalItems: total, Page: page, Limit: limit}, nil
 }
 
+// attachTerminals populates the Terminals field for a batch of merchants.
 func (s *Service) attachTerminals(merchants []structs.Merchant) []structs.Merchant {
 	store := s.repo.store
 	ids := make([]string, len(merchants))
@@ -190,6 +194,7 @@ func (s *Service) attachTerminals(merchants []structs.Merchant) []structs.Mercha
 	return merchants
 }
 
+// GetMerchantByID retrieves the complete profile and terminal list for a specific merchant.
 func (s *Service) GetMerchantByID(merchantID string) (MerchantDetailsData, error) {
 	store := s.repo.store
 	var m MerchantDetailsData
@@ -273,6 +278,7 @@ func (s *Service) GetMerchantByID(merchantID string) (MerchantDetailsData, error
 	return m, nil
 }
 
+// ApproveMerchant activates a merchant account and assigns them a physical payment terminal.
 func (s *Service) ApproveMerchant(ctx context.Context, merchantID, adminUsername string, req ApproveMerchantRequest) error {
 	store := s.repo.store
 	tx, err := store.Begin()
@@ -345,6 +351,7 @@ func (s *Service) ApproveMerchant(ctx context.Context, merchantID, adminUsername
 	return nil
 }
 
+// RejectMerchant declines a merchant application and deactivates the associated user account.
 func (s *Service) RejectMerchant(merchantID string, req RejectMerchantRequest) error {
 	store := s.repo.store
 	if req.Reason == "" {
@@ -377,6 +384,7 @@ func (s *Service) RejectMerchant(merchantID string, req RejectMerchantRequest) e
 	return nil
 }
 
+// SuspendMerchant temporarily disables a merchant account and its associated user access.
 func (s *Service) SuspendMerchant(merchantID string, req SuspendMerchantRequest) error {
 	store := s.repo.store
 	if req.Reason == "" {
@@ -409,6 +417,7 @@ func (s *Service) SuspendMerchant(merchantID string, req SuspendMerchantRequest)
 	return nil
 }
 
+// DeleteMerchant permanently removes a merchant profile and unassigns any linked terminals.
 func (s *Service) DeleteMerchant(merchantID string) error {
 	store := s.repo.store
 	tx, err := store.Begin()
@@ -440,11 +449,13 @@ func (s *Service) DeleteMerchant(merchantID string) error {
 	return nil
 }
 
+// ApproveMerchantDocuments marks a merchant's uploaded verification documents as approved.
 func (s *Service) ApproveMerchantDocuments(merchantID string) error {
 	_, err := s.repo.store.Exec("UPDATE merchants SET document_status='approved', message='Your newly uploaded documents have been approved.' WHERE merchant_id=?", merchantID)
 	return err
 }
 
+// AddMerchants processes a batch onboarding request for multiple new merchants.
 func (s *Service) AddMerchants(ctx context.Context, reqs []AddMerchantRequest) error {
 	store := s.repo.store
 	caser := cases.Title(language.English)
@@ -522,6 +533,7 @@ func (s *Service) AddMerchants(ctx context.Context, reqs []AddMerchantRequest) e
 // Terminals
 // ---------------------------------------------------------------------------
 
+// GetTerminals retrieves a paginated and filtered list of all physical payment terminals.
 func (s *Service) GetTerminals(page, limit int, search, status, sortOrder string) (PaginatedTerminalsResult, error) {
 	store := s.repo.store
 
@@ -587,6 +599,7 @@ func (s *Service) GetTerminals(page, limit int, search, status, sortOrder string
 	}, nil
 }
 
+// AddTerminal registers a new unassigned payment terminal into the system inventory.
 func (s *Service) AddTerminal(req AddTerminalRequest) error {
 	timestamp := time.Now().Format("01020605")
 	n, _ := rand.Int(rand.Reader, big.NewInt(10000))
@@ -599,6 +612,7 @@ func (s *Service) AddTerminal(req AddTerminalRequest) error {
 	return nil
 }
 
+// GetUnassignedTerminals returns a list of inactive terminals available for merchant assignment.
 func (s *Service) GetUnassignedTerminals() ([]UnassignedTerminalData, error) {
 	rows, err := s.repo.store.Query(`SELECT terminal_sn, device_name, status FROM terminals WHERE merchant_id IS NULL AND status='inactive'`)
 	if err != nil {
@@ -622,6 +636,7 @@ func (s *Service) GetUnassignedTerminals() ([]UnassignedTerminalData, error) {
 // Terminal requests
 // ---------------------------------------------------------------------------
 
+// GetTerminalRequests retrieves a paginated list of merchant applications for new hardware.
 func (s *Service) GetTerminalRequests(page, limit int, status, search string) (TerminalRequestsResult, error) {
 	store := s.repo.store
 
@@ -705,6 +720,7 @@ func (s *Service) GetTerminalRequests(page, limit int, status, search string) (T
 	return TerminalRequestsResult{Requests: requests, TotalItems: total, CurrentPage: page, TotalPages: totalPages}, nil
 }
 
+// ApproveTerminalRequest grants a merchant's hardware request by assigning them an available terminal.
 func (s *Service) ApproveTerminalRequest(requestID, adminUserID string, payload ApproveTerminalRequestPayload) error {
 	store := s.repo.store
 	tx, err := store.Begin()
@@ -759,6 +775,7 @@ func (s *Service) ApproveTerminalRequest(requestID, adminUserID string, payload 
 	return tx.Commit()
 }
 
+// RejectTerminalRequest denies a merchant's hardware application with a specified reason.
 func (s *Service) RejectTerminalRequest(requestID, adminUserID string, payload RejectTerminalRequestPayload) error {
 	store := s.repo.store
 	var currentStatus string
@@ -785,6 +802,7 @@ func (s *Service) RejectTerminalRequest(requestID, adminUserID string, payload R
 // Cards
 // ---------------------------------------------------------------------------
 
+// GetCardInventory retrieves all smart cards and aggregates system-wide status statistics.
 func (s *Service) GetCardInventory() (CardInventoryResult, error) {
 	store := s.repo.store
 	var stats AdminCardInventoryStats
@@ -812,6 +830,7 @@ func (s *Service) GetCardInventory() (CardInventoryResult, error) {
 	return CardInventoryResult{Stats: stats, Cards: cards}, nil
 }
 
+// BlockCard permanently disables a smart card by its unique identifier.
 func (s *Service) BlockCard(cardID string) (bool, error) {
 	result, err := s.repo.store.Exec(`UPDATE cards SET status='Blocked' WHERE card_number=? OR card_uid=?`, cardID, cardID)
 	if err != nil {
@@ -821,6 +840,7 @@ func (s *Service) BlockCard(cardID string) (bool, error) {
 	return rows > 0, err
 }
 
+// AddCard registers a new smart card into the system with an initial unlinked state.
 func (s *Service) AddCard(req structs.CardData) error {
 	if req.Balance.IsNegative() {
 		return errors.New("initial amount cannot be negative")
@@ -842,6 +862,7 @@ func (s *Service) AddCard(req structs.CardData) error {
 	return err
 }
 
+// DeactivateCard blocks an active smart card linked to a specific user.
 func (s *Service) DeactivateCard(cardNumber, cardHolder, cardType string) (bool, error) {
 	result, err := s.repo.store.Exec(`UPDATE cards SET status='Blocked' WHERE card_number=? AND user_id=? AND card_type=? AND status='Active'`, cardNumber, cardHolder, cardType)
 	if err != nil {
@@ -851,6 +872,7 @@ func (s *Service) DeactivateCard(cardNumber, cardHolder, cardType string) (bool,
 	return rows > 0, err
 }
 
+// DeleteCard permanently removes a smart card record from the database.
 func (s *Service) DeleteCard(cardNumber string) (bool, error) {
 	result, err := s.repo.store.Exec("DELETE FROM cards WHERE card_number=?", cardNumber)
 	if err != nil {
@@ -864,6 +886,7 @@ func (s *Service) DeleteCard(cardNumber string) (bool, error) {
 // Transactions
 // ---------------------------------------------------------------------------
 
+// GetAllTransactions retrieves a unified list of financial and audit events across the platform.
 func (s *Service) GetAllTransactions() ([]TxnRow, error) {
 	const q = `
 		SELECT transaction_id, terminal_id, date, time, transaction_type, amount, status, description, business_name, merchant_id, points_earned, card_number, customer_name, service_fee
@@ -946,6 +969,7 @@ func (s *Service) GetAllTransactions() ([]TxnRow, error) {
 	return txns, nil
 }
 
+// GetXenditTransactions fetches and formats payout events from the external Xendit gateway.
 func (s *Service) GetXenditTransactions() ([]XenditTxnRow, error) {
 	xenditTx, err := xenditclient.GetAllTransactions()
 	if err != nil {
@@ -998,6 +1022,7 @@ func (s *Service) GetXenditTransactions() ([]XenditTxnRow, error) {
 // Terminal simulation
 // ---------------------------------------------------------------------------
 
+// GetSimMerchants retrieves a lightweight list of merchants for the transaction simulator.
 func (s *Service) GetSimMerchants() []SimMerchant {
 	rows, err := s.repo.store.Query("SELECT merchant_id, business_name FROM merchants")
 	if err != nil {
@@ -1015,6 +1040,7 @@ func (s *Service) GetSimMerchants() []SimMerchant {
 	return merchants
 }
 
+// SimTransaction executes a mocked payment or refund for testing and demonstration purposes.
 func (s *Service) SimTransaction(req SimRequest) (decimal.Decimal, error) {
 	store := s.repo.store
 
