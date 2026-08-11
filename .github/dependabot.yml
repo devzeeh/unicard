@@ -14,7 +14,11 @@ updates:
       - dependency-name: "github.com/xendit/xendit-go/*"
         update-types: ["version-update:semver-major"]
       - dependency-name: "github.com/aws/aws-sdk-go-v2/*"
-        update-types: ["version-update:semver-major"]
+        update-types: [
+          "version-update:semver-major",
+          "version-update:semver-minor",
+          "version-update:semver-patch"
+        ]
     commit-message:
       prefix: "chore(deps)"
 
