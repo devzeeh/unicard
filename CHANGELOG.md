@@ -25,6 +25,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - —
 
+## [0.0.2] - 2026-08-08
+
+### Added
+- Admin Dashboard Analytics: Added admin-facing analytics and reporting for transactions and merchant income.
+- Merchant Features: Implemented merchant signup, enhanced merchant dashboard, income and transaction history endpoints, and terminal request functionality.
+- Documentation: Added comprehensive setup, hardware, usage and testing documentation.
+- Hardware Integration: Integrated MQTT-based hardware communication for ESP32/RC522 terminals and added card validation flows.
+- Object Storage: Added support for Cloudflare R2 object storage handlers.
+
+### Changed
+- Web UI: Redesigned frontend UI and improved templates for customer and merchant dashboards and admin views.
+- Payments: Continued integration and hardening of Xendit payment workflows.
+- Dependencies: Routine dependency bumps (AWS SDK v2, golang.org/x/* packages) and GitHub Actions upgrades via Dependabot.
+
+### Deprecated
+- —
+
+### Removed
+- Removed legacy Stripe integration and replaced with Xendit where applicable.
+
+### Fixed
+- Concurrency: Fixed a race condition in otpStore by adding a mutex to guard read/write access.
+- Multiple small bug fixes across transaction handling and notification flows.
+
+### Security
+- Improved JWT handling and RequireAuth middleware to support JWT extraction from Authorization headers and improved error logging and rate-limit middleware.
+
 ## [0.0.1-alpha] - 2026-07-31
 
 ### Added
@@ -61,5 +88,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### References
 - This changelog follows Keep a Changelog conventions: https://keepachangelog.com
 
-[Unreleased]: https://github.com/devzeeh/unicard/compare/v0.0.1-alpha...HEAD
+[Unreleased]: https://github.com/devzeeh/unicard/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/devzeeh/unicard/releases/tag/v0.0.2
 [0.0.1-alpha]: https://github.com/devzeeh/unicard/releases/tag/v0.0.1-alpha
