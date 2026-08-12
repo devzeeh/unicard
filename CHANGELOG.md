@@ -1,0 +1,65 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Prepared repository for upcoming changes and release notes.
+
+### Changed
+- —
+
+### Deprecated
+- —
+
+### Removed
+- —
+
+### Fixed
+- —
+
+### Security
+- —
+
+## [0.0.1-alpha] - 2026-07-31
+
+### Added
+- **Core Architecture**: Established initial Go backend and MySQL database schema.
+- **Card Lifecycle Management**: Built end-to-end flows to register, activate, reload, and block UniCards.
+- **Dual Payment Engine**: Developed distinct transaction logic for retail billing and distance-based public transport fares.
+- **Automated Discounts & Rewards**:
+  - Implemented an automatic 20% discount system for eligible user profiles (e.g., PWD, Students, Seniors).
+  - Implemented a 0.2% cashback reward system applied per payment transaction.
+- **Hardware Integration**: Added robust REST endpoints to process payloads from ESP32 & RC522 RFID terminals.
+- **Web Dashboard MVP**: Delivered a server-rendered admin interface using Go Templates, HTML, JavaScript, and Tailwind CSS for monitoring transaction logs, user data, and card statuses.
+- **Payment Processing**: Integrated Xendit for handling secure digital payments and payouts.
+- **Notifications**: Configured an SMTP service to send receipts to users upon successful transactions.
+- **API Authentication**: Implemented JWT-based authentication and role-based access control for API endpoints.
+- **R2 Storage Integration**: Integrated Cloudflare R2 for storage of uploaded documents and images.
+
+### Changed
+- None
+
+### Deprecated
+- None
+
+### Removed
+- None
+
+### Fixed
+- None
+
+### Security
+- Basic transaction security for MVP and session management.
+
+---
+
+### References
+- This changelog follows Keep a Changelog conventions: https://keepachangelog.com
+
+[Unreleased]: https://github.com/devzeeh/unicard/compare/v0.0.1-alpha...HEAD
+[0.0.1-alpha]: https://github.com/devzeeh/unicard/releases/tag/v0.0.1-alpha
