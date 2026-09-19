@@ -1,6 +1,6 @@
 module unicard-go
 
-go 1.25.4
+go 1.26.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.43.5
@@ -15,7 +15,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/xendit/xendit-go/v7 v7.0.0
 	golang.org/x/crypto v0.55.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.23.0
 	golang.org/x/text v0.41.0
 	golang.org/x/time v0.15.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
