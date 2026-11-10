@@ -2,7 +2,6 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/devzeeh/unicard)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/devzeeh/unicard)
-![Status](https://img.shields.io/badge/Status-Alpha-orange)
 ![GitHub Created At](https://img.shields.io/github/created-at/devzeeh/unicard)
 ![GitHub last commit](https://img.shields.io/github/last-commit/devzeeh/unicard)
 ![GitHub language count](https://img.shields.io/github/languages/count/devzeeh/unicard)
@@ -93,22 +92,13 @@ This project was made possible by the incredible work of the following communiti
 - **The Go Community** - For a robust and efficient backend language.
 - **MySQL** - For a reliable and powerful database solution.
 - **ESP & Arduino Developers** - For versatile microcontroller support.
-- **Tailwind Labs** - For a utility-first CSS framework.
+- **Tailwind** - For a utility-first CSS framework.
 - **Xendit** - For localized and developer-friendly payment infrastructure.
 - **The entire Open Source Community** - For the countless tools and libraries that power modern development.
 
 ---
 
 <div align="center">
-
-### Made with ❤️ in the Philippines
-
-<img src="https://flagcdn.com/w40/ph.png" width="30" height="20" alt="Philippine Flag">
-<br />
-
-<!--*Built by Filipinos, for Filipinos*-->
-
-**Helping local businesses and campuses build cashless ecosystems**
 
 <small>Copyright © 2025 devzeeh. All Rights Reserved.</small>
 <br />
