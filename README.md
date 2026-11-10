@@ -1,8 +1,8 @@
 # UniCard
 
-![GitHub Release](https://img.shields.io/github/v/release/devzeeh/unicard)
+[![GitHub Release](https://img.shields.io/github/v/release/devzeeh/unicard)](https://github.com/devzeeh/unicard/releases/latest)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/devzeeh/unicard)
-![GitHub Created At](https://img.shields.io/github/created-at/devzeeh/unicard)
+[![GitHub Created At](https://img.shields.io/github/created-at/devzeeh/unicard)](https://github.com/devzeeh/unicard/commit/734b2d5f0a0599dcc403cdf5aa137f5516e18bbc)
 ![GitHub last commit](https://img.shields.io/github/last-commit/devzeeh/unicard)
 ![GitHub language count](https://img.shields.io/github/languages/count/devzeeh/unicard)
 ![GitHub Repo stars](https://img.shields.io/github/stars/devzeeh/unicard)
